@@ -1,0 +1,15 @@
+[build]
+rustflags = [
+    "-D", "warnings",
+    "-D", "missing_docs",
+    "-D", "clippy::pedantic",
+    "-D", "clippy::cognitive_complexity",
+    "-D", "unreachable_pub",
+    "-D", "rust_2018_idioms",
+]
+
+[registries.crates-io]
+protocol = "sparse"
+
+[net]
+retry = 3

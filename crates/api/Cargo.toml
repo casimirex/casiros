@@ -1,0 +1,24 @@
+[package]
+name = "casiros-api"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CASIROS infrastructure layer — HTTP API server"
+
+[[bin]]
+name = "casiros-api"
+path = "src/main.rs"
+
+[dependencies]
+casiros-core = { workspace = true }
+casiros-dag = { workspace = true }
+casiros-simulator = { workspace = true }
+actix-web = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

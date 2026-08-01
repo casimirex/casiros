@@ -1,0 +1,13 @@
+[package]
+name = "casiros-dag"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CASIROS application layer — causality graph engine"
+
+[dependencies]
+casiros-core = { workspace = true }
+petgraph = { workspace = true }
