@@ -11,3 +11,6 @@ description = "CASIROS application layer — causality graph engine"
 [dependencies]
 casiros-core = { workspace = true }
 petgraph = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
+thiserror = { workspace = true }

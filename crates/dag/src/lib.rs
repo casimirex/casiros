@@ -6,6 +6,13 @@
 //! ## Layer
 //!
 //! Application Layer — depends only on [`casiros_core`] (Domain Layer).
+//!
+//! ## Public API
+//!
+//! - [`graph::CausalityEngine`] — the DAG builder and evaluator.
+//! - [`graph::Node`], [`graph::NodeId`], [`graph::NodeKind`], [`graph::Port`],
+//!   [`graph::FormulaKind`] — graph building blocks.
+//! - [`error::DagError`] — the universal error type for DAG operations.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -13,38 +20,8 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
-/// Formula node identifiers used in the causality graph.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum FormulaNode {
-    /// Future value of a present sum.
-    FutureValue,
-    /// Present value of a future sum.
-    PresentValue,
-    /// Return on equity.
-    ReturnOnEquity,
-    /// Weighted average cost of capital.
-    Wacc,
-    /// Sustainable growth rate.
-    SustainableGrowthRate,
-}
+pub mod error;
+pub mod graph;
 
-/// A stub causality engine for the MVP.
-///
-/// Full implementation will construct a [`petgraph::graph::DiGraph`] of all
-/// formula dependencies and provide topological evaluation.
-#[derive(Debug, Clone)]
-pub struct CausalityEngine;
-
-impl CausalityEngine {
-    /// Creates a new, empty causality engine.
-    #[must_use]
-    pub fn new() -> Self {
-        return Self;
-    }
-}
-
-impl Default for CausalityEngine {
-    fn default() -> Self {
-        return Self::new();
-    }
-}
+pub use error::DagError;
+pub use graph::{CausalityEngine, FormulaKind, Node, NodeId, NodeKind, Port};
