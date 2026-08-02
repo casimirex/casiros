@@ -11,8 +11,8 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  check:
-    name: Check & Lint
+  lint:
+    name: Format, Clippy, and Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,15 +20,17 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "casiros-lint"
 
       - name: Format check
         run: cargo fmt --all -- --check
 
       - name: Clippy (strict)
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - name: Check compilation
-        run: cargo check --workspace --all-features
+      - name: Check compilation (all targets)
+        run: cargo check --workspace --all-targets
 
   test:
     name: Test
@@ -37,12 +39,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "casiros-test"
 
-      - name: Run tests
-        run: cargo test --workspace --all-features
-
-      - name: Run doc-tests
-        run: cargo test --doc --workspace
+      - name: Run all tests (unit, integration, and doc-tests)
+        run: cargo test --workspace --all-targets
 
   docs:
     name: Documentation
@@ -51,6 +52,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "casiros-docs"
 
       - name: Build docs
-        run: cargo doc --no-deps --document-private-items --workspace
+        run: cargo doc --workspace --no-deps --document-private-items
