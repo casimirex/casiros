@@ -27,6 +27,8 @@ RUN useradd --create-home --shell /bin/bash casiros
 WORKDIR /app
 
 COPY --from=builder /usr/src/casiros/target/release/casiros-api /usr/local/bin/casiros-api
+COPY --from=builder /usr/src/casiros/migrations /app/migrations
+COPY --from=builder /usr/src/casiros/config/default.toml /app/config/default.toml
 
 USER casiros
 

@@ -41,3 +41,5 @@ utoipa-swagger-ui = { workspace = true }
 
 [dev-dependencies]
 rust_decimal_macros = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }

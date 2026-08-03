@@ -2025,6 +2025,408 @@ mod tests {
         assert_eq!(outputs[&sgr], dec!(0.09));
     }
 
+    fn evaluate_constant_formula(formula: FormulaKind) -> Decimal {
+        let mut engine = CausalityEngine::new();
+        let id = engine.add_formula("f", formula);
+        return engine.evaluate(&HashMap::new()).unwrap()[&id];
+    }
+
+    #[test]
+    fn evaluates_present_value() {
+        let value = evaluate_constant_formula(FormulaKind::PresentValue {
+            future_value: Port::Constant(dec!(162.8895)),
+            rate: Port::Constant(dec!(0.05)),
+            periods: Port::Constant(dec!(10)),
+        });
+        assert!((value - dec!(100.0)).abs() < dec!(0.01));
+    }
+
+    #[test]
+    fn evaluates_amortization_payment() {
+        let value = evaluate_constant_formula(FormulaKind::AmortizationPayment {
+            principal: Port::Constant(dec!(1000.0)),
+            rate: Port::Constant(dec!(0.01)),
+            periods: Port::Constant(dec!(12)),
+        });
+        assert!((value - dec!(88.85)).abs() < dec!(0.01));
+    }
+
+    #[test]
+    fn evaluates_yield_to_maturity_approximation() {
+        let value = evaluate_constant_formula(FormulaKind::YieldToMaturityApproximation {
+            face_value: Port::Constant(dec!(1000.0)),
+            coupon_payment: Port::Constant(dec!(50.0)),
+            price: Port::Constant(dec!(950.0)),
+            periods: Port::Constant(dec!(10)),
+        });
+        assert!((value - dec!(0.0564)).abs() < dec!(0.0001));
+    }
+
+    #[test]
+    fn evaluates_simple_moving_average() {
+        let value = evaluate_constant_formula(FormulaKind::SimpleMovingAverage {
+            prices: Port::Constant(dec!(100.0)),
+            window: Port::Constant(dec!(1)),
+        });
+        assert_eq!(value, dec!(100.0));
+    }
+
+    #[test]
+    fn evaluates_black_scholes_call() {
+        let value = evaluate_constant_formula(FormulaKind::BlackScholesCall {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+        });
+        assert!(value > dec!(0.0));
+        assert!(value < dec!(20.0));
+    }
+
+    #[test]
+    fn evaluates_black_scholes_put() {
+        let value = evaluate_constant_formula(FormulaKind::BlackScholesPut {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+        });
+        assert!(value > dec!(0.0));
+        assert!(value < dec!(20.0));
+    }
+
+    #[test]
+    fn evaluates_binomial_option_call() {
+        let value = evaluate_constant_formula(FormulaKind::BinomialOptionCall {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            steps: Port::Constant(dec!(100)),
+        });
+        assert!(value > dec!(0.0));
+        assert!(value < dec!(20.0));
+    }
+
+    #[test]
+    fn evaluates_binomial_option_put() {
+        let value = evaluate_constant_formula(FormulaKind::BinomialOptionPut {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            steps: Port::Constant(dec!(100)),
+        });
+        assert!(value > dec!(0.0));
+        assert!(value < dec!(20.0));
+    }
+
+    #[test]
+    fn evaluates_black_scholes_delta() {
+        let call = evaluate_constant_formula(FormulaKind::BlackScholesDelta {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            style: OptionStyle::Call,
+        });
+        assert!(call > dec!(0.0));
+
+        let put = evaluate_constant_formula(FormulaKind::BlackScholesDelta {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            style: OptionStyle::Put,
+        });
+        assert!(put < dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_black_scholes_gamma() {
+        let value = evaluate_constant_formula(FormulaKind::BlackScholesGamma {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+        });
+        assert!(value > dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_black_scholes_vega() {
+        let value = evaluate_constant_formula(FormulaKind::BlackScholesVega {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+        });
+        assert!(value > dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_black_scholes_theta() {
+        let call = evaluate_constant_formula(FormulaKind::BlackScholesTheta {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            style: OptionStyle::Call,
+        });
+        assert!(call < dec!(0.0));
+
+        let put = evaluate_constant_formula(FormulaKind::BlackScholesTheta {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            style: OptionStyle::Put,
+        });
+        assert!(put < dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_black_scholes_rho() {
+        let call = evaluate_constant_formula(FormulaKind::BlackScholesRho {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            style: OptionStyle::Call,
+        });
+        assert!(call > dec!(0.0));
+
+        let put = evaluate_constant_formula(FormulaKind::BlackScholesRho {
+            spot: Port::Constant(dec!(100.0)),
+            strike: Port::Constant(dec!(100.0)),
+            risk_free_rate: Port::Constant(dec!(0.05)),
+            volatility: Port::Constant(dec!(0.2)),
+            time_to_maturity: Port::Constant(dec!(1.0)),
+            style: OptionStyle::Put,
+        });
+        assert!(put < dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_growing_perpetuity_present_value() {
+        let value = evaluate_constant_formula(FormulaKind::GrowingPerpetuityPresentValue {
+            payment: Port::Constant(dec!(100.0)),
+            rate: Port::Constant(dec!(0.08)),
+            growth_rate: Port::Constant(dec!(0.03)),
+        });
+        assert_eq!(value, dec!(2000.0));
+    }
+
+    #[test]
+    fn evaluates_continuous_compounding_future_value() {
+        let value = evaluate_constant_formula(FormulaKind::ContinuousCompoundingFutureValue {
+            present_value: Port::Constant(dec!(100.0)),
+            rate: Port::Constant(dec!(0.05)),
+            time: Port::Constant(dec!(10.0)),
+        });
+        assert_eq!(value.round_dp(4), dec!(164.8721));
+    }
+
+    #[test]
+    fn evaluates_return_on_investment() {
+        let value = evaluate_constant_formula(FormulaKind::ReturnOnInvestment {
+            gain: Port::Constant(dec!(150.0)),
+            cost: Port::Constant(dec!(100.0)),
+        });
+        assert_eq!(value, dec!(0.5));
+    }
+
+    #[test]
+    fn evaluates_profit_margin() {
+        let value = evaluate_constant_formula(FormulaKind::ProfitMargin {
+            net_income: Port::Constant(dec!(150.0)),
+            revenue: Port::Constant(dec!(1000.0)),
+        });
+        assert_eq!(value, dec!(0.15));
+    }
+
+    #[test]
+    fn evaluates_asset_turnover() {
+        let value = evaluate_constant_formula(FormulaKind::AssetTurnover {
+            revenue: Port::Constant(dec!(1000.0)),
+            total_assets: Port::Constant(dec!(500.0)),
+        });
+        assert_eq!(value, dec!(2.0));
+    }
+
+    #[test]
+    fn evaluates_equity_multiplier() {
+        let value = evaluate_constant_formula(FormulaKind::EquityMultiplier {
+            total_assets: Port::Constant(dec!(2000.0)),
+            shareholders_equity: Port::Constant(dec!(1000.0)),
+        });
+        assert_eq!(value, dec!(2.0));
+    }
+
+    #[test]
+    fn evaluates_quick_ratio() {
+        let value = evaluate_constant_formula(FormulaKind::QuickRatio {
+            current_assets: Port::Constant(dec!(1000.0)),
+            inventory: Port::Constant(dec!(300.0)),
+            current_liabilities: Port::Constant(dec!(500.0)),
+        });
+        assert_eq!(value, dec!(1.4));
+    }
+
+    #[test]
+    fn evaluates_interest_coverage() {
+        let value = evaluate_constant_formula(FormulaKind::InterestCoverage {
+            ebit: Port::Constant(dec!(500.0)),
+            interest_expense: Port::Constant(dec!(100.0)),
+        });
+        assert_eq!(value, dec!(5.0));
+    }
+
+    #[test]
+    fn evaluates_inventory_turnover() {
+        let value = evaluate_constant_formula(FormulaKind::InventoryTurnover {
+            cogs: Port::Constant(dec!(600.0)),
+            inventory: Port::Constant(dec!(100.0)),
+        });
+        assert_eq!(value, dec!(6.0));
+    }
+
+    #[test]
+    fn evaluates_cash_conversion_cycle() {
+        let value = evaluate_constant_formula(FormulaKind::CashConversionCycle {
+            days_inventory_outstanding: Port::Constant(dec!(30.0)),
+            days_sales_outstanding: Port::Constant(dec!(45.0)),
+            days_payables_outstanding: Port::Constant(dec!(25.0)),
+        });
+        assert_eq!(value, dec!(50.0));
+    }
+
+    #[test]
+    fn evaluates_capital_adequacy_ratio() {
+        let value = evaluate_constant_formula(FormulaKind::CapitalAdequacyRatio {
+            total_capital: Port::Constant(dec!(100.0)),
+            risk_weighted_assets: Port::Constant(dec!(1000.0)),
+        });
+        assert_eq!(value, dec!(0.1));
+    }
+
+    #[test]
+    fn evaluates_provision_coverage_ratio() {
+        let value = evaluate_constant_formula(FormulaKind::ProvisionCoverageRatio {
+            provisions: Port::Constant(dec!(80.0)),
+            non_performing_assets: Port::Constant(dec!(100.0)),
+        });
+        assert_eq!(value, dec!(0.8));
+    }
+
+    #[test]
+    fn evaluates_treynor_ratio() {
+        let value = evaluate_constant_formula(FormulaKind::TreynorRatio {
+            portfolio_return: Port::Constant(dec!(0.12)),
+            risk_free_rate: Port::Constant(dec!(0.03)),
+            beta: Port::Constant(dec!(1.2)),
+        });
+        assert_eq!(value, dec!(0.075));
+    }
+
+    #[test]
+    fn evaluates_value_at_risk() {
+        let value = evaluate_constant_formula(FormulaKind::ValueAtRisk {
+            portfolio_value: Port::Constant(dec!(100000.0)),
+            mean_return: Port::Constant(dec!(0.10)),
+            std_dev: Port::Constant(dec!(0.15)),
+            z_score: Port::Constant(dec!(1.645)),
+        });
+        assert!(value < dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_expected_shortfall() {
+        let value = evaluate_constant_formula(FormulaKind::ExpectedShortfall {
+            portfolio_value: Port::Constant(dec!(100000.0)),
+            mean_return: Port::Constant(dec!(0.10)),
+            std_dev: Port::Constant(dec!(0.15)),
+            z_score: Port::Constant(dec!(1.645)),
+        });
+        assert!(value < dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_discounted_cash_flow() {
+        let value = evaluate_constant_formula(FormulaKind::DiscountedCashFlow {
+            cash_flows: Port::Constant(dec!(100.0)),
+            discount_rate: Port::Constant(dec!(0.05)),
+        });
+        assert_eq!(value.round_dp(2), dec!(95.24));
+    }
+
+    #[test]
+    fn evaluates_macaulay_duration() {
+        let value = evaluate_constant_formula(FormulaKind::MacaulayDuration {
+            cash_flows: Port::Constant(dec!(100.0)),
+            yield_per_period: Port::Constant(dec!(0.05)),
+        });
+        assert_eq!(value, dec!(1.0));
+    }
+
+    #[test]
+    fn evaluates_modified_duration() {
+        let value = evaluate_constant_formula(FormulaKind::ModifiedDuration {
+            macaulay_duration: Port::Constant(dec!(1.967)),
+            yield_per_period: Port::Constant(dec!(0.05)),
+        });
+        assert_eq!(value.round_dp(3), dec!(1.873));
+    }
+
+    #[test]
+    fn evaluates_convexity() {
+        let value = evaluate_constant_formula(FormulaKind::Convexity {
+            cash_flows: Port::Constant(dec!(100.0)),
+            yield_per_period: Port::Constant(dec!(0.05)),
+        });
+        assert!(value > dec!(0.0));
+    }
+
+    #[test]
+    fn evaluates_free_cash_flow_to_equity() {
+        let value = evaluate_constant_formula(FormulaKind::FreeCashFlowToEquity {
+            fcff: Port::Constant(dec!(550.0)),
+            interest_expense_after_tax: Port::Constant(dec!(35.0)),
+            net_borrowing: Port::Constant(dec!(50.0)),
+        });
+        assert_eq!(value, dec!(565.0));
+    }
+
+    #[test]
+    fn evaluates_economic_value_added() {
+        let value = evaluate_constant_formula(FormulaKind::EconomicValueAdded {
+            nopat: Port::Constant(dec!(200.0)),
+            invested_capital: Port::Constant(dec!(1000.0)),
+            wacc: Port::Constant(dec!(0.10)),
+        });
+        assert_eq!(value, dec!(100.0));
+    }
+
+    #[test]
+    fn evaluates_internal_growth_rate() {
+        let value = evaluate_constant_formula(FormulaKind::InternalGrowthRate {
+            roe: Port::Constant(dec!(0.15)),
+            dividend_payout_ratio: Port::Constant(dec!(0.40)),
+        });
+        assert_eq!(value.round_dp(4), dec!(0.0989));
+    }
+
     #[test]
     fn missing_input_returns_error() {
         let mut engine = CausalityEngine::new();

@@ -8,10 +8,35 @@ services:
       - "8080:8080"
     environment:
       - CASIROS_BIND_ADDR=0.0.0.0:8080
-      - RUST_LOG=info
+      - CASIROS_LOG_LEVEL=info
+      - CASIROS_SNAPSHOT__BACKEND=memory
+      - CASIROS_POSTGRES__URL=postgresql://casiros:casiros@postgres:5432/casiros
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: casiros-postgres
+    environment:
+      - POSTGRES_USER=casiros
+      - POSTGRES_PASSWORD=casiros
+      - POSTGRES_DB=casiros
+    volumes:
+      - casiros_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casiros -d casiros"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  casiros_postgres_data:

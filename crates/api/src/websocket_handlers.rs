@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponse, Responder, web};
-use actix_ws::{MessageStream, Session, handle};
+use actix_ws::{AggregatedMessageStream, Session, handle};
 use serde::Serialize;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
@@ -59,7 +59,7 @@ pub async fn simulate_ws(req: HttpRequest, body: web::Payload) -> impl Responder
     };
 
     let mut session = session;
-    let mut stream = stream;
+    let mut stream = stream.aggregate_continuations();
 
     actix_web::rt::spawn(async move {
         let request_json = match read_first_text_frame(&mut stream, &mut session).await {
@@ -94,28 +94,31 @@ pub async fn simulate_ws(req: HttpRequest, body: web::Payload) -> impl Responder
 }
 
 async fn read_first_text_frame(
-    stream: &mut MessageStream,
+    stream: &mut AggregatedMessageStream,
     session: &mut Session,
 ) -> Result<Option<String>, String> {
-    use actix_ws::Message;
+    use actix_ws::AggregatedMessage;
 
     loop {
         let item = stream
-            .next()
+            .recv()
             .await
             .ok_or_else(|| "websocket stream closed before request".to_string())?;
 
         let msg = item.map_err(|err| format!("websocket error: {err}"))?;
         match msg {
-            Message::Text(text) => return Ok(Some(text.to_string())),
-            Message::Close(_) => {
+            AggregatedMessage::Text(text) => return Ok(Some(text.to_string())),
+            AggregatedMessage::Close(_) => {
                 let _ = session.clone().close(None).await;
                 return Ok(None);
             }
-            Message::Ping(bytes) => {
+            AggregatedMessage::Binary(_) => {
+                return Err("expected text frame, received binary".to_string());
+            }
+            AggregatedMessage::Pong(_) => {}
+            AggregatedMessage::Ping(bytes) => {
                 let _ = session.pong(&bytes).await;
             }
-            _ => {}
         }
     }
 }
