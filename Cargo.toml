@@ -25,11 +25,11 @@ documentation = "https://docs.rs/casiros-core"
 
 [workspace.dependencies]
 # Domain
-casiros-core = { path = "crates/core" }
-casiros-dag = { path = "crates/dag" }
-casiros-simulator = { path = "crates/simulator" }
-casiros-api = { path = "crates/api" }
-casiros-macros = { path = "crates/macros" }
+casiros-core = { path = "crates/core", version = "0.2.0" }
+casiros-dag = { path = "crates/dag", version = "0.2.0" }
+casiros-simulator = { path = "crates/simulator", version = "0.2.0" }
+casiros-api = { path = "crates/api", version = "0.2.0" }
+casiros-macros = { path = "crates/macros", version = "0.2.0" }
 
 # Math & finance
 rust_decimal = { version = "1.36", features = ["maths"] }

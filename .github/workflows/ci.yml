@@ -106,3 +106,16 @@ jobs:
         with:
           files: ./cobertura.xml
           fail_ci_if_error: false
+
+      - name: Enforce coverage gate
+        run: |
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          import sys
+          root = ET.parse('cobertura.xml').getroot()
+          covered = int(root.get('lines-covered'))
+          valid = int(root.get('lines-valid'))
+          rate = covered / valid
+          print(f'Line coverage: {covered}/{valid} = {rate:.2%}')
+          sys.exit(0 if rate >= 0.60 else 1)
+          "
