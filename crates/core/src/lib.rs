@@ -48,5 +48,6 @@ pub mod error;
 pub mod financial;
 pub mod general;
 pub mod markets;
+pub mod narrative;
 pub mod stocks_bonds;
 pub mod types;

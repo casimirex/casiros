@@ -23,7 +23,7 @@ Every dependency traced through a causality graph. Every scenario simulated in p
 | `crates/dag` | Application | Causality graph engine | ✅ Implemented |
 | `crates/simulator` | Application | Monte Carlo multiverse engine | ✅ Implemented |
 | `crates/api` | Infrastructure | Actix-Web REST interface | ✅ Implemented |
-| `crates/macros` | Infrastructure | Procedural macros for narrative generation | 🟡 Stub |
+| `crates/macros` | Infrastructure | Procedural macros for narrative generation | ✅ Implemented |
 
 ## Quick Start
 
@@ -189,6 +189,35 @@ health check against `/healthz`.
 - **Markets**: Sharpe Ratio, Jensen's Alpha
 - **Stocks & Bonds**: Dividend Discount Model, Bond Price
 - **Corporate**: WACC, Free Cash Flow to Firm, Sustainable Growth Rate
+
+## Narrative Macros
+
+The `casiros-macros` crate provides a `#[derive(Narrative)]` procedural macro
+that turns any struct with named fields into a human-readable sentence, useful
+for audit trails and CFO memos.
+
+```rust
+use casiros_core::narrative::Narrative;
+use casiros_macros::Narrative;
+use rust_decimal_macros::dec;
+
+#[derive(Narrative)]
+#[narrative(prefix = "Capital Structure")]
+struct CapitalStructure {
+    equity: rust_decimal::Decimal,
+    #[narrative(name = "total debt")]
+    debt: rust_decimal::Decimal,
+}
+
+let cs = CapitalStructure { equity: dec!(600.0), debt: dec!(400.0) };
+assert_eq!(cs.narrative(), "Capital Structure: equity = 600.00, total debt = 400.00");
+```
+
+Supported field attributes:
+
+- `#[narrative(skip)]` — omit the field.
+- `#[narrative(name = "...")]` — custom display name.
+- `#[narrative(prefix = "...")]` on the struct — custom prefix (defaults to struct name).
 
 ## Security
 

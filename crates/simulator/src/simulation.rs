@@ -55,7 +55,7 @@ pub struct InputBinding {
 /// ```
 /// use casiros_simulator::simulation::MonteCarloConfig;
 ///
-/// let config = MonteCarloConfig::new(1_000, 42);
+/// let config = MonteCarloConfig::new(1_000, 42).unwrap();
 /// assert_eq!(config.universe_count(), 1_000);
 /// ```
 #[derive(Debug, Clone)]
