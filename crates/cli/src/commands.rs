@@ -50,6 +50,15 @@ pub(crate) enum CliError {
     /// Simulation configuration failed.
     #[error("Simulation error: {0}")]
     Simulation(String),
+
+    /// CSV/Excel conversion failed.
+    #[error("Conversion error for {path}: {message}")]
+    Convert {
+        /// Path of the file being converted.
+        path: String,
+        /// Human-readable conversion failure message.
+        message: String,
+    },
 }
 
 /// Evaluates a graph from a JSON file and prints the response JSON.
@@ -418,5 +427,113 @@ fn formula_request_from_kind(
             volatility: port(volatility, id_to_name),
             time_to_maturity: port(time_to_maturity, id_to_name),
         },
+        FormulaKind::BinomialOptionCall {
+            spot,
+            strike,
+            risk_free_rate,
+            volatility,
+            time_to_maturity,
+            steps,
+        } => casiros_api::models::FormulaRequest::BinomialOptionCall {
+            spot: port(spot, id_to_name),
+            strike: port(strike, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            volatility: port(volatility, id_to_name),
+            time_to_maturity: port(time_to_maturity, id_to_name),
+            steps: port(steps, id_to_name),
+        },
+        FormulaKind::BinomialOptionPut {
+            spot,
+            strike,
+            risk_free_rate,
+            volatility,
+            time_to_maturity,
+            steps,
+        } => casiros_api::models::FormulaRequest::BinomialOptionPut {
+            spot: port(spot, id_to_name),
+            strike: port(strike, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            volatility: port(volatility, id_to_name),
+            time_to_maturity: port(time_to_maturity, id_to_name),
+            steps: port(steps, id_to_name),
+        },
+        FormulaKind::BlackScholesDelta {
+            spot,
+            strike,
+            risk_free_rate,
+            volatility,
+            time_to_maturity,
+            style,
+        } => casiros_api::models::FormulaRequest::BlackScholesDelta {
+            spot: port(spot, id_to_name),
+            strike: port(strike, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            volatility: port(volatility, id_to_name),
+            time_to_maturity: port(time_to_maturity, id_to_name),
+            style: option_style_to_api(*style),
+        },
+        FormulaKind::BlackScholesGamma {
+            spot,
+            strike,
+            risk_free_rate,
+            volatility,
+            time_to_maturity,
+        } => casiros_api::models::FormulaRequest::BlackScholesGamma {
+            spot: port(spot, id_to_name),
+            strike: port(strike, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            volatility: port(volatility, id_to_name),
+            time_to_maturity: port(time_to_maturity, id_to_name),
+        },
+        FormulaKind::BlackScholesVega {
+            spot,
+            strike,
+            risk_free_rate,
+            volatility,
+            time_to_maturity,
+        } => casiros_api::models::FormulaRequest::BlackScholesVega {
+            spot: port(spot, id_to_name),
+            strike: port(strike, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            volatility: port(volatility, id_to_name),
+            time_to_maturity: port(time_to_maturity, id_to_name),
+        },
+        FormulaKind::BlackScholesTheta {
+            spot,
+            strike,
+            risk_free_rate,
+            volatility,
+            time_to_maturity,
+            style,
+        } => casiros_api::models::FormulaRequest::BlackScholesTheta {
+            spot: port(spot, id_to_name),
+            strike: port(strike, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            volatility: port(volatility, id_to_name),
+            time_to_maturity: port(time_to_maturity, id_to_name),
+            style: option_style_to_api(*style),
+        },
+        FormulaKind::BlackScholesRho {
+            spot,
+            strike,
+            risk_free_rate,
+            volatility,
+            time_to_maturity,
+            style,
+        } => casiros_api::models::FormulaRequest::BlackScholesRho {
+            spot: port(spot, id_to_name),
+            strike: port(strike, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            volatility: port(volatility, id_to_name),
+            time_to_maturity: port(time_to_maturity, id_to_name),
+            style: option_style_to_api(*style),
+        },
+    };
+}
+
+fn option_style_to_api(style: casiros_dag::graph::OptionStyle) -> casiros_api::models::OptionStyle {
+    return match style {
+        casiros_dag::graph::OptionStyle::Call => casiros_api::models::OptionStyle::Call,
+        casiros_dag::graph::OptionStyle::Put => casiros_api::models::OptionStyle::Put,
     };
 }

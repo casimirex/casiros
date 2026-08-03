@@ -12,6 +12,11 @@ description = "CASIROS command-line interface for evaluation, simulation, and gr
 name = "casiros-cli"
 path = "src/main.rs"
 
+[features]
+default = ["csv", "excel"]
+csv = ["dep:csv"]
+excel = ["dep:calamine", "dep:rust_xlsxwriter"]
+
 [dependencies]
 casiros-api = { workspace = true }
 casiros-core = { workspace = true }
@@ -23,6 +28,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+csv = { workspace = true, optional = true }
+calamine = { workspace = true, optional = true }
+rust_xlsxwriter = { workspace = true, optional = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

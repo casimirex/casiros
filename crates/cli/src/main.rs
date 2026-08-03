@@ -14,6 +14,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 mod commands;
+mod convert;
 
 /// CASIROS CLI — evaluate graphs, run simulations, and persist models.
 #[derive(Debug, Parser)]
@@ -60,6 +61,14 @@ enum Command {
         /// Path where the engine JSON request will be written.
         engine_file: PathBuf,
     },
+
+    /// Convert between JSON, CSV, and Excel file formats.
+    Convert {
+        /// Path to the input file (.json, .csv, or .xlsx).
+        input: PathBuf,
+        /// Path where the converted output will be written.
+        output: PathBuf,
+    },
 }
 
 fn main() {
@@ -79,6 +88,7 @@ fn main() {
         } => {
             commands::load(&snapshot_file, &engine_file).map(|()| "Engine file written".to_string())
         }
+        Command::Convert { input, output } => convert::convert(&input, &output),
     };
 
     match result {
