@@ -19,6 +19,7 @@ pub mod openapi;
 pub mod repositories;
 pub mod snapshot_handlers;
 pub mod streaming_handlers;
+pub mod tenant;
 pub mod tracing_middleware;
 pub mod validation;
 pub mod websocket_handlers;

@@ -14,9 +14,10 @@
 use std::time::Duration;
 
 pub use casiros_api::models::{
-    BindingRequest, DistributionRequest, EdgeRequest, ErrorResponse, EvaluateRequest,
-    EvaluateResponse, FormulaRequest, HealthzResponse, NodeRequest, PortRequest, SimulateRequest,
-    SimulateResponse,
+    BindingRequest, DeleteSnapshotRequest, DistributionRequest, EdgeRequest, ErrorResponse,
+    EvaluateRequest, EvaluateResponse, FormulaRequest, HealthzResponse, NodeRequest, PortRequest,
+    SaveSnapshotRequest, SaveSnapshotResponse, SimulateRequest, SimulateResponse,
+    SnapshotListResponse, SnapshotResponse, SnapshotSummaryResponse,
 };
 use reqwest::{Client, Url};
 
@@ -117,6 +118,59 @@ impl CasirosClient {
         request: &SimulateRequest,
     ) -> Result<SimulateResponse, ClientError> {
         return self.post("simulate", request).await;
+    }
+
+    /// Calls `POST /snapshots`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::Http`] on transport failure or [`ClientError::Api`]
+    /// if the server returns an error status.
+    pub async fn save_snapshot(
+        &self,
+        request: &SaveSnapshotRequest,
+    ) -> Result<SaveSnapshotResponse, ClientError> {
+        return self.post("snapshots", request).await;
+    }
+
+    /// Calls `GET /snapshots/{id}`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::Http`] on transport failure or [`ClientError::Api`]
+    /// if the server returns an error status.
+    pub async fn load_snapshot(&self, id: &str) -> Result<SnapshotResponse, ClientError> {
+        return self.get(&format!("snapshots/{id}")).await;
+    }
+
+    /// Calls `DELETE /snapshots/{id}`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::Http`] on transport failure or [`ClientError::Api`]
+    /// if the server returns an error status.
+    pub async fn delete_snapshot(&self, id: &str) -> Result<(), ClientError> {
+        let url = self.resolve(&format!("snapshots/{id}"));
+        let response = self.client.delete(url).send().await?;
+        let status = response.status();
+        if !status.is_success() {
+            let error = response
+                .json::<ErrorResponse>()
+                .await
+                .map_err(|err| ClientError::Decode(err.to_string()))?;
+            return Err(ClientError::Api { error: error.error });
+        }
+        return Ok(());
+    }
+
+    /// Calls `GET /snapshots`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::Http`] on transport failure or [`ClientError::Api`]
+    /// if the server returns an error status.
+    pub async fn list_snapshots(&self) -> Result<SnapshotListResponse, ClientError> {
+        return self.get("snapshots").await;
     }
 
     async fn get<R: serde::de::DeserializeOwned>(&self, path: &str) -> Result<R, ClientError> {

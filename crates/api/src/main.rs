@@ -21,7 +21,7 @@ use std::sync::Arc;
 use actix_cors::Cors;
 use actix_files::Files;
 use actix_web::{App, HttpServer, middleware, web};
-use casiros_api::auth::{AuthConfig, RateLimiter, auth_middleware};
+use casiros_api::auth::{AuthConfig, RateLimiter, auth_middleware, build_tenant_resolver};
 use casiros_api::config::AppConfig;
 use casiros_api::handlers;
 use casiros_api::openapi;
@@ -30,6 +30,7 @@ use casiros_api::repositories::{
 };
 use casiros_api::snapshot_handlers;
 use casiros_api::streaming_handlers;
+use casiros_api::tenant::TenantResolver;
 use casiros_api::tracing_middleware::TracingMiddleware;
 use casiros_api::websocket_handlers;
 use tracing::{info, instrument};
@@ -57,6 +58,7 @@ async fn main() -> std::io::Result<()> {
     info!("CASIROS API starting on {}", bind_addr);
 
     let auth_config = Arc::new(AuthConfig::from_env());
+    let tenant_resolver: Arc<dyn TenantResolver> = build_tenant_resolver();
     let rate_limiter = Arc::new(RateLimiter::new());
     let snapshot_repo = build_snapshot_repo(&app_config)
         .await
@@ -64,6 +66,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let auth_config = Arc::clone(&auth_config);
+        let tenant_resolver: Arc<dyn TenantResolver> = Arc::clone(&tenant_resolver);
         let rate_limiter = Arc::clone(&rate_limiter);
 
         App::new()
@@ -72,8 +75,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(TracingMiddleware::new())
             .wrap(middleware::from_fn(move |req, next| {
                 let auth_config = Arc::clone(&auth_config);
+                let tenant_resolver: Arc<dyn TenantResolver> = Arc::clone(&tenant_resolver);
                 let rate_limiter = Arc::clone(&rate_limiter);
-                auth_middleware(req, next, auth_config, rate_limiter)
+                auth_middleware(req, next, auth_config, tenant_resolver, rate_limiter)
             }))
             .service(openapi::swagger_ui())
             .service(Files::new("/dashboard", "web").index_file("index.html"))

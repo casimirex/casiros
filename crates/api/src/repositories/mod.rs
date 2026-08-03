@@ -2,11 +2,12 @@
 //!
 //! This module provides infrastructure-layer repositories that implement the
 //! [`casiros_dag::repository::SnapshotRepository`] trait defined in the
-//! Application Layer.
+//! Application Layer. All operations are scoped to a tenant and workspace.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use casiros_core::tenant::{TenantId, WorkspaceId};
 use casiros_dag::DagError;
 use casiros_dag::persistence::EngineSnapshot;
 use casiros_dag::repository::{SnapshotRepository, SnapshotSummary};
@@ -33,20 +34,40 @@ impl SnapshotRepo {
 
 #[async_trait]
 impl SnapshotRepository for SnapshotRepo {
-    async fn save(&self, id: &str, snapshot: &EngineSnapshot) -> Result<(), DagError> {
-        return self.inner.save(id, snapshot).await;
+    async fn save(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+        id: &str,
+        snapshot: &EngineSnapshot,
+    ) -> Result<(), DagError> {
+        return self.inner.save(tenant, workspace, id, snapshot).await;
     }
 
-    async fn load(&self, id: &str) -> Result<EngineSnapshot, DagError> {
-        return self.inner.load(id).await;
+    async fn load(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+        id: &str,
+    ) -> Result<EngineSnapshot, DagError> {
+        return self.inner.load(tenant, workspace, id).await;
     }
 
-    async fn delete(&self, id: &str) -> Result<(), DagError> {
-        return self.inner.delete(id).await;
+    async fn delete(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+        id: &str,
+    ) -> Result<(), DagError> {
+        return self.inner.delete(tenant, workspace, id).await;
     }
 
-    async fn list(&self) -> Result<Vec<SnapshotSummary>, DagError> {
-        return self.inner.list().await;
+    async fn list(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+    ) -> Result<Vec<SnapshotSummary>, DagError> {
+        return self.inner.list(tenant, workspace).await;
     }
 }
 
