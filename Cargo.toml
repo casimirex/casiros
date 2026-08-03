@@ -4,6 +4,9 @@ members = [
     "crates/dag",
     "crates/simulator",
     "crates/api",
+    "crates/api-client",
+    "crates/bench",
+    "crates/cli",
     "crates/macros",
 ]
 resolver = "3"
@@ -21,6 +24,7 @@ rust-version = "1.85"
 casiros-core = { path = "crates/core" }
 casiros-dag = { path = "crates/dag" }
 casiros-simulator = { path = "crates/simulator" }
+casiros-api = { path = "crates/api" }
 casiros-macros = { path = "crates/macros" }
 
 # Math & finance
@@ -35,6 +39,7 @@ tokio = { version = "1.43", features = ["full"] }
 
 # Web framework (future phases)
 actix-web = "4.9"
+actix-web-httpauth = "0.8"
 
 # Graphs (future phases)
 petgraph = "0.7"
@@ -50,9 +55,22 @@ serde_json = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
+# OpenAPI
+utoipa = { version = "5", features = ["decimal"] }
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
 # Testing
+assert_cmd = "2"
 criterion = "0.5"
+predicates = "3"
 proptest = "1.6"
+tempfile = "3"
 
 [profile.release]
 opt-level = 3
