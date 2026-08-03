@@ -36,6 +36,8 @@ thiserror = { workspace = true }
 rust_decimal = { workspace = true }
 config = { workspace = true }
 sqlx = { workspace = true }
+uuid = { workspace = true }
+time = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 

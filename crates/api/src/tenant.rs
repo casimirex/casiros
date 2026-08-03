@@ -17,6 +17,17 @@ pub trait TenantResolver: Send + Sync {
     ///
     /// Returns `None` when the key is unknown or revoked.
     async fn resolve(&self, api_key: &str) -> Option<Principal>;
+
+    /// Returns every principal this resolver can produce.
+    ///
+    /// Used at startup to provision the tenant and workspace rows that the
+    /// `audit_events`, `snapshots`, and `simulation_jobs` foreign keys require.
+    /// Resolvers backed by an external directory cannot enumerate their
+    /// principals, so the default implementation returns nothing and such
+    /// deployments must provision tenants out of band.
+    fn known_principals(&self) -> Vec<Principal> {
+        return Vec::new();
+    }
 }
 
 /// In-memory tenant resolver configured from environment variables.
@@ -105,6 +116,10 @@ impl TenantResolver for InMemoryTenantResolver {
             .cloned()
             .or_else(|| self.mapping.get("").cloned());
     }
+
+    fn known_principals(&self) -> Vec<Principal> {
+        return self.mapping.values().cloned().collect();
+    }
 }
 
 #[cfg(test)]
@@ -137,6 +152,25 @@ mod tests {
             ))
         );
         assert!(resolver.resolve("bad").await.is_none());
+    }
+
+    #[test]
+    fn known_principals_lists_every_mapping() {
+        let resolver = InMemoryTenantResolver::parse(Some("a:t1:w1,b:t2:w2"));
+        let principals = resolver.known_principals();
+        assert_eq!(principals.len(), 2);
+        assert!(
+            principals
+                .iter()
+                .any(|p| p.tenant_id.as_str() == "t1" && p.workspace_id.as_str() == "w1")
+        );
+    }
+
+    #[test]
+    fn known_principals_is_empty_without_mappings() {
+        let resolver = InMemoryTenantResolver::parse(None);
+        assert!(resolver.known_principals().is_empty());
+        assert_eq!(resolver.known_principals().len(), 0);
     }
 
     #[tokio::test]

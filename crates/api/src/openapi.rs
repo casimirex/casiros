@@ -7,6 +7,7 @@
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::audit_handlers;
 use crate::handlers;
 use crate::models;
 use crate::snapshot_handlers;
@@ -30,6 +31,7 @@ use crate::snapshot_handlers;
         snapshot_handlers::load_snapshot,
         snapshot_handlers::delete_snapshot,
         snapshot_handlers::list_snapshots,
+        audit_handlers::list_audit_events,
     ),
     components(schemas(
         models::HealthzResponse,
@@ -51,6 +53,9 @@ use crate::snapshot_handlers;
         models::SnapshotResponse,
         models::SnapshotListResponse,
         models::SnapshotSummaryResponse,
+        models::AuditListQuery,
+        models::AuditEventResponse,
+        models::AuditListResponse,
     ))
 )]
 pub struct ApiDoc;

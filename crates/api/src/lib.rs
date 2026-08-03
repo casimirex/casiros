@@ -10,6 +10,9 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
+pub mod audit;
+pub mod audit_handlers;
+pub mod audit_middleware;
 pub mod auth;
 pub mod config;
 pub mod engine_builder;

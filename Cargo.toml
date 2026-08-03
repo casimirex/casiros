@@ -89,7 +89,18 @@ rust_xlsxwriter = "0.84"
 config = "0.14"
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "migrate", "json"] }
+sqlx = { version = "0.8", features = [
+    "runtime-tokio",
+    "postgres",
+    "migrate",
+    "json",
+    "uuid",
+    "time",
+] }
+
+# Identifiers and timestamps
+uuid = { version = "1", features = ["v4", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
 
 # Testing
 assert_cmd = "2"

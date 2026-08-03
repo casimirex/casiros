@@ -36,6 +36,7 @@
 
 pub mod prelude {
     //! Re-exports for ergonomic use across the workspace.
+    pub use crate::audit::{AuditAction, AuditEvent, AuditResult, Pagination};
     pub use crate::error::CalculationError;
     pub use crate::tenant::{Principal, TenantId, WorkspaceId};
     pub use crate::types::{Amounts, Dollar, Periods, Rate, Ratio};
@@ -43,6 +44,7 @@ pub mod prelude {
     pub use rust_decimal_macros::dec;
 }
 
+pub mod audit;
 pub mod banking;
 pub mod corporate;
 pub mod error;
