@@ -42,6 +42,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `simulator_run`: Monte Carlo simulation throughput.
   - `api_deserialize`: request deserialization throughput.
 
+- **Persistent snapshot REST endpoints** (`crates/api/src/snapshot_handlers.rs`)
+  - `POST /snapshots`, `GET /snapshots`, `GET /snapshots/{id}`, `DELETE /snapshots/{id}`.
+  - Backend-agnostic `SnapshotRepository` trait in `casiros_dag` with an in-memory implementation.
+  - `SnapshotRepo` wrapper in `casiros_api` for clean infrastructure wiring.
+
+- **Advanced option pricing & Greeks** (`casiros_core`)
+  - `options::binomial_option_call` / `binomial_option_put` (Cox-Ross-Rubinstein).
+  - `options::black_scholes_delta`, `black_scholes_gamma`, `black_scholes_vega`, `black_scholes_theta`, `black_scholes_rho`.
+  - Wired through `casiros_dag::FormulaKind`, `casiros_api::FormulaRequest`, engine builder, and CLI reverse mapper.
+  - Formula count: 28 → 35.
+
+- **CSV/Excel import-export** (`crates/cli/src/convert.rs`)
+  - `casiros-cli convert input.{csv,xlsx,json} output.{csv,xlsx,json}`.
+  - Imports CSV/Excel into JSON input maps; exports `EvaluateResponse` and `SimulateResponse` to CSV/Excel.
+
+- **Python client SDK** (`python/`)
+  - Synchronous `CasirosClient` with typed models for evaluate, simulate, and snapshot endpoints.
+  - Bearer-token API key support and `responses`-based pytest suite.
+
+- **Web dashboard** (`web/`)
+  - Static single-page dashboard for evaluate/simulate/snapshot operations with live Chart.js visuals.
+  - Served by the API at `/dashboard` with permissive CORS for local development.
+
+- **Streaming simulation progress** (`crates/api/src/streaming_handlers.rs`)
+  - `POST /simulate/stream` returns `text/event-stream` with progress and final result frames.
+
+- **Performance & release engineering**
+  - Monte Carlo universes already run in parallel via `rayon`.
+  - CI hardening: `cargo audit`, `cargo deny`, `cargo tarpaulin`, cross-platform release workflow.
+  - `deny.toml`, `LICENSE-MIT`, `LICENSE-APACHE`, and crates.io-ready workspace metadata.
+
 - **New financial formulas** (`casiros_core`)
   - `options::black_scholes_call` / `black_scholes_put`.
   - `general::amortization_payment` / `amortization_schedule`.
@@ -51,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- README updated with OpenAPI/Swagger URLs, CLI usage, auth env vars, and expanded formula catalog.
+- README updated with dashboard, streaming, Python SDK, CSV/Excel CLI, advanced options, snapshot, and OpenAPI/Swagger usage.
 
 ## [0.1.0] - 2026-08-01
 
