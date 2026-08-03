@@ -10,4 +10,10 @@ description = "CASIROS application layer — Monte Carlo multiverse simulator"
 
 [dependencies]
 casiros-core = { workspace = true }
+casiros-dag = { workspace = true }
 rayon = { workspace = true }
+rand = "0.9"
+rand_distr = "0.5"
+thiserror = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
