@@ -267,6 +267,204 @@ pub enum FormulaKind {
         /// Option style.
         style: OptionStyle,
     },
+
+    /// Present value of a growing perpetuity.
+    GrowingPerpetuityPresentValue {
+        /// Periodic payment input port.
+        payment: Port,
+        /// Discount rate input port.
+        rate: Port,
+        /// Perpetual growth rate input port.
+        growth_rate: Port,
+    },
+
+    /// Future value with continuous compounding.
+    ContinuousCompoundingFutureValue {
+        /// Present value input port.
+        present_value: Port,
+        /// Continuous rate input port.
+        rate: Port,
+        /// Time horizon input port.
+        time: Port,
+    },
+
+    /// Return on investment.
+    ReturnOnInvestment {
+        /// Gain input port.
+        gain: Port,
+        /// Cost input port.
+        cost: Port,
+    },
+
+    /// Profit margin.
+    ProfitMargin {
+        /// Net income input port.
+        net_income: Port,
+        /// Revenue input port.
+        revenue: Port,
+    },
+
+    /// Asset turnover.
+    AssetTurnover {
+        /// Revenue input port.
+        revenue: Port,
+        /// Total assets input port.
+        total_assets: Port,
+    },
+
+    /// Equity multiplier.
+    EquityMultiplier {
+        /// Total assets input port.
+        total_assets: Port,
+        /// Shareholders' equity input port.
+        shareholders_equity: Port,
+    },
+
+    /// Quick ratio.
+    QuickRatio {
+        /// Current assets input port.
+        current_assets: Port,
+        /// Inventory input port.
+        inventory: Port,
+        /// Current liabilities input port.
+        current_liabilities: Port,
+    },
+
+    /// Interest coverage ratio.
+    InterestCoverage {
+        /// EBIT input port.
+        ebit: Port,
+        /// Interest expense input port.
+        interest_expense: Port,
+    },
+
+    /// Inventory turnover.
+    InventoryTurnover {
+        /// Cost of goods sold input port.
+        cogs: Port,
+        /// Inventory input port.
+        inventory: Port,
+    },
+
+    /// Cash conversion cycle.
+    CashConversionCycle {
+        /// Days inventory outstanding input port.
+        days_inventory_outstanding: Port,
+        /// Days sales outstanding input port.
+        days_sales_outstanding: Port,
+        /// Days payables outstanding input port.
+        days_payables_outstanding: Port,
+    },
+
+    /// Capital adequacy ratio.
+    CapitalAdequacyRatio {
+        /// Total capital input port.
+        total_capital: Port,
+        /// Risk-weighted assets input port.
+        risk_weighted_assets: Port,
+    },
+
+    /// Provision coverage ratio.
+    ProvisionCoverageRatio {
+        /// Provisions input port.
+        provisions: Port,
+        /// Non-performing assets input port.
+        non_performing_assets: Port,
+    },
+
+    /// Treynor ratio.
+    TreynorRatio {
+        /// Portfolio return input port.
+        portfolio_return: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Beta input port.
+        beta: Port,
+    },
+
+    /// Value at Risk.
+    ValueAtRisk {
+        /// Portfolio value input port.
+        portfolio_value: Port,
+        /// Mean return input port.
+        mean_return: Port,
+        /// Standard deviation input port.
+        std_dev: Port,
+        /// Z-score input port.
+        z_score: Port,
+    },
+
+    /// Expected shortfall.
+    ExpectedShortfall {
+        /// Portfolio value input port.
+        portfolio_value: Port,
+        /// Mean return input port.
+        mean_return: Port,
+        /// Standard deviation input port.
+        std_dev: Port,
+        /// Z-score input port.
+        z_score: Port,
+    },
+
+    /// Discounted cash flow over a comma-separated cash-flow series.
+    DiscountedCashFlow {
+        /// Comma-separated cash-flow series input port.
+        cash_flows: Port,
+        /// Discount rate input port.
+        discount_rate: Port,
+    },
+
+    /// Macaulay duration over a comma-separated cash-flow series.
+    MacaulayDuration {
+        /// Comma-separated cash-flow series input port.
+        cash_flows: Port,
+        /// Yield per period input port.
+        yield_per_period: Port,
+    },
+
+    /// Modified duration from Macaulay duration.
+    ModifiedDuration {
+        /// Macaulay duration input port.
+        macaulay_duration: Port,
+        /// Yield per period input port.
+        yield_per_period: Port,
+    },
+
+    /// Convexity over a comma-separated cash-flow series.
+    Convexity {
+        /// Comma-separated cash-flow series input port.
+        cash_flows: Port,
+        /// Yield per period input port.
+        yield_per_period: Port,
+    },
+
+    /// Free cash flow to equity.
+    FreeCashFlowToEquity {
+        /// Free cash flow to firm input port.
+        fcff: Port,
+        /// Interest expense after tax input port.
+        interest_expense_after_tax: Port,
+        /// Net borrowing input port.
+        net_borrowing: Port,
+    },
+
+    /// Economic value added.
+    EconomicValueAdded {
+        /// NOPAT input port.
+        nopat: Port,
+        /// Invested capital input port.
+        invested_capital: Port,
+        /// WACC input port.
+        wacc: Port,
+    },
+
+    /// Internal growth rate.
+    InternalGrowthRate {
+        /// ROE input port.
+        roe: Port,
+        /// Dividend payout ratio input port.
+        dividend_payout_ratio: Port,
+    },
 }
 
 /// A node in the causality graph.
@@ -842,6 +1040,159 @@ impl CausalityEngine {
                 outputs,
                 node_id,
             ),
+            FormulaKind::GrowingPerpetuityPresentValue {
+                payment,
+                rate,
+                growth_rate,
+            } => Self::eval_growing_perpetuity_present_value(
+                payment,
+                rate,
+                growth_rate,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::ContinuousCompoundingFutureValue {
+                present_value,
+                rate,
+                time,
+            } => Self::eval_continuous_compounding_future_value(
+                present_value,
+                rate,
+                time,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::ReturnOnInvestment { gain, cost } => {
+                Self::eval_return_on_investment(gain, cost, outputs, node_id)
+            }
+            FormulaKind::ProfitMargin {
+                net_income,
+                revenue,
+            } => Self::eval_profit_margin(net_income, revenue, outputs, node_id),
+            FormulaKind::AssetTurnover {
+                revenue,
+                total_assets,
+            } => Self::eval_asset_turnover(revenue, total_assets, outputs, node_id),
+            FormulaKind::EquityMultiplier {
+                total_assets,
+                shareholders_equity,
+            } => Self::eval_equity_multiplier(total_assets, shareholders_equity, outputs, node_id),
+            FormulaKind::QuickRatio {
+                current_assets,
+                inventory,
+                current_liabilities,
+            } => Self::eval_quick_ratio(
+                current_assets,
+                inventory,
+                current_liabilities,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::InterestCoverage {
+                ebit,
+                interest_expense,
+            } => Self::eval_interest_coverage(ebit, interest_expense, outputs, node_id),
+            FormulaKind::InventoryTurnover { cogs, inventory } => {
+                Self::eval_inventory_turnover(cogs, inventory, outputs, node_id)
+            }
+            FormulaKind::CashConversionCycle {
+                days_inventory_outstanding,
+                days_sales_outstanding,
+                days_payables_outstanding,
+            } => Self::eval_cash_conversion_cycle(
+                days_inventory_outstanding,
+                days_sales_outstanding,
+                days_payables_outstanding,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::CapitalAdequacyRatio {
+                total_capital,
+                risk_weighted_assets,
+            } => Self::eval_capital_adequacy_ratio(
+                total_capital,
+                risk_weighted_assets,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::ProvisionCoverageRatio {
+                provisions,
+                non_performing_assets,
+            } => Self::eval_provision_coverage_ratio(
+                provisions,
+                non_performing_assets,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::TreynorRatio {
+                portfolio_return,
+                risk_free_rate,
+                beta,
+            } => Self::eval_treynor_ratio(portfolio_return, risk_free_rate, beta, outputs, node_id),
+            FormulaKind::ValueAtRisk {
+                portfolio_value,
+                mean_return,
+                std_dev,
+                z_score,
+            } => Self::eval_value_at_risk(
+                portfolio_value,
+                mean_return,
+                std_dev,
+                z_score,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::ExpectedShortfall {
+                portfolio_value,
+                mean_return,
+                std_dev,
+                z_score,
+            } => Self::eval_expected_shortfall(
+                portfolio_value,
+                mean_return,
+                std_dev,
+                z_score,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::DiscountedCashFlow {
+                cash_flows,
+                discount_rate,
+            } => Self::eval_discounted_cash_flow(cash_flows, discount_rate, outputs, node_id),
+            FormulaKind::MacaulayDuration {
+                cash_flows,
+                yield_per_period,
+            } => Self::eval_macaulay_duration(cash_flows, yield_per_period, outputs, node_id),
+            FormulaKind::ModifiedDuration {
+                macaulay_duration,
+                yield_per_period,
+            } => {
+                Self::eval_modified_duration(macaulay_duration, yield_per_period, outputs, node_id)
+            }
+            FormulaKind::Convexity {
+                cash_flows,
+                yield_per_period,
+            } => Self::eval_convexity(cash_flows, yield_per_period, outputs, node_id),
+            FormulaKind::FreeCashFlowToEquity {
+                fcff,
+                interest_expense_after_tax,
+                net_borrowing,
+            } => Self::eval_free_cash_flow_to_equity(
+                fcff,
+                interest_expense_after_tax,
+                net_borrowing,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::EconomicValueAdded {
+                nopat,
+                invested_capital,
+                wacc,
+            } => Self::eval_economic_value_added(nopat, invested_capital, wacc, outputs, node_id),
+            FormulaKind::InternalGrowthRate {
+                roe,
+                dividend_payout_ratio,
+            } => Self::eval_internal_growth_rate(roe, dividend_payout_ratio, outputs, node_id),
         }
     }
 
@@ -1150,6 +1501,306 @@ impl CausalityEngine {
         let t = Self::resolve_port(time_to_maturity, outputs)?;
         let core_style = Self::option_style_to_core(style);
         return casiros_core::options::black_scholes_rho(s, k, r, sigma, t, core_style)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_growing_perpetuity_present_value(
+        payment: &Port,
+        rate: &Port,
+        growth_rate: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pmt = Self::resolve_port(payment, outputs)?;
+        let r = Self::resolve_port(rate, outputs)?;
+        let g = Self::resolve_port(growth_rate, outputs)?;
+        return casiros_core::general::growing_perpetuity_present_value(pmt, r, g)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_continuous_compounding_future_value(
+        present_value: &Port,
+        rate: &Port,
+        time: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pv = Self::resolve_port(present_value, outputs)?;
+        let r = Self::resolve_port(rate, outputs)?;
+        let t = Self::resolve_port(time, outputs)?;
+        return casiros_core::general::continuous_compounding_future_value(pv, r, t)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_return_on_investment(
+        gain: &Port,
+        cost: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let g = Self::resolve_port(gain, outputs)?;
+        let c = Self::resolve_port(cost, outputs)?;
+        return casiros_core::financial::return_on_investment(g, c)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_profit_margin(
+        net_income: &Port,
+        revenue: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let ni = Self::resolve_port(net_income, outputs)?;
+        let rev = Self::resolve_port(revenue, outputs)?;
+        return casiros_core::financial::profit_margin(ni, rev)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_asset_turnover(
+        revenue: &Port,
+        total_assets: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let rev = Self::resolve_port(revenue, outputs)?;
+        let assets = Self::resolve_port(total_assets, outputs)?;
+        return casiros_core::financial::asset_turnover(rev, assets)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_equity_multiplier(
+        total_assets: &Port,
+        shareholders_equity: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let assets = Self::resolve_port(total_assets, outputs)?;
+        let equity = Self::resolve_port(shareholders_equity, outputs)?;
+        return casiros_core::financial::equity_multiplier(assets, equity)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_quick_ratio(
+        current_assets: &Port,
+        inventory: &Port,
+        current_liabilities: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let assets = Self::resolve_port(current_assets, outputs)?;
+        let inv = Self::resolve_port(inventory, outputs)?;
+        let liab = Self::resolve_port(current_liabilities, outputs)?;
+        return casiros_core::financial::quick_ratio(assets, inv, liab)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_interest_coverage(
+        ebit: &Port,
+        interest_expense: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let e = Self::resolve_port(ebit, outputs)?;
+        let interest = Self::resolve_port(interest_expense, outputs)?;
+        return casiros_core::financial::interest_coverage(e, interest)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_inventory_turnover(
+        cogs: &Port,
+        inventory: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let cost = Self::resolve_port(cogs, outputs)?;
+        let inv = Self::resolve_port(inventory, outputs)?;
+        return casiros_core::financial::inventory_turnover(cost, inv)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_cash_conversion_cycle(
+        days_inventory_outstanding: &Port,
+        days_sales_outstanding: &Port,
+        days_payables_outstanding: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let dio = Self::resolve_port(days_inventory_outstanding, outputs)?;
+        let dso = Self::resolve_port(days_sales_outstanding, outputs)?;
+        let dpo = Self::resolve_port(days_payables_outstanding, outputs)?;
+        return casiros_core::financial::cash_conversion_cycle(dio, dso, dpo)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_capital_adequacy_ratio(
+        total_capital: &Port,
+        risk_weighted_assets: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let capital = Self::resolve_port(total_capital, outputs)?;
+        let rwa = Self::resolve_port(risk_weighted_assets, outputs)?;
+        return casiros_core::banking::capital_adequacy_ratio(capital, rwa)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_provision_coverage_ratio(
+        provisions: &Port,
+        non_performing_assets: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let prov = Self::resolve_port(provisions, outputs)?;
+        let npa = Self::resolve_port(non_performing_assets, outputs)?;
+        return casiros_core::banking::provision_coverage_ratio(prov, npa)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_treynor_ratio(
+        portfolio_return: &Port,
+        risk_free_rate: &Port,
+        beta: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let rp = Self::resolve_port(portfolio_return, outputs)?;
+        let rf = Self::resolve_port(risk_free_rate, outputs)?;
+        let b = Self::resolve_port(beta, outputs)?;
+        return casiros_core::markets::treynor_ratio(rp, rf, b)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_value_at_risk(
+        portfolio_value: &Port,
+        mean_return: &Port,
+        std_dev: &Port,
+        z_score: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pv = Self::resolve_port(portfolio_value, outputs)?;
+        let mu = Self::resolve_port(mean_return, outputs)?;
+        let sigma = Self::resolve_port(std_dev, outputs)?;
+        let z = Self::resolve_port(z_score, outputs)?;
+        return casiros_core::markets::value_at_risk(pv, mu, sigma, z)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_expected_shortfall(
+        portfolio_value: &Port,
+        mean_return: &Port,
+        std_dev: &Port,
+        z_score: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pv = Self::resolve_port(portfolio_value, outputs)?;
+        let mu = Self::resolve_port(mean_return, outputs)?;
+        let sigma = Self::resolve_port(std_dev, outputs)?;
+        let z = Self::resolve_port(z_score, outputs)?;
+        return casiros_core::markets::expected_shortfall(pv, mu, sigma, z)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn parse_decimal_series(
+        port: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+    ) -> Result<Vec<Decimal>, DagError> {
+        let value = Self::resolve_port(port, outputs)?;
+        return value
+            .to_string()
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.parse().map_err(|_| DagError::InvalidPeriod { value }))
+            .collect::<Result<_, _>>();
+    }
+
+    fn eval_discounted_cash_flow(
+        cash_flows: &Port,
+        discount_rate: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let flows = Self::parse_decimal_series(cash_flows, outputs)?;
+        let r = Self::resolve_port(discount_rate, outputs)?;
+        return casiros_core::stocks_bonds::discounted_cash_flow(&flows, r)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_macaulay_duration(
+        cash_flows: &Port,
+        yield_per_period: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let flows = Self::parse_decimal_series(cash_flows, outputs)?;
+        let y = Self::resolve_port(yield_per_period, outputs)?;
+        return casiros_core::stocks_bonds::macaulay_duration(&flows, y)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_modified_duration(
+        macaulay_duration: &Port,
+        yield_per_period: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let d = Self::resolve_port(macaulay_duration, outputs)?;
+        let y = Self::resolve_port(yield_per_period, outputs)?;
+        return casiros_core::stocks_bonds::modified_duration(d, y)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_convexity(
+        cash_flows: &Port,
+        yield_per_period: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let flows = Self::parse_decimal_series(cash_flows, outputs)?;
+        let y = Self::resolve_port(yield_per_period, outputs)?;
+        return casiros_core::stocks_bonds::convexity(&flows, y)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_free_cash_flow_to_equity(
+        fcff: &Port,
+        interest_expense_after_tax: &Port,
+        net_borrowing: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let f = Self::resolve_port(fcff, outputs)?;
+        let interest = Self::resolve_port(interest_expense_after_tax, outputs)?;
+        let borrowing = Self::resolve_port(net_borrowing, outputs)?;
+        return casiros_core::corporate::free_cash_flow_to_equity(f, interest, borrowing)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_economic_value_added(
+        nopat: &Port,
+        invested_capital: &Port,
+        wacc: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let n = Self::resolve_port(nopat, outputs)?;
+        let ic = Self::resolve_port(invested_capital, outputs)?;
+        let w = Self::resolve_port(wacc, outputs)?;
+        return casiros_core::corporate::economic_value_added(n, ic, w)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_internal_growth_rate(
+        roe: &Port,
+        dividend_payout_ratio: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let r = Self::resolve_port(roe, outputs)?;
+        let payout = Self::resolve_port(dividend_payout_ratio, outputs)?;
+        return casiros_core::corporate::internal_growth_rate(r, payout)
             .map_err(|err| Self::wrap_formula_error(node_id, err));
     }
 

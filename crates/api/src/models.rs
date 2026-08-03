@@ -253,6 +253,204 @@ pub enum FormulaRequest {
         /// Option style.
         style: OptionStyle,
     },
+
+    /// Present value of a growing perpetuity.
+    GrowingPerpetuityPresentValue {
+        /// Periodic payment binding.
+        payment: PortRequest,
+        /// Discount rate binding.
+        rate: PortRequest,
+        /// Perpetual growth rate binding.
+        growth_rate: PortRequest,
+    },
+
+    /// Future value with continuous compounding.
+    ContinuousCompoundingFutureValue {
+        /// Present value binding.
+        present_value: PortRequest,
+        /// Continuous rate binding.
+        rate: PortRequest,
+        /// Time horizon binding.
+        time: PortRequest,
+    },
+
+    /// Return on investment.
+    ReturnOnInvestment {
+        /// Gain binding.
+        gain: PortRequest,
+        /// Cost binding.
+        cost: PortRequest,
+    },
+
+    /// Profit margin.
+    ProfitMargin {
+        /// Net income binding.
+        net_income: PortRequest,
+        /// Revenue binding.
+        revenue: PortRequest,
+    },
+
+    /// Asset turnover.
+    AssetTurnover {
+        /// Revenue binding.
+        revenue: PortRequest,
+        /// Total assets binding.
+        total_assets: PortRequest,
+    },
+
+    /// Equity multiplier.
+    EquityMultiplier {
+        /// Total assets binding.
+        total_assets: PortRequest,
+        /// Shareholders' equity binding.
+        shareholders_equity: PortRequest,
+    },
+
+    /// Quick ratio.
+    QuickRatio {
+        /// Current assets binding.
+        current_assets: PortRequest,
+        /// Inventory binding.
+        inventory: PortRequest,
+        /// Current liabilities binding.
+        current_liabilities: PortRequest,
+    },
+
+    /// Interest coverage ratio.
+    InterestCoverage {
+        /// EBIT binding.
+        ebit: PortRequest,
+        /// Interest expense binding.
+        interest_expense: PortRequest,
+    },
+
+    /// Inventory turnover.
+    InventoryTurnover {
+        /// Cost of goods sold binding.
+        cogs: PortRequest,
+        /// Inventory binding.
+        inventory: PortRequest,
+    },
+
+    /// Cash conversion cycle.
+    CashConversionCycle {
+        /// Days inventory outstanding binding.
+        days_inventory_outstanding: PortRequest,
+        /// Days sales outstanding binding.
+        days_sales_outstanding: PortRequest,
+        /// Days payables outstanding binding.
+        days_payables_outstanding: PortRequest,
+    },
+
+    /// Capital adequacy ratio.
+    CapitalAdequacyRatio {
+        /// Total capital binding.
+        total_capital: PortRequest,
+        /// Risk-weighted assets binding.
+        risk_weighted_assets: PortRequest,
+    },
+
+    /// Provision coverage ratio.
+    ProvisionCoverageRatio {
+        /// Provisions binding.
+        provisions: PortRequest,
+        /// Non-performing assets binding.
+        non_performing_assets: PortRequest,
+    },
+
+    /// Treynor ratio.
+    TreynorRatio {
+        /// Portfolio return binding.
+        portfolio_return: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Beta binding.
+        beta: PortRequest,
+    },
+
+    /// Value at Risk.
+    ValueAtRisk {
+        /// Portfolio value binding.
+        portfolio_value: PortRequest,
+        /// Mean return binding.
+        mean_return: PortRequest,
+        /// Standard deviation binding.
+        std_dev: PortRequest,
+        /// Z-score binding.
+        z_score: PortRequest,
+    },
+
+    /// Expected shortfall.
+    ExpectedShortfall {
+        /// Portfolio value binding.
+        portfolio_value: PortRequest,
+        /// Mean return binding.
+        mean_return: PortRequest,
+        /// Standard deviation binding.
+        std_dev: PortRequest,
+        /// Z-score binding.
+        z_score: PortRequest,
+    },
+
+    /// Discounted cash flow over a comma-separated cash-flow series.
+    DiscountedCashFlow {
+        /// Comma-separated cash-flow series binding.
+        cash_flows: PortRequest,
+        /// Discount rate binding.
+        discount_rate: PortRequest,
+    },
+
+    /// Macaulay duration over a comma-separated cash-flow series.
+    MacaulayDuration {
+        /// Comma-separated cash-flow series binding.
+        cash_flows: PortRequest,
+        /// Yield per period binding.
+        yield_per_period: PortRequest,
+    },
+
+    /// Modified duration from Macaulay duration.
+    ModifiedDuration {
+        /// Macaulay duration binding.
+        macaulay_duration: PortRequest,
+        /// Yield per period binding.
+        yield_per_period: PortRequest,
+    },
+
+    /// Convexity over a comma-separated cash-flow series.
+    Convexity {
+        /// Comma-separated cash-flow series binding.
+        cash_flows: PortRequest,
+        /// Yield per period binding.
+        yield_per_period: PortRequest,
+    },
+
+    /// Free cash flow to equity.
+    FreeCashFlowToEquity {
+        /// Free cash flow to firm binding.
+        fcff: PortRequest,
+        /// Interest expense after tax binding.
+        interest_expense_after_tax: PortRequest,
+        /// Net borrowing binding.
+        net_borrowing: PortRequest,
+    },
+
+    /// Economic value added.
+    EconomicValueAdded {
+        /// NOPAT binding.
+        nopat: PortRequest,
+        /// Invested capital binding.
+        invested_capital: PortRequest,
+        /// WACC binding.
+        wacc: PortRequest,
+    },
+
+    /// Internal growth rate.
+    InternalGrowthRate {
+        /// ROE binding.
+        roe: PortRequest,
+        /// Dividend payout ratio binding.
+        dividend_payout_ratio: PortRequest,
+    },
 }
 
 /// A port binding: either a literal value or a reference to another node by

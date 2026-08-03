@@ -326,6 +326,180 @@ impl EngineBuilder {
                 time_to_maturity: self.port(time_to_maturity)?,
                 style: Self::option_style(*style),
             }),
+            FormulaRequest::GrowingPerpetuityPresentValue {
+                payment,
+                rate,
+                growth_rate,
+            } => Ok(FormulaKind::GrowingPerpetuityPresentValue {
+                payment: self.port(payment)?,
+                rate: self.port(rate)?,
+                growth_rate: self.port(growth_rate)?,
+            }),
+            FormulaRequest::ContinuousCompoundingFutureValue {
+                present_value,
+                rate,
+                time,
+            } => Ok(FormulaKind::ContinuousCompoundingFutureValue {
+                present_value: self.port(present_value)?,
+                rate: self.port(rate)?,
+                time: self.port(time)?,
+            }),
+            FormulaRequest::ReturnOnInvestment { gain, cost } => {
+                Ok(FormulaKind::ReturnOnInvestment {
+                    gain: self.port(gain)?,
+                    cost: self.port(cost)?,
+                })
+            }
+            FormulaRequest::ProfitMargin {
+                net_income,
+                revenue,
+            } => Ok(FormulaKind::ProfitMargin {
+                net_income: self.port(net_income)?,
+                revenue: self.port(revenue)?,
+            }),
+            FormulaRequest::AssetTurnover {
+                revenue,
+                total_assets,
+            } => Ok(FormulaKind::AssetTurnover {
+                revenue: self.port(revenue)?,
+                total_assets: self.port(total_assets)?,
+            }),
+            FormulaRequest::EquityMultiplier {
+                total_assets,
+                shareholders_equity,
+            } => Ok(FormulaKind::EquityMultiplier {
+                total_assets: self.port(total_assets)?,
+                shareholders_equity: self.port(shareholders_equity)?,
+            }),
+            FormulaRequest::QuickRatio {
+                current_assets,
+                inventory,
+                current_liabilities,
+            } => Ok(FormulaKind::QuickRatio {
+                current_assets: self.port(current_assets)?,
+                inventory: self.port(inventory)?,
+                current_liabilities: self.port(current_liabilities)?,
+            }),
+            FormulaRequest::InterestCoverage {
+                ebit,
+                interest_expense,
+            } => Ok(FormulaKind::InterestCoverage {
+                ebit: self.port(ebit)?,
+                interest_expense: self.port(interest_expense)?,
+            }),
+            FormulaRequest::InventoryTurnover { cogs, inventory } => {
+                Ok(FormulaKind::InventoryTurnover {
+                    cogs: self.port(cogs)?,
+                    inventory: self.port(inventory)?,
+                })
+            }
+            FormulaRequest::CashConversionCycle {
+                days_inventory_outstanding,
+                days_sales_outstanding,
+                days_payables_outstanding,
+            } => Ok(FormulaKind::CashConversionCycle {
+                days_inventory_outstanding: self.port(days_inventory_outstanding)?,
+                days_sales_outstanding: self.port(days_sales_outstanding)?,
+                days_payables_outstanding: self.port(days_payables_outstanding)?,
+            }),
+            FormulaRequest::CapitalAdequacyRatio {
+                total_capital,
+                risk_weighted_assets,
+            } => Ok(FormulaKind::CapitalAdequacyRatio {
+                total_capital: self.port(total_capital)?,
+                risk_weighted_assets: self.port(risk_weighted_assets)?,
+            }),
+            FormulaRequest::ProvisionCoverageRatio {
+                provisions,
+                non_performing_assets,
+            } => Ok(FormulaKind::ProvisionCoverageRatio {
+                provisions: self.port(provisions)?,
+                non_performing_assets: self.port(non_performing_assets)?,
+            }),
+            FormulaRequest::TreynorRatio {
+                portfolio_return,
+                risk_free_rate,
+                beta,
+            } => Ok(FormulaKind::TreynorRatio {
+                portfolio_return: self.port(portfolio_return)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                beta: self.port(beta)?,
+            }),
+            FormulaRequest::ValueAtRisk {
+                portfolio_value,
+                mean_return,
+                std_dev,
+                z_score,
+            } => Ok(FormulaKind::ValueAtRisk {
+                portfolio_value: self.port(portfolio_value)?,
+                mean_return: self.port(mean_return)?,
+                std_dev: self.port(std_dev)?,
+                z_score: self.port(z_score)?,
+            }),
+            FormulaRequest::ExpectedShortfall {
+                portfolio_value,
+                mean_return,
+                std_dev,
+                z_score,
+            } => Ok(FormulaKind::ExpectedShortfall {
+                portfolio_value: self.port(portfolio_value)?,
+                mean_return: self.port(mean_return)?,
+                std_dev: self.port(std_dev)?,
+                z_score: self.port(z_score)?,
+            }),
+            FormulaRequest::DiscountedCashFlow {
+                cash_flows,
+                discount_rate,
+            } => Ok(FormulaKind::DiscountedCashFlow {
+                cash_flows: self.port(cash_flows)?,
+                discount_rate: self.port(discount_rate)?,
+            }),
+            FormulaRequest::MacaulayDuration {
+                cash_flows,
+                yield_per_period,
+            } => Ok(FormulaKind::MacaulayDuration {
+                cash_flows: self.port(cash_flows)?,
+                yield_per_period: self.port(yield_per_period)?,
+            }),
+            FormulaRequest::ModifiedDuration {
+                macaulay_duration,
+                yield_per_period,
+            } => Ok(FormulaKind::ModifiedDuration {
+                macaulay_duration: self.port(macaulay_duration)?,
+                yield_per_period: self.port(yield_per_period)?,
+            }),
+            FormulaRequest::Convexity {
+                cash_flows,
+                yield_per_period,
+            } => Ok(FormulaKind::Convexity {
+                cash_flows: self.port(cash_flows)?,
+                yield_per_period: self.port(yield_per_period)?,
+            }),
+            FormulaRequest::FreeCashFlowToEquity {
+                fcff,
+                interest_expense_after_tax,
+                net_borrowing,
+            } => Ok(FormulaKind::FreeCashFlowToEquity {
+                fcff: self.port(fcff)?,
+                interest_expense_after_tax: self.port(interest_expense_after_tax)?,
+                net_borrowing: self.port(net_borrowing)?,
+            }),
+            FormulaRequest::EconomicValueAdded {
+                nopat,
+                invested_capital,
+                wacc,
+            } => Ok(FormulaKind::EconomicValueAdded {
+                nopat: self.port(nopat)?,
+                invested_capital: self.port(invested_capital)?,
+                wacc: self.port(wacc)?,
+            }),
+            FormulaRequest::InternalGrowthRate {
+                roe,
+                dividend_payout_ratio,
+            } => Ok(FormulaKind::InternalGrowthRate {
+                roe: self.port(roe)?,
+                dividend_payout_ratio: self.port(dividend_payout_ratio)?,
+            }),
         }
     }
 

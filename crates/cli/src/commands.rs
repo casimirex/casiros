@@ -528,6 +528,180 @@ fn formula_request_from_kind(
             time_to_maturity: port(time_to_maturity, id_to_name),
             style: option_style_to_api(*style),
         },
+        FormulaKind::GrowingPerpetuityPresentValue {
+            payment,
+            rate,
+            growth_rate,
+        } => casiros_api::models::FormulaRequest::GrowingPerpetuityPresentValue {
+            payment: port(payment, id_to_name),
+            rate: port(rate, id_to_name),
+            growth_rate: port(growth_rate, id_to_name),
+        },
+        FormulaKind::ContinuousCompoundingFutureValue {
+            present_value,
+            rate,
+            time,
+        } => casiros_api::models::FormulaRequest::ContinuousCompoundingFutureValue {
+            present_value: port(present_value, id_to_name),
+            rate: port(rate, id_to_name),
+            time: port(time, id_to_name),
+        },
+        FormulaKind::ReturnOnInvestment { gain, cost } => {
+            casiros_api::models::FormulaRequest::ReturnOnInvestment {
+                gain: port(gain, id_to_name),
+                cost: port(cost, id_to_name),
+            }
+        }
+        FormulaKind::ProfitMargin {
+            net_income,
+            revenue,
+        } => casiros_api::models::FormulaRequest::ProfitMargin {
+            net_income: port(net_income, id_to_name),
+            revenue: port(revenue, id_to_name),
+        },
+        FormulaKind::AssetTurnover {
+            revenue,
+            total_assets,
+        } => casiros_api::models::FormulaRequest::AssetTurnover {
+            revenue: port(revenue, id_to_name),
+            total_assets: port(total_assets, id_to_name),
+        },
+        FormulaKind::EquityMultiplier {
+            total_assets,
+            shareholders_equity,
+        } => casiros_api::models::FormulaRequest::EquityMultiplier {
+            total_assets: port(total_assets, id_to_name),
+            shareholders_equity: port(shareholders_equity, id_to_name),
+        },
+        FormulaKind::QuickRatio {
+            current_assets,
+            inventory,
+            current_liabilities,
+        } => casiros_api::models::FormulaRequest::QuickRatio {
+            current_assets: port(current_assets, id_to_name),
+            inventory: port(inventory, id_to_name),
+            current_liabilities: port(current_liabilities, id_to_name),
+        },
+        FormulaKind::InterestCoverage {
+            ebit,
+            interest_expense,
+        } => casiros_api::models::FormulaRequest::InterestCoverage {
+            ebit: port(ebit, id_to_name),
+            interest_expense: port(interest_expense, id_to_name),
+        },
+        FormulaKind::InventoryTurnover { cogs, inventory } => {
+            casiros_api::models::FormulaRequest::InventoryTurnover {
+                cogs: port(cogs, id_to_name),
+                inventory: port(inventory, id_to_name),
+            }
+        }
+        FormulaKind::CashConversionCycle {
+            days_inventory_outstanding,
+            days_sales_outstanding,
+            days_payables_outstanding,
+        } => casiros_api::models::FormulaRequest::CashConversionCycle {
+            days_inventory_outstanding: port(days_inventory_outstanding, id_to_name),
+            days_sales_outstanding: port(days_sales_outstanding, id_to_name),
+            days_payables_outstanding: port(days_payables_outstanding, id_to_name),
+        },
+        FormulaKind::CapitalAdequacyRatio {
+            total_capital,
+            risk_weighted_assets,
+        } => casiros_api::models::FormulaRequest::CapitalAdequacyRatio {
+            total_capital: port(total_capital, id_to_name),
+            risk_weighted_assets: port(risk_weighted_assets, id_to_name),
+        },
+        FormulaKind::ProvisionCoverageRatio {
+            provisions,
+            non_performing_assets,
+        } => casiros_api::models::FormulaRequest::ProvisionCoverageRatio {
+            provisions: port(provisions, id_to_name),
+            non_performing_assets: port(non_performing_assets, id_to_name),
+        },
+        FormulaKind::TreynorRatio {
+            portfolio_return,
+            risk_free_rate,
+            beta,
+        } => casiros_api::models::FormulaRequest::TreynorRatio {
+            portfolio_return: port(portfolio_return, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            beta: port(beta, id_to_name),
+        },
+        FormulaKind::ValueAtRisk {
+            portfolio_value,
+            mean_return,
+            std_dev,
+            z_score,
+        } => casiros_api::models::FormulaRequest::ValueAtRisk {
+            portfolio_value: port(portfolio_value, id_to_name),
+            mean_return: port(mean_return, id_to_name),
+            std_dev: port(std_dev, id_to_name),
+            z_score: port(z_score, id_to_name),
+        },
+        FormulaKind::ExpectedShortfall {
+            portfolio_value,
+            mean_return,
+            std_dev,
+            z_score,
+        } => casiros_api::models::FormulaRequest::ExpectedShortfall {
+            portfolio_value: port(portfolio_value, id_to_name),
+            mean_return: port(mean_return, id_to_name),
+            std_dev: port(std_dev, id_to_name),
+            z_score: port(z_score, id_to_name),
+        },
+        FormulaKind::DiscountedCashFlow {
+            cash_flows,
+            discount_rate,
+        } => casiros_api::models::FormulaRequest::DiscountedCashFlow {
+            cash_flows: port(cash_flows, id_to_name),
+            discount_rate: port(discount_rate, id_to_name),
+        },
+        FormulaKind::MacaulayDuration {
+            cash_flows,
+            yield_per_period,
+        } => casiros_api::models::FormulaRequest::MacaulayDuration {
+            cash_flows: port(cash_flows, id_to_name),
+            yield_per_period: port(yield_per_period, id_to_name),
+        },
+        FormulaKind::ModifiedDuration {
+            macaulay_duration,
+            yield_per_period,
+        } => casiros_api::models::FormulaRequest::ModifiedDuration {
+            macaulay_duration: port(macaulay_duration, id_to_name),
+            yield_per_period: port(yield_per_period, id_to_name),
+        },
+        FormulaKind::Convexity {
+            cash_flows,
+            yield_per_period,
+        } => casiros_api::models::FormulaRequest::Convexity {
+            cash_flows: port(cash_flows, id_to_name),
+            yield_per_period: port(yield_per_period, id_to_name),
+        },
+        FormulaKind::FreeCashFlowToEquity {
+            fcff,
+            interest_expense_after_tax,
+            net_borrowing,
+        } => casiros_api::models::FormulaRequest::FreeCashFlowToEquity {
+            fcff: port(fcff, id_to_name),
+            interest_expense_after_tax: port(interest_expense_after_tax, id_to_name),
+            net_borrowing: port(net_borrowing, id_to_name),
+        },
+        FormulaKind::EconomicValueAdded {
+            nopat,
+            invested_capital,
+            wacc,
+        } => casiros_api::models::FormulaRequest::EconomicValueAdded {
+            nopat: port(nopat, id_to_name),
+            invested_capital: port(invested_capital, id_to_name),
+            wacc: port(wacc, id_to_name),
+        },
+        FormulaKind::InternalGrowthRate {
+            roe,
+            dividend_payout_ratio,
+        } => casiros_api::models::FormulaRequest::InternalGrowthRate {
+            roe: port(roe, id_to_name),
+            dividend_payout_ratio: port(dividend_payout_ratio, id_to_name),
+        },
     };
 }
 
