@@ -34,6 +34,9 @@ rust_decimal_macros = "1.36"
 # Error handling
 thiserror = "2.0"
 
+# Async trait helpers
+async-trait = "0.1"
+
 # Async runtime (future phases)
 tokio = { version = "1.43", features = ["full"] }
 

@@ -17,6 +17,7 @@ name = "casiros-api-export-openapi"
 path = "src/bin/export_openapi.rs"
 
 [dependencies]
+async-trait = { workspace = true }
 casiros-core = { workspace = true }
 casiros-dag = { workspace = true }
 casiros-simulator = { workspace = true }

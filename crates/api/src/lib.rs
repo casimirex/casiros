@@ -15,4 +15,6 @@ pub mod engine_builder;
 pub mod handlers;
 pub mod models;
 pub mod openapi;
+pub mod repositories;
+pub mod snapshot_handlers;
 pub mod validation;

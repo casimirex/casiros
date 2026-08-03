@@ -9,6 +9,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::handlers;
 use crate::models;
+use crate::snapshot_handlers;
 
 /// The complete CASIROS REST API `OpenAPI` contract.
 ///
@@ -18,10 +19,18 @@ use crate::models;
 #[openapi(
     info(
         title = "CASIROS API",
-        version = "0.1.0",
+        version = "0.2.0",
         description = "NASA/JPL-grade Financial Physics Engine & Multiverse Simulator"
     ),
-    paths(handlers::healthz, handlers::evaluate, handlers::simulate,),
+    paths(
+        handlers::healthz,
+        handlers::evaluate,
+        handlers::simulate,
+        snapshot_handlers::save_snapshot,
+        snapshot_handlers::load_snapshot,
+        snapshot_handlers::delete_snapshot,
+        snapshot_handlers::list_snapshots,
+    ),
     components(schemas(
         models::HealthzResponse,
         models::EvaluateRequest,
@@ -35,6 +44,11 @@ use crate::models;
         models::EdgeRequest,
         models::DistributionRequest,
         models::BindingRequest,
+        models::SaveSnapshotRequest,
+        models::SaveSnapshotResponse,
+        models::DeleteSnapshotRequest,
+        models::SnapshotResponse,
+        models::SnapshotListResponse,
     ))
 )]
 pub struct ApiDoc;

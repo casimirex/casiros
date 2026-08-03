@@ -69,4 +69,11 @@ pub enum DagError {
         /// The underlying core computation error.
         source: casiros_core::prelude::CalculationError,
     },
+
+    /// A snapshot repository operation failed.
+    #[error("Repository error: {message}")]
+    Repository {
+        /// Human-readable description of the failure.
+        message: String,
+    },
 }

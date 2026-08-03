@@ -267,3 +267,54 @@ pub struct SimulateResponse {
     /// Maximum observed value.
     pub max: Decimal,
 }
+
+/// Request body for `POST /snapshots`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct SaveSnapshotRequest {
+    /// Unique identifier for the snapshot.
+    pub id: String,
+
+    /// Nodes that make up the DAG.
+    pub nodes: Vec<NodeRequest>,
+
+    /// Directed edges between nodes.
+    pub edges: Vec<EdgeRequest>,
+}
+
+/// Response body for `POST /snapshots`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct SaveSnapshotResponse {
+    /// Identifier of the saved snapshot.
+    pub id: String,
+}
+
+/// Request body for `DELETE /snapshots/{id}`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct DeleteSnapshotRequest {
+    /// Identifier of the snapshot to delete.
+    pub id: String,
+}
+
+/// Response body for `GET /snapshots/{id}`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct SnapshotResponse {
+    /// Identifier of the snapshot.
+    pub id: String,
+
+    /// Snapshot payload as a JSON object.
+    pub data: serde_json::Value,
+}
+
+/// A single snapshot entry returned by `GET /snapshots`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct SnapshotSummaryResponse {
+    /// Identifier of the snapshot.
+    pub id: String,
+}
+
+/// Response body for `GET /snapshots`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct SnapshotListResponse {
+    /// List of stored snapshots.
+    pub snapshots: Vec<SnapshotSummaryResponse>,
+}

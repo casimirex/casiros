@@ -22,6 +22,8 @@ use actix_web::{App, HttpServer, middleware, web};
 use casiros_api::auth::{AuthConfig, RateLimiter, auth_middleware};
 use casiros_api::handlers;
 use casiros_api::openapi;
+use casiros_api::repositories::{InMemorySnapshotRepository, SnapshotRepo};
+use casiros_api::snapshot_handlers;
 use tracing::{info, instrument};
 
 /// Application entry point.
@@ -44,12 +46,14 @@ async fn main() -> std::io::Result<()> {
 
     let auth_config = Arc::new(AuthConfig::from_env());
     let rate_limiter = Arc::new(RateLimiter::new());
+    let snapshot_repo = Arc::new(SnapshotRepo::new(InMemorySnapshotRepository::new()));
 
     HttpServer::new(move || {
         let auth_config = Arc::clone(&auth_config);
         let rate_limiter = Arc::clone(&rate_limiter);
 
         App::new()
+            .app_data(web::Data::from(Arc::clone(&snapshot_repo)))
             .wrap(middleware::Logger::default())
             .wrap(middleware::from_fn(move |req, next| {
                 let auth_config = Arc::clone(&auth_config);
@@ -60,6 +64,22 @@ async fn main() -> std::io::Result<()> {
             .route("/healthz", web::get().to(handlers::healthz))
             .route("/evaluate", web::post().to(handlers::evaluate))
             .route("/simulate", web::post().to(handlers::simulate))
+            .route(
+                "/snapshots",
+                web::post().to(snapshot_handlers::save_snapshot),
+            )
+            .route(
+                "/snapshots",
+                web::get().to(snapshot_handlers::list_snapshots),
+            )
+            .route(
+                "/snapshots/{id}",
+                web::get().to(snapshot_handlers::load_snapshot),
+            )
+            .route(
+                "/snapshots/{id}",
+                web::delete().to(snapshot_handlers::delete_snapshot),
+            )
     })
     .bind(bind_addr)?
     .run()
