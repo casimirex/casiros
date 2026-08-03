@@ -73,3 +73,46 @@ pub fn jensens_alpha(
     let expected_return = risk_free_rate + beta * (market_return - risk_free_rate);
     return Ok(portfolio_return - expected_return);
 }
+
+/// Computes the simple moving average (SMA) of a price series.
+///
+/// # Mathematical Definition
+///
+/// \\[ SMA = \\frac{1}{n} \\sum_{i=0}^{n-1} P_i \\]
+///
+/// where `n` is the window size and `P_i` are the most recent prices.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::DivisionByZero`] if `window` is zero.
+/// Returns [`CalculationError::Overflow`] if `window` exceeds the number of
+/// provided prices.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::markets::simple_moving_average;
+/// use rust_decimal_macros::dec;
+///
+/// let prices = vec![dec!(10.0), dec!(20.0), dec!(30.0)];
+/// let sma = simple_moving_average(&prices, 3).unwrap();
+/// assert_eq!(sma, dec!(20.0));
+/// ```
+pub fn simple_moving_average(
+    prices: &[Decimal],
+    window: usize,
+) -> Result<Decimal, CalculationError> {
+    if window == 0 {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Simple Moving Average",
+        });
+    }
+    if window > prices.len() {
+        return Err(CalculationError::Overflow {
+            formula: "Simple Moving Average",
+        });
+    }
+
+    let sum: Decimal = prices.iter().rev().take(window).copied().sum();
+    return Ok(sum / Decimal::from(window));
+}

@@ -13,15 +13,18 @@ use petgraph::Direction;
 use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rust_decimal::prelude::ToPrimitive;
+use serde::{Deserialize, Serialize};
 
 use crate::error::DagError;
 
 /// Unique identifier for a node in the causality graph.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct NodeId(pub usize);
 
 /// A port binding: either a constant value or the output of another node.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Port {
     /// A literal constant value.
     Constant(Decimal),
@@ -30,7 +33,8 @@ pub enum Port {
 }
 
 /// The kind of computation a node performs.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum NodeKind {
     /// A raw numeric input provided by the caller at evaluation time.
     Input,
@@ -39,7 +43,8 @@ pub enum NodeKind {
 }
 
 /// Supported core formulas that can be used inside the DAG.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum FormulaKind {
     /// Future value: `FV = PV * (1 + r)^n`.
     FutureValue {
@@ -85,6 +90,64 @@ pub enum FormulaKind {
         roe: Port,
         /// Dividend payout ratio input port.
         dividend_payout_ratio: Port,
+    },
+
+    /// Amortization payment: `PMT = P * r * (1 + r)^n / ((1 + r)^n - 1)`.
+    AmortizationPayment {
+        /// Loan principal input port.
+        principal: Port,
+        /// Periodic interest rate input port.
+        rate: Port,
+        /// Number of periods input port.
+        periods: Port,
+    },
+
+    /// Yield-to-maturity approximation for a fixed-coupon bond.
+    YieldToMaturityApproximation {
+        /// Face value input port.
+        face_value: Port,
+        /// Periodic coupon payment input port.
+        coupon_payment: Port,
+        /// Current market price input port.
+        price: Port,
+        /// Periods to maturity input port.
+        periods: Port,
+    },
+
+    /// Simple moving average over a price series.
+    SimpleMovingAverage {
+        /// Price series input port (single vector-valued input).
+        prices: Port,
+        /// Window size input port.
+        window: Port,
+    },
+
+    /// Black-Scholes European call option price.
+    BlackScholesCall {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+    },
+
+    /// Black-Scholes European put option price.
+    BlackScholesPut {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
     },
 }
 
@@ -494,6 +557,57 @@ impl CausalityEngine {
                 roe,
                 dividend_payout_ratio,
             } => Self::eval_sustainable_growth_rate(roe, dividend_payout_ratio, outputs, node_id),
+            FormulaKind::AmortizationPayment {
+                principal,
+                rate,
+                periods,
+            } => Self::eval_amortization_payment(principal, rate, periods, outputs, node_id),
+            FormulaKind::YieldToMaturityApproximation {
+                face_value,
+                coupon_payment,
+                price,
+                periods,
+            } => Self::eval_yield_to_maturity_approximation(
+                face_value,
+                coupon_payment,
+                price,
+                periods,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::SimpleMovingAverage { prices, window } => {
+                Self::eval_simple_moving_average(prices, window, outputs, node_id)
+            }
+            FormulaKind::BlackScholesCall {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Self::eval_black_scholes_call(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BlackScholesPut {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Self::eval_black_scholes_put(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                outputs,
+                node_id,
+            ),
         }
     }
 
@@ -567,12 +681,162 @@ impl CausalityEngine {
             .map_err(|err| Self::wrap_formula_error(node_id, err));
     }
 
+    fn eval_amortization_payment(
+        principal: &Port,
+        rate: &Port,
+        periods: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let p = Self::resolve_port(principal, outputs)?;
+        let r = Self::resolve_port(rate, outputs)?;
+        let n = Self::resolve_period(periods, outputs)?;
+        return casiros_core::general::amortization_payment(p, r, n)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_yield_to_maturity_approximation(
+        face_value: &Port,
+        coupon_payment: &Port,
+        price: &Port,
+        periods: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let f = Self::resolve_port(face_value, outputs)?;
+        let c = Self::resolve_port(coupon_payment, outputs)?;
+        let p = Self::resolve_port(price, outputs)?;
+        let n = Self::resolve_period(periods, outputs)?;
+        return casiros_core::stocks_bonds::yield_to_maturity_approximation(f, c, p, n)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_simple_moving_average(
+        prices: &Port,
+        window: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let prices_value = Self::resolve_port(prices, outputs)?;
+        let window_value = Self::resolve_port(window, outputs)?;
+        let window_u = window_value.to_u32().ok_or(DagError::InvalidPeriod {
+            value: window_value,
+        })?;
+
+        // The DAG operates on scalar ports. A price series is represented as a
+        // single comma-separated Decimal value encoded as a string. This is a
+        // pragmatic MVP encoding for vector inputs; future phases may introduce a
+        // first-class vector port type.
+        let series: Vec<Decimal> = prices_value
+            .to_string()
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| {
+                s.parse().map_err(|_| DagError::InvalidPeriod {
+                    value: prices_value,
+                })
+            })
+            .collect::<Result<_, _>>()?;
+
+        return casiros_core::markets::simple_moving_average(&series, window_u as usize)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_black_scholes_call(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let s = Self::resolve_port(spot, outputs)?;
+        let k = Self::resolve_port(strike, outputs)?;
+        let r = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(volatility, outputs)?;
+        let t = Self::resolve_port(time_to_maturity, outputs)?;
+        return casiros_core::options::black_scholes_call(s, k, r, sigma, t)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_black_scholes_put(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let s = Self::resolve_port(spot, outputs)?;
+        let k = Self::resolve_port(strike, outputs)?;
+        let r = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(volatility, outputs)?;
+        let t = Self::resolve_port(time_to_maturity, outputs)?;
+        return casiros_core::options::black_scholes_put(s, k, r, sigma, t)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
     fn resolve_period(
         port: &Port,
         outputs: &HashMap<NodeId, Decimal>,
     ) -> Result<casiros_core::prelude::Periods, DagError> {
         let value = Self::resolve_port(port, outputs)?;
         return value.to_u32().ok_or(DagError::InvalidPeriod { value });
+    }
+
+    /// Returns an iterator over all nodes in insertion order.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the internal `NodeId` → `Node` invariant is violated. This
+    /// should never happen for a graph built through the public API.
+    #[must_use = "iterator is lazy; consume it to traverse the graph"]
+    pub fn nodes(&self) -> impl Iterator<Item = &Node> {
+        return (0..self.next_id).map(NodeId).map(|id| {
+            self.nodes
+                .get(&id)
+                .expect("internal invariant: every NodeId has a Node")
+        });
+    }
+
+    /// Returns an iterator over all edges as `(dependency, dependent)` name
+    /// pairs.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the internal `petgraph` edge or node-weight invariants are
+    /// violated. This should never happen for a graph built through the public
+    /// API.
+    #[must_use = "iterator is lazy; consume it to traverse the graph"]
+    pub fn edges(&self) -> impl Iterator<Item = (&str, &str)> {
+        return self.graph.edge_indices().map(|edge_idx| {
+            let (source_idx, target_idx) = self
+                .graph
+                .edge_endpoints(edge_idx)
+                .expect("internal invariant: every edge index has endpoints");
+            let source_id = *self
+                .graph
+                .node_weight(source_idx)
+                .expect("internal invariant: every NodeIndex has a NodeId weight");
+            let target_id = *self
+                .graph
+                .node_weight(target_idx)
+                .expect("internal invariant: every NodeIndex has a NodeId weight");
+            let source_name = self
+                .nodes
+                .get(&source_id)
+                .expect("internal invariant: every NodeId has a Node")
+                .name();
+            let target_name = self
+                .nodes
+                .get(&target_id)
+                .expect("internal invariant: every NodeId has a Node")
+                .name();
+            return (source_name, target_name);
+        });
     }
 
     fn wrap_formula_error(node_id: NodeId, err: CalculationError) -> DagError {

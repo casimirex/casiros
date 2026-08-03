@@ -4,11 +4,14 @@
 //! public contract of the REST API and are translated into the richer domain
 //! types provided by [`casiros_dag`] and [`casiros_simulator`].
 
+#![allow(clippy::large_stack_arrays)]
+
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// A single node in a DAG request.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum NodeRequest {
     /// A raw numeric input provided by the caller.
@@ -26,7 +29,7 @@ pub enum NodeRequest {
 }
 
 /// A formula request with concrete port bindings.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case", tag = "formula")]
 pub enum FormulaRequest {
     /// Future value: `FV = PV * (1 + r)^n`.
@@ -74,11 +77,69 @@ pub enum FormulaRequest {
         /// Dividend payout ratio binding.
         dividend_payout_ratio: PortRequest,
     },
+
+    /// Amortization payment.
+    AmortizationPayment {
+        /// Loan principal binding.
+        principal: PortRequest,
+        /// Periodic rate binding.
+        rate: PortRequest,
+        /// Number of periods binding.
+        periods: PortRequest,
+    },
+
+    /// Yield-to-maturity approximation for a bond.
+    YieldToMaturityApproximation {
+        /// Face value binding.
+        face_value: PortRequest,
+        /// Periodic coupon payment binding.
+        coupon_payment: PortRequest,
+        /// Current market price binding.
+        price: PortRequest,
+        /// Periods to maturity binding.
+        periods: PortRequest,
+    },
+
+    /// Simple moving average over a price series.
+    SimpleMovingAverage {
+        /// Comma-separated price series binding.
+        prices: PortRequest,
+        /// Window size binding.
+        window: PortRequest,
+    },
+
+    /// Black-Scholes European call option price.
+    BlackScholesCall {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+    },
+
+    /// Black-Scholes European put option price.
+    BlackScholesPut {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+    },
 }
 
 /// A port binding: either a literal value or a reference to another node by
 /// name.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 #[serde(untagged)]
 pub enum PortRequest {
     /// A literal constant value.
@@ -91,7 +152,7 @@ pub enum PortRequest {
 }
 
 /// A directed edge between two nodes.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct EdgeRequest {
     /// Name of the dependency node.
     pub dependency: String,
@@ -100,7 +161,7 @@ pub struct EdgeRequest {
 }
 
 /// Request body for `POST /evaluate`.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct EvaluateRequest {
     /// Nodes that make up the DAG.
     pub nodes: Vec<NodeRequest>,
@@ -111,14 +172,31 @@ pub struct EvaluateRequest {
 }
 
 /// Response body for `POST /evaluate`.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct EvaluateResponse {
     /// Computed value for every node, keyed by node name.
     pub outputs: std::collections::HashMap<String, Decimal>,
 }
 
+/// Response body for `GET /healthz`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct HealthzResponse {
+    /// Always `"ok"` when the service is healthy.
+    pub status: String,
+}
+
+impl HealthzResponse {
+    /// Returns the canonical healthy response.
+    #[must_use]
+    pub fn ok() -> Self {
+        return Self {
+            status: "ok".to_string(),
+        };
+    }
+}
+
 /// A distribution request used by the simulator.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum DistributionRequest {
     /// Uniform distribution over `[low, high]`.
@@ -143,7 +221,7 @@ pub enum DistributionRequest {
 }
 
 /// A single input-to-distribution binding.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct BindingRequest {
     /// Name of the input node.
     pub node: String,
@@ -152,7 +230,7 @@ pub struct BindingRequest {
 }
 
 /// Request body for `POST /simulate`.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct SimulateRequest {
     /// Nodes that make up the DAG.
     pub nodes: Vec<NodeRequest>,
@@ -168,8 +246,15 @@ pub struct SimulateRequest {
     pub seed: Option<u64>,
 }
 
+/// Error response body returned for invalid requests.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct ErrorResponse {
+    /// Human-readable error message.
+    pub error: String,
+}
+
 /// Response body for `POST /simulate`.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct SimulateResponse {
     /// Number of universes simulated.
     pub count: usize,

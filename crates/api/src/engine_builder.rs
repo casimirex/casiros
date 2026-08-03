@@ -170,6 +170,58 @@ impl EngineBuilder {
                 roe: self.port(roe)?,
                 dividend_payout_ratio: self.port(dividend_payout_ratio)?,
             }),
+            FormulaRequest::AmortizationPayment {
+                principal,
+                rate,
+                periods,
+            } => Ok(FormulaKind::AmortizationPayment {
+                principal: self.port(principal)?,
+                rate: self.port(rate)?,
+                periods: self.port(periods)?,
+            }),
+            FormulaRequest::YieldToMaturityApproximation {
+                face_value,
+                coupon_payment,
+                price,
+                periods,
+            } => Ok(FormulaKind::YieldToMaturityApproximation {
+                face_value: self.port(face_value)?,
+                coupon_payment: self.port(coupon_payment)?,
+                price: self.port(price)?,
+                periods: self.port(periods)?,
+            }),
+            FormulaRequest::SimpleMovingAverage { prices, window } => {
+                Ok(FormulaKind::SimpleMovingAverage {
+                    prices: self.port(prices)?,
+                    window: self.port(window)?,
+                })
+            }
+            FormulaRequest::BlackScholesCall {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Ok(FormulaKind::BlackScholesCall {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+            }),
+            FormulaRequest::BlackScholesPut {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Ok(FormulaKind::BlackScholesPut {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+            }),
         }
     }
 

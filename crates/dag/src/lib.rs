@@ -22,6 +22,8 @@
 
 pub mod error;
 pub mod graph;
+pub mod persistence;
 
 pub use error::DagError;
 pub use graph::{CausalityEngine, FormulaKind, Node, NodeId, NodeKind, Port};
+pub use persistence::{EngineSnapshot, SnapshotNode, SnapshotNodeKind};

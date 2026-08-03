@@ -111,3 +111,65 @@ pub fn bond_price(
     let face_pv = face_value / discount_factor;
     return Ok(coupon_pv + face_pv);
 }
+
+/// Approximates the yield-to-maturity (YTM) of a fixed-coupon bond.
+///
+/// Uses the common linear approximation:
+///
+/// \\[ YTM \\approx \\frac{C + \\frac{F - P}{n}}{\\frac{F + P}{2}} \\]
+///
+/// where `C` is the periodic coupon payment, `F` is the face value, `P` is the
+/// current price, and `n` is the number of periods to maturity. The result is a
+/// periodic yield consistent with [`bond_price`].
+///
+/// # Errors
+///
+/// Returns [`CalculationError::DivisionByZero`] if `price + face_value` is zero.
+/// Returns [`CalculationError::NegativeValueInvalid`] if `periods` is zero or if
+/// `price` or `face_value` is negative.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::stocks_bonds::yield_to_maturity_approximation;
+/// use rust_decimal_macros::dec;
+///
+/// let ytm = yield_to_maturity_approximation(dec!(1000.0), dec!(50.0), dec!(950.0), 10).unwrap();
+/// assert!(ytm > dec!(0.05));
+/// assert!(ytm < dec!(0.06));
+/// ```
+pub fn yield_to_maturity_approximation(
+    face_value: Decimal,
+    coupon_payment: Decimal,
+    price: Decimal,
+    periods: Periods,
+) -> Result<Decimal, CalculationError> {
+    if periods == 0 {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "yield_to_maturity_approximation - periods",
+            value: Decimal::ZERO,
+        });
+    }
+    if face_value < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "yield_to_maturity_approximation - face_value",
+            value: face_value,
+        });
+    }
+    if price < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "yield_to_maturity_approximation - price",
+            value: price,
+        });
+    }
+
+    let average_price = (face_value + price) / dec!(2.0);
+    if average_price == Decimal::ZERO {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Yield to Maturity Approximation",
+        });
+    }
+
+    let capital_gain = (face_value - price) / Decimal::from(periods);
+    return Ok((coupon_payment + capital_gain) / average_price);
+}
