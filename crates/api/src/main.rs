@@ -16,20 +16,15 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
-use actix_web::{App, HttpResponse, HttpServer, Responder, middleware, web};
+use actix_web::{App, HttpServer, middleware, web};
+use casiros_api::handlers;
 use tracing::{info, instrument};
-
-/// Health check endpoint for liveness and readiness probes.
-#[instrument(name = "healthz")]
-async fn healthz() -> impl Responder {
-    info!("Health check requested");
-    return HttpResponse::Ok().json(serde_json::json!({ "status": "ok" }));
-}
 
 /// Application entry point.
 ///
 /// Initializes structured logging and starts the Actix-Web server.
 #[actix_web::main]
+#[instrument(name = "main")]
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -46,7 +41,9 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .wrap(middleware::Logger::default())
-            .route("/healthz", web::get().to(healthz))
+            .route("/healthz", web::get().to(handlers::healthz))
+            .route("/evaluate", web::post().to(handlers::evaluate))
+            .route("/simulate", web::post().to(handlers::simulate))
     })
     .bind(bind_addr)?
     .run()
