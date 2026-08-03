@@ -417,3 +417,111 @@ pub fn amortization_schedule(
 
     return Ok(schedule);
 }
+
+/// Calculates the present value of a growing perpetuity.
+///
+/// # Mathematical Definition
+///
+/// \[ PV_{\text{growing perpetuity}} = \frac{PMT}{r - g} \]
+///
+/// where \( PMT \) is the periodic payment, \( r \) is the discount rate, and
+/// \( g \) is the perpetual growth rate.
+///
+/// # Constraints
+///
+/// - `rate` MUST be strictly greater than `growth_rate`.
+/// - `payment` MUST be >= 0.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidRate`] if `rate` <= `growth_rate`.
+/// Returns [`CalculationError::NegativeValueInvalid`] if `payment` < 0.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::general::growing_perpetuity_present_value;
+/// use rust_decimal_macros::dec;
+///
+/// let pv = growing_perpetuity_present_value(dec!(100.0), dec!(0.08), dec!(0.03)).unwrap();
+/// assert_eq!(pv, dec!(2000.0));
+/// assert!(pv > dec!(0.0)); // Assertion 2
+/// ```
+pub fn growing_perpetuity_present_value(
+    payment: Decimal,
+    rate: Decimal,
+    growth_rate: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if rate <= growth_rate {
+        return Err(CalculationError::InvalidRate { rate });
+    }
+    if payment < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "growing_perpetuity_present_value - payment",
+            value: payment,
+        });
+    }
+    let denominator = rate - growth_rate;
+    if denominator == Decimal::ZERO {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Growing Perpetuity Present Value",
+        });
+    }
+    return Ok(payment / denominator);
+}
+
+/// Calculates the future value of a present sum using continuous compounding.
+///
+/// # Mathematical Definition
+///
+/// \[ FV = PV \times e^{rt} \]
+///
+/// where \( PV \) is the present value, \( r \) is the continuous rate, and
+/// \( t \) is the time horizon.
+///
+/// # Constraints
+///
+/// - `present_value` MUST be >= 0.
+/// - `rate` MUST be > -1.0.
+/// - `time` MUST be >= 0.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidRate`] if `rate` <= -1.0.
+/// Returns [`CalculationError::NegativeValueInvalid`] if `present_value` < 0
+/// or `time` < 0.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::general::continuous_compounding_future_value;
+/// use rust_decimal_macros::dec;
+///
+/// let fv = continuous_compounding_future_value(dec!(100.0), dec!(0.05), dec!(10.0)).unwrap();
+/// assert_eq!(fv.round_dp(4), dec!(164.8721));
+/// assert!(fv > dec!(100.0)); // Assertion 2
+/// ```
+pub fn continuous_compounding_future_value(
+    present_value: Decimal,
+    rate: Decimal,
+    time: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if rate <= dec!(-1.0) {
+        return Err(CalculationError::InvalidRate { rate });
+    }
+    if present_value < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "continuous_compounding_future_value - present_value",
+            value: present_value,
+        });
+    }
+    if time < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "continuous_compounding_future_value - time",
+            value: time,
+        });
+    }
+    let exponent = rate * time;
+    let growth_factor = exponent.exp();
+    return Ok(present_value * growth_factor);
+}

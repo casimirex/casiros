@@ -116,3 +116,116 @@ pub fn simple_moving_average(
     let sum: Decimal = prices.iter().rev().take(window).copied().sum();
     return Ok(sum / Decimal::from(window));
 }
+
+/// Computes the Treynor Ratio.
+///
+/// # Mathematical Definition
+///
+/// \[ T = \frac{R_p - R_f}{\beta} \]
+///
+/// where \( R_p \) is the portfolio return, \( R_f \) is the risk-free rate,
+/// and \( \beta \) is the portfolio beta.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::DivisionByZero`] if `beta` is zero.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::markets::treynor_ratio;
+/// use rust_decimal_macros::dec;
+///
+/// let treynor = treynor_ratio(dec!(0.12), dec!(0.03), dec!(1.2)).unwrap();
+/// assert_eq!(treynor, dec!(0.075));
+/// assert!(treynor > dec!(0.0)); // Assertion 2
+/// ```
+pub fn treynor_ratio(
+    portfolio_return: Decimal,
+    risk_free_rate: Decimal,
+    beta: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if beta == Decimal::ZERO {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Treynor Ratio",
+        });
+    }
+    return Ok((portfolio_return - risk_free_rate) / beta);
+}
+
+/// Computes Value at Risk (VaR) using the parametric method.
+///
+/// # Mathematical Definition
+///
+/// \[ VaR = PV \times (\mu - z \times \sigma) \]
+///
+/// where \( PV \) is the portfolio value, \( \mu \) is the mean return,
+/// \( \sigma \) is the standard deviation, and \( z \) is the z-score.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::NegativeValueInvalid`] if `portfolio_value` is negative.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::markets::value_at_risk;
+/// use rust_decimal_macros::dec;
+///
+/// let var = value_at_risk(dec!(100000.0), dec!(0.10), dec!(0.15), dec!(1.645)).unwrap();
+/// assert!(var < dec!(0.0)); // Assertion 1: VaR is a loss
+/// assert!(var.abs() < dec!(25000.0)); // Assertion 2
+/// ```
+pub fn value_at_risk(
+    portfolio_value: Decimal,
+    mean_return: Decimal,
+    std_dev: Decimal,
+    z_score: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if portfolio_value < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "value_at_risk - portfolio_value",
+            value: portfolio_value,
+        });
+    }
+    return Ok(portfolio_value * (mean_return - z_score * std_dev));
+}
+
+/// Computes the Expected Shortfall (CVaR) using a simple VaR approximation.
+///
+/// # Mathematical Definition
+///
+/// \[ CVaR \approx PV \times (\mu - (z + 1) \times \sigma) \]
+///
+/// where \( PV \) is the portfolio value, \( \mu \) is the mean return,
+/// \( \sigma \) is the standard deviation, and \( z \) is the z-score.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::NegativeValueInvalid`] if `portfolio_value` is negative.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::markets::expected_shortfall;
+/// use rust_decimal_macros::dec;
+///
+/// let cvar = expected_shortfall(dec!(100000.0), dec!(0.10), dec!(0.15), dec!(1.645)).unwrap();
+/// assert!(cvar < dec!(0.0)); // Assertion 1: CVaR is a loss
+/// assert!(cvar.abs() > dec!(25000.0)); // Assertion 2
+/// ```
+pub fn expected_shortfall(
+    portfolio_value: Decimal,
+    mean_return: Decimal,
+    std_dev: Decimal,
+    z_score: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if portfolio_value < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "expected_shortfall - portfolio_value",
+            value: portfolio_value,
+        });
+    }
+    let adjusted_z = z_score + dec!(1.0);
+    return Ok(portfolio_value * (mean_return - adjusted_z * std_dev));
+}

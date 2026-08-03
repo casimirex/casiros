@@ -173,3 +173,234 @@ pub fn yield_to_maturity_approximation(
     let capital_gain = (face_value - price) / Decimal::from(periods);
     return Ok((coupon_payment + capital_gain) / average_price);
 }
+
+/// Computes the present value of a series of future cash flows.
+///
+/// # Mathematical Definition
+///
+/// \[ PV = \sum_{t=1}^{n} \frac{CF_t}{(1 + r)^t} \]
+///
+/// where \( CF_t \) is the cash flow at period \( t \) and \( r \) is the
+/// discount rate per period.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidRate`] if `discount_rate` <= -1.0.
+/// Returns [`CalculationError::DivisionByZero`] if a discount factor is zero.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::stocks_bonds::discounted_cash_flow;
+/// use rust_decimal_macros::dec;
+///
+/// let cash_flows = vec![dec!(100.0), dec!(100.0), dec!(100.0)];
+/// let pv = discounted_cash_flow(&cash_flows, dec!(0.05)).unwrap();
+/// assert_eq!(pv.round_dp(2), dec!(272.32));
+/// assert!(pv > dec!(0.0)); // Assertion 2
+/// ```
+pub fn discounted_cash_flow(
+    cash_flows: &[Decimal],
+    discount_rate: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if discount_rate <= dec!(-1.0) {
+        return Err(CalculationError::InvalidRate {
+            rate: discount_rate,
+        });
+    }
+    let mut present_value = Decimal::ZERO;
+    for (index, cash_flow) in cash_flows.iter().enumerate() {
+        let period = match i64::try_from(index) {
+            Ok(value) => value + 1,
+            Err(_) => {
+                return Err(CalculationError::Overflow {
+                    formula: "Discounted Cash Flow",
+                });
+            }
+        };
+        let discount_factor = (dec!(1.0) + discount_rate).powi(period);
+        if discount_factor == Decimal::ZERO {
+            return Err(CalculationError::DivisionByZero {
+                formula: "Discounted Cash Flow",
+            });
+        }
+        present_value += cash_flow / discount_factor;
+    }
+    return Ok(present_value);
+}
+
+/// Computes the Macaulay duration of a series of cash flows.
+///
+/// # Mathematical Definition
+///
+/// \[ D = \frac{\sum_{t=1}^{n} t \times PV(CF_t)}{P} \]
+///
+/// where \( PV(CF_t) = CF_t / (1 + y)^t \) and \( P \) is the total present
+/// value of all cash flows.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidRate`] if `yield_per_period` <= -1.0.
+/// Returns [`CalculationError::DivisionByZero`] if the total present value is
+/// zero or a discount factor is zero.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::stocks_bonds::macaulay_duration;
+/// use rust_decimal_macros::dec;
+///
+/// let cash_flows = vec![dec!(100.0), dec!(100.0), dec!(100.0)];
+/// let duration = macaulay_duration(&cash_flows, dec!(0.05)).unwrap();
+/// assert_eq!(duration.round_dp(3), dec!(1.967));
+/// assert!(duration > dec!(0.0)); // Assertion 2
+/// ```
+pub fn macaulay_duration(
+    cash_flows: &[Decimal],
+    yield_per_period: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if yield_per_period <= dec!(-1.0) {
+        return Err(CalculationError::InvalidRate {
+            rate: yield_per_period,
+        });
+    }
+    let mut price = Decimal::ZERO;
+    let mut weighted_sum = Decimal::ZERO;
+    for (index, cash_flow) in cash_flows.iter().enumerate() {
+        let period = match i64::try_from(index) {
+            Ok(value) => value + 1,
+            Err(_) => {
+                return Err(CalculationError::Overflow {
+                    formula: "Macaulay Duration",
+                });
+            }
+        };
+        let discount_factor = (dec!(1.0) + yield_per_period).powi(period);
+        if discount_factor == Decimal::ZERO {
+            return Err(CalculationError::DivisionByZero {
+                formula: "Macaulay Duration",
+            });
+        }
+        let pv = cash_flow / discount_factor;
+        price += pv;
+        weighted_sum += Decimal::from(period) * pv;
+    }
+    if price == Decimal::ZERO {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Macaulay Duration",
+        });
+    }
+    return Ok(weighted_sum / price);
+}
+
+/// Computes Modified Duration from Macaulay duration.
+///
+/// # Mathematical Definition
+///
+/// \[ MD = \frac{D}{1 + y} \]
+///
+/// where \( D \) is the Macaulay duration and \( y \) is the yield per period.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidRate`] if `yield_per_period` <= -1.0.
+/// Returns [`CalculationError::DivisionByZero`] if `1 + yield_per_period` is zero.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::stocks_bonds::modified_duration;
+/// use rust_decimal_macros::dec;
+///
+/// let md = modified_duration(dec!(1.967), dec!(0.05)).unwrap();
+/// assert_eq!(md.round_dp(3), dec!(1.873));
+/// assert!(md > dec!(0.0)); // Assertion 2
+/// ```
+pub fn modified_duration(
+    macaulay_duration: Decimal,
+    yield_per_period: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if yield_per_period <= dec!(-1.0) {
+        return Err(CalculationError::InvalidRate {
+            rate: yield_per_period,
+        });
+    }
+    let denominator = dec!(1.0) + yield_per_period;
+    if denominator == Decimal::ZERO {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Modified Duration",
+        });
+    }
+    return Ok(macaulay_duration / denominator);
+}
+
+/// Computes the convexity of a series of cash flows.
+///
+/// # Mathematical Definition
+///
+/// \[ C = \frac{\sum_{t=1}^{n} t(t+1) \times PV(CF_t)}{P \times (1 + y)^2} \]
+///
+/// where \( PV(CF_t) = CF_t / (1 + y)^t \), \( P \) is the total present
+/// value, and \( y \) is the yield per period.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidRate`] if `yield_per_period` <= -1.0.
+/// Returns [`CalculationError::DivisionByZero`] if the total present value is
+/// zero or a discount factor is zero.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::stocks_bonds::convexity;
+/// use rust_decimal_macros::dec;
+///
+/// let cash_flows = vec![dec!(100.0), dec!(100.0), dec!(100.0)];
+/// let c = convexity(&cash_flows, dec!(0.05)).unwrap();
+/// assert_eq!(c.round_dp(3), dec!(5.900));
+/// assert!(c > dec!(0.0)); // Assertion 2
+/// ```
+pub fn convexity(
+    cash_flows: &[Decimal],
+    yield_per_period: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if yield_per_period <= dec!(-1.0) {
+        return Err(CalculationError::InvalidRate {
+            rate: yield_per_period,
+        });
+    }
+    let mut price = Decimal::ZERO;
+    let mut weighted_sum = Decimal::ZERO;
+    for (index, cash_flow) in cash_flows.iter().enumerate() {
+        let period_i64 = match i64::try_from(index) {
+            Ok(value) => value + 1,
+            Err(_) => {
+                return Err(CalculationError::Overflow {
+                    formula: "Convexity",
+                });
+            }
+        };
+        let period = Decimal::from(period_i64);
+        let discount_factor = (dec!(1.0) + yield_per_period).powi(period_i64);
+        if discount_factor == Decimal::ZERO {
+            return Err(CalculationError::DivisionByZero {
+                formula: "Convexity",
+            });
+        }
+        let pv = cash_flow / discount_factor;
+        price += pv;
+        weighted_sum += period * (period + dec!(1.0)) * pv;
+    }
+    if price == Decimal::ZERO {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Convexity",
+        });
+    }
+    let denominator = price * (dec!(1.0) + yield_per_period).powi(2);
+    if denominator == Decimal::ZERO {
+        return Err(CalculationError::DivisionByZero {
+            formula: "Convexity",
+        });
+    }
+    return Ok(weighted_sum / denominator);
+}
