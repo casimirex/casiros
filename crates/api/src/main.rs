@@ -18,6 +18,7 @@
 
 use actix_web::{App, HttpServer, middleware, web};
 use casiros_api::handlers;
+use casiros_api::openapi;
 use tracing::{info, instrument};
 
 /// Application entry point.
@@ -38,9 +39,10 @@ async fn main() -> std::io::Result<()> {
 
     info!("CASIROS API starting on {}", bind_addr);
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
+            .service(openapi::swagger_ui())
             .route("/healthz", web::get().to(handlers::healthz))
             .route("/evaluate", web::post().to(handlers::evaluate))
             .route("/simulate", web::post().to(handlers::simulate))

@@ -13,4 +13,5 @@
 pub mod engine_builder;
 pub mod handlers;
 pub mod models;
+pub mod openapi;
 pub mod validation;
