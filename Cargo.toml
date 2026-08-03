@@ -18,6 +18,10 @@ authors = ["CASIROS Contributors"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/casiros/casiros"
 rust-version = "1.85"
+readme = "README.md"
+keywords = ["finance", "simulation", "dag", "monte-carlo", "rust"]
+categories = ["finance", "mathematics", "science"]
+documentation = "https://docs.rs/casiros-core"
 
 [workspace.dependencies]
 # Domain
