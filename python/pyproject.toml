@@ -1,0 +1,47 @@
+[project]
+name = "casiros"
+version = "0.2.0"
+description = "Python client SDK for CASIROS — the financial physics engine and multiverse simulator."
+readme = "README.md"
+license = { text = "MIT OR Apache-2.0" }
+requires-python = ">=3.9"
+authors = [
+    { name = "CASIROS Contributors" },
+]
+keywords = ["finance", "simulation", "dag", "monte-carlo"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial",
+]
+dependencies = [
+    "requests>=2.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "responses>=0.22.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/casiros/casiros"
+Documentation = "https://docs.rs/casiros-core"
+Repository = "https://github.com/casiros/casiros"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["casiros"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
