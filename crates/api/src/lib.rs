@@ -10,6 +10,7 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
+pub mod auth;
 pub mod engine_builder;
 pub mod handlers;
 pub mod models;

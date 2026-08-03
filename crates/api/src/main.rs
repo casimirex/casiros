@@ -16,7 +16,10 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
+use std::sync::Arc;
+
 use actix_web::{App, HttpServer, middleware, web};
+use casiros_api::auth::{AuthConfig, RateLimiter, auth_middleware};
 use casiros_api::handlers;
 use casiros_api::openapi;
 use tracing::{info, instrument};
@@ -39,9 +42,20 @@ async fn main() -> std::io::Result<()> {
 
     info!("CASIROS API starting on {}", bind_addr);
 
+    let auth_config = Arc::new(AuthConfig::from_env());
+    let rate_limiter = Arc::new(RateLimiter::new());
+
     HttpServer::new(move || {
+        let auth_config = Arc::clone(&auth_config);
+        let rate_limiter = Arc::clone(&rate_limiter);
+
         App::new()
             .wrap(middleware::Logger::default())
+            .wrap(middleware::from_fn(move |req, next| {
+                let auth_config = Arc::clone(&auth_config);
+                let rate_limiter = Arc::clone(&rate_limiter);
+                auth_middleware(req, next, auth_config, rate_limiter)
+            }))
             .service(openapi::swagger_ui())
             .route("/healthz", web::get().to(handlers::healthz))
             .route("/evaluate", web::post().to(handlers::evaluate))
