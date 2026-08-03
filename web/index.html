@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CASIROS Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>CASIROS Dashboard</h1>
+    <p>Multiverse financial simulator &amp; causality engine</p>
+  </header>
+
+  <main>
+    <section class="card" id="connection">
+      <h2>Connection</h2>
+      <label>
+        API base URL
+        <input id="baseUrl" type="url" value="http://localhost:8080" />
+      </label>
+      <label>
+        API key (optional)
+        <input id="apiKey" type="password" placeholder="Bearer token" />
+      </label>
+      <button id="healthBtn">Check health</button>
+      <pre id="healthOut" class="output"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Evaluate</h2>
+      <textarea id="evaluateJson" rows="12" spellcheck="false"></textarea>
+      <button id="evaluateBtn">Run evaluation</button>
+      <pre id="evaluateOut" class="output"></pre>
+      <div class="chart-wrap">
+        <canvas id="evaluateChart"></canvas>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Simulate</h2>
+      <textarea id="simulateJson" rows="14" spellcheck="false"></textarea>
+      <button id="simulateBtn">Run simulation</button>
+      <pre id="simulateOut" class="output"></pre>
+      <div class="chart-wrap">
+        <canvas id="simulateChart"></canvas>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Snapshots</h2>
+      <div class="row">
+        <input id="snapshotId" type="text" placeholder="snapshot-id" />
+        <button id="saveSnapshotBtn">Save</button>
+        <button id="loadSnapshotBtn">Load</button>
+        <button id="deleteSnapshotBtn">Delete</button>
+        <button id="listSnapshotsBtn">List</button>
+      </div>
+      <pre id="snapshotOut" class="output"></pre>
+    </section>
+  </main>
+
+  <footer>
+    <a href="/openapi.json" target="_blank">OpenAPI JSON</a>
+    ·
+    <a href="/swagger-ui" target="_blank">Swagger UI</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
