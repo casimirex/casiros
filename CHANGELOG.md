@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Phase 4 infrastructure scaffolding:
+  - `config/default.toml` with embedded defaults and `CASIROS_*` environment overrides.
+  - PostgreSQL-backed `SnapshotRepository` with SQLx migrations in `migrations/`.
+  - WebSocket `/ws/simulate` endpoint streaming progress and final results.
+  - Actix-Web tracing middleware replacing the default logger.
+
 ## [0.2.0] - 2026-08-03
 
 ### Added

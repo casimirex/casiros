@@ -1,0 +1,13 @@
+# CASIROS API default configuration.
+# Values here can be overridden by environment variables prefixed with CASIROS_,
+# for example CASIROS_BIND_ADDR=0.0.0.0:3000.
+
+bind_addr = "127.0.0.1:8080"
+log_level = "info"
+rate_limit_rpm = 60
+
+[snapshot]
+backend = "memory" # "memory" or "postgres"
+
+[postgres]
+url = "postgresql://casiros:casiros@localhost:5432/casiros"

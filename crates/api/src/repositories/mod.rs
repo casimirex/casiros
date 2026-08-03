@@ -56,3 +56,5 @@ mod in_memory {
 }
 
 pub use in_memory::InMemorySnapshotRepository;
+pub mod postgres;
+pub use postgres::PostgresSnapshotRepository;

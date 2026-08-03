@@ -23,6 +23,7 @@ casiros-dag = { workspace = true }
 casiros-simulator = { workspace = true }
 actix-web = { workspace = true }
 actix-web-httpauth = { workspace = true }
+actix-ws = { workspace = true }
 actix-cors = { workspace = true }
 actix-files = { workspace = true }
 tokio-stream = { workspace = true }
@@ -33,6 +34,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 rust_decimal = { workspace = true }
+config = { workspace = true }
+sqlx = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 
