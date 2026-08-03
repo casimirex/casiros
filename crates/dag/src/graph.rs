@@ -42,6 +42,16 @@ pub enum NodeKind {
     Formula(FormulaKind),
 }
 
+/// Side of an option contract used inside formula variants that depend on style.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OptionStyle {
+    /// A call option gives the holder the right to buy the underlying.
+    Call,
+    /// A put option gives the holder the right to sell the underlying.
+    Put,
+}
+
 /// Supported core formulas that can be used inside the DAG.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -148,6 +158,114 @@ pub enum FormulaKind {
         volatility: Port,
         /// Time to maturity input port.
         time_to_maturity: Port,
+    },
+
+    /// Cox-Ross-Rubinstein binomial tree European call option price.
+    BinomialOptionCall {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+        /// Number of time-steps input port.
+        steps: Port,
+    },
+
+    /// Cox-Ross-Rubinstein binomial tree European put option price.
+    BinomialOptionPut {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+        /// Number of time-steps input port.
+        steps: Port,
+    },
+
+    /// Black-Scholes delta of a European option.
+    BlackScholesDelta {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+        /// Option style.
+        style: OptionStyle,
+    },
+
+    /// Black-Scholes gamma of a European option.
+    BlackScholesGamma {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+    },
+
+    /// Black-Scholes vega of a European option.
+    BlackScholesVega {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+    },
+
+    /// Black-Scholes theta of a European option.
+    BlackScholesTheta {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+        /// Option style.
+        style: OptionStyle,
+    },
+
+    /// Black-Scholes rho of a European option.
+    BlackScholesRho {
+        /// Current spot price input port.
+        spot: Port,
+        /// Option strike price input port.
+        strike: Port,
+        /// Risk-free rate input port.
+        risk_free_rate: Port,
+        /// Volatility input port.
+        volatility: Port,
+        /// Time to maturity input port.
+        time_to_maturity: Port,
+        /// Option style.
+        style: OptionStyle,
     },
 }
 
@@ -519,6 +637,7 @@ impl CausalityEngine {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn evaluate_formula(
         formula: &FormulaKind,
         outputs: &HashMap<NodeId, Decimal>,
@@ -605,6 +724,121 @@ impl CausalityEngine {
                 risk_free_rate,
                 volatility,
                 time_to_maturity,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BinomialOptionCall {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                steps,
+            } => Self::eval_binomial_option_call(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                steps,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BinomialOptionPut {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                steps,
+            } => Self::eval_binomial_option_put(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                steps,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BlackScholesDelta {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                style,
+            } => Self::eval_black_scholes_delta(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                *style,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BlackScholesGamma {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Self::eval_black_scholes_gamma(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BlackScholesVega {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Self::eval_black_scholes_vega(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BlackScholesTheta {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                style,
+            } => Self::eval_black_scholes_theta(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                *style,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BlackScholesRho {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                style,
+            } => Self::eval_black_scholes_rho(
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                *style,
                 outputs,
                 node_id,
             ),
@@ -777,6 +1011,153 @@ impl CausalityEngine {
         let t = Self::resolve_port(time_to_maturity, outputs)?;
         return casiros_core::options::black_scholes_put(s, k, r, sigma, t)
             .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_binomial_option_call(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        steps: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let spot_f = Self::resolve_port(spot, outputs)?;
+        let strike_f = Self::resolve_port(strike, outputs)?;
+        let rate_f = Self::resolve_port(risk_free_rate, outputs)?;
+        let vol_f = Self::resolve_port(volatility, outputs)?;
+        let maturity_f = Self::resolve_port(time_to_maturity, outputs)?;
+        let step_count = Self::resolve_period(steps, outputs)?;
+        return casiros_core::options::binomial_option_call(
+            spot_f, strike_f, rate_f, vol_f, maturity_f, step_count,
+        )
+        .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_binomial_option_put(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        steps: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let spot_f = Self::resolve_port(spot, outputs)?;
+        let strike_f = Self::resolve_port(strike, outputs)?;
+        let rate_f = Self::resolve_port(risk_free_rate, outputs)?;
+        let vol_f = Self::resolve_port(volatility, outputs)?;
+        let maturity_f = Self::resolve_port(time_to_maturity, outputs)?;
+        let step_count = Self::resolve_period(steps, outputs)?;
+        return casiros_core::options::binomial_option_put(
+            spot_f, strike_f, rate_f, vol_f, maturity_f, step_count,
+        )
+        .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_black_scholes_delta(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        style: OptionStyle,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let s = Self::resolve_port(spot, outputs)?;
+        let k = Self::resolve_port(strike, outputs)?;
+        let r = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(volatility, outputs)?;
+        let t = Self::resolve_port(time_to_maturity, outputs)?;
+        let core_style = Self::option_style_to_core(style);
+        return casiros_core::options::black_scholes_delta(s, k, r, sigma, t, core_style)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_black_scholes_gamma(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let s = Self::resolve_port(spot, outputs)?;
+        let k = Self::resolve_port(strike, outputs)?;
+        let r = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(volatility, outputs)?;
+        let t = Self::resolve_port(time_to_maturity, outputs)?;
+        return casiros_core::options::black_scholes_gamma(s, k, r, sigma, t)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_black_scholes_vega(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let s = Self::resolve_port(spot, outputs)?;
+        let k = Self::resolve_port(strike, outputs)?;
+        let r = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(volatility, outputs)?;
+        let t = Self::resolve_port(time_to_maturity, outputs)?;
+        return casiros_core::options::black_scholes_vega(s, k, r, sigma, t)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_black_scholes_theta(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        style: OptionStyle,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let s = Self::resolve_port(spot, outputs)?;
+        let k = Self::resolve_port(strike, outputs)?;
+        let r = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(volatility, outputs)?;
+        let t = Self::resolve_port(time_to_maturity, outputs)?;
+        let core_style = Self::option_style_to_core(style);
+        return casiros_core::options::black_scholes_theta(s, k, r, sigma, t, core_style)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_black_scholes_rho(
+        spot: &Port,
+        strike: &Port,
+        risk_free_rate: &Port,
+        volatility: &Port,
+        time_to_maturity: &Port,
+        style: OptionStyle,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let s = Self::resolve_port(spot, outputs)?;
+        let k = Self::resolve_port(strike, outputs)?;
+        let r = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(volatility, outputs)?;
+        let t = Self::resolve_port(time_to_maturity, outputs)?;
+        let core_style = Self::option_style_to_core(style);
+        return casiros_core::options::black_scholes_rho(s, k, r, sigma, t, core_style)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn option_style_to_core(style: OptionStyle) -> casiros_core::options::OptionStyle {
+        return match style {
+            OptionStyle::Call => casiros_core::options::OptionStyle::Call,
+            OptionStyle::Put => casiros_core::options::OptionStyle::Put,
+        };
     }
 
     fn resolve_period(
