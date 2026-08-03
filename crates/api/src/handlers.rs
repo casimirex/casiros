@@ -5,6 +5,7 @@ use tracing::{info, instrument};
 
 use crate::engine_builder::{EngineBuilder, distribution_from_request, map_inputs_by_id};
 use crate::models::{EvaluateRequest, EvaluateResponse, SimulateRequest, SimulateResponse};
+use crate::validation::{validate_depth, validate_evaluate, validate_simulate};
 
 /// Health check endpoint for liveness and readiness probes.
 #[instrument(name = "healthz")]
@@ -27,6 +28,10 @@ pub async fn healthz() -> impl Responder {
 pub async fn evaluate(payload: web::Json<EvaluateRequest>) -> impl Responder {
     info!("Evaluate request received");
 
+    if let Err(err) = validate_evaluate(&payload) {
+        return HttpResponse::BadRequest().json(serde_json::json!({ "error": err.to_string() }));
+    }
+
     let mut builder = EngineBuilder::new();
     if let Err(err) = builder.add_nodes(&payload.nodes) {
         return HttpResponse::BadRequest().json(serde_json::json!({ "error": err.to_string() }));
@@ -44,6 +49,10 @@ pub async fn evaluate(payload: web::Json<EvaluateRequest>) -> impl Responder {
     };
 
     let engine = builder.build();
+    if let Err(err) = validate_depth(&engine) {
+        return HttpResponse::BadRequest().json(serde_json::json!({ "error": err.to_string() }));
+    }
+
     let outputs = match engine.evaluate(&inputs) {
         Ok(map) => map,
         Err(err) => {
@@ -86,6 +95,10 @@ pub async fn evaluate(payload: web::Json<EvaluateRequest>) -> impl Responder {
 pub async fn simulate(payload: web::Json<SimulateRequest>) -> impl Responder {
     info!("Simulate request received");
 
+    if let Err(err) = validate_simulate(&payload) {
+        return HttpResponse::BadRequest().json(serde_json::json!({ "error": err.to_string() }));
+    }
+
     let mut builder = EngineBuilder::new();
     if let Err(err) = builder.add_nodes(&payload.nodes) {
         return HttpResponse::BadRequest().json(serde_json::json!({ "error": err.to_string() }));
@@ -119,6 +132,10 @@ pub async fn simulate(payload: web::Json<SimulateRequest>) -> impl Responder {
     }
 
     let engine = builder.build();
+    if let Err(err) = validate_depth(&engine) {
+        return HttpResponse::BadRequest().json(serde_json::json!({ "error": err.to_string() }));
+    }
+
     let result = match config.run(&engine, target_id) {
         Ok(result) => result,
         Err(err) => {

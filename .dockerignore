@@ -1,0 +1,13 @@
+.git
+.github
+.env
+.env.local
+target/
+*.md
+!README.md
+*.swp
+*.swo
+*~
+.DS_Store
+.idea
+.vscode

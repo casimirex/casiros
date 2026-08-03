@@ -9,6 +9,7 @@
 use std::collections::HashMap;
 
 use casiros_core::prelude::{CalculationError, Decimal};
+use petgraph::Direction;
 use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rust_decimal::prelude::ToPrimitive;
@@ -361,6 +362,68 @@ impl CausalityEngine {
                     .expect("internal graph invariant: every NodeIndex has a NodeId weight")
             })
             .collect());
+    }
+
+    /// Returns the length of the longest dependency chain in the graph.
+    ///
+    /// Input nodes have depth `1`. The depth of any formula node is `1 +` the
+    /// maximum depth of its dependencies.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DagError::CycleDetected`] if the graph contains a directed
+    /// cycle.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the internal graph invariant is violated.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use casiros_dag::graph::{CausalityEngine, FormulaKind, Port};
+    /// use rust_decimal_macros::dec;
+    ///
+    /// let mut engine = CausalityEngine::new();
+    /// let a = engine.add_input("a");
+    /// let b = engine.add_formula(
+    ///     "b",
+    ///     FormulaKind::ReturnOnEquity {
+    ///         net_income: Port::Output(a),
+    ///         equity: Port::Constant(dec!(100.0)),
+    ///     },
+    /// );
+    /// let c = engine.add_formula(
+    ///     "c",
+    ///     FormulaKind::ReturnOnEquity {
+    ///         net_income: Port::Output(b),
+    ///         equity: Port::Constant(dec!(100.0)),
+    ///     },
+    /// );
+    /// engine.add_edge(a, b).unwrap();
+    /// engine.add_edge(b, c).unwrap();
+    ///
+    /// assert_eq!(engine.max_depth().unwrap(), 3);
+    /// ```
+    pub fn max_depth(&self) -> Result<usize, DagError> {
+        let order = self.topological_order()?;
+        let mut depth: HashMap<NodeId, usize> = HashMap::with_capacity(self.nodes.len());
+
+        for id in order {
+            let idx = self.index(id)?;
+            let mut max_dependency_depth = 0;
+            for neighbor in self.graph.neighbors_directed(idx, Direction::Incoming) {
+                let dependency_id = *self
+                    .graph
+                    .node_weight(neighbor)
+                    .expect("internal graph invariant: every NodeIndex has a NodeId weight");
+                let dependency_depth = depth.get(&dependency_id).copied().unwrap_or(1);
+                max_dependency_depth = max_dependency_depth.max(dependency_depth);
+            }
+            depth.insert(id, max_dependency_depth + 1);
+        }
+
+        return Ok(depth.values().copied().max().unwrap_or(0));
     }
 
     fn next_id(&mut self) -> NodeId {

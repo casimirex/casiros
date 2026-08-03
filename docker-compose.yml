@@ -1,0 +1,17 @@
+services:
+  casiros-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: casiros-api
+    ports:
+      - "8080:8080"
+    environment:
+      - CASIROS_BIND_ADDR=0.0.0.0:8080
+      - RUST_LOG=info
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
