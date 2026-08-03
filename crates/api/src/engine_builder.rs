@@ -9,7 +9,9 @@ use std::collections::HashMap;
 use casiros_dag::graph::{CausalityEngine, FormulaKind, NodeId, Port};
 use rust_decimal::Decimal;
 
-use crate::models::{DistributionRequest, EdgeRequest, FormulaRequest, NodeRequest, PortRequest};
+use crate::models::{
+    DistributionRequest, EdgeRequest, FormulaRequest, NodeRequest, OptionStyle, PortRequest,
+};
 
 /// Errors that can occur while translating an API request into a causality
 /// engine.
@@ -124,6 +126,7 @@ impl EngineBuilder {
         return self.name_to_id.get(name).copied();
     }
 
+    #[allow(clippy::too_many_lines)]
     fn formula_kind(&self, request: &FormulaRequest) -> Result<FormulaKind, EngineBuilderError> {
         match request {
             FormulaRequest::FutureValue {
@@ -222,7 +225,115 @@ impl EngineBuilder {
                 volatility: self.port(volatility)?,
                 time_to_maturity: self.port(time_to_maturity)?,
             }),
+            FormulaRequest::BinomialOptionCall {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                steps,
+            } => Ok(FormulaKind::BinomialOptionCall {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+                steps: self.port(steps)?,
+            }),
+            FormulaRequest::BinomialOptionPut {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                steps,
+            } => Ok(FormulaKind::BinomialOptionPut {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+                steps: self.port(steps)?,
+            }),
+            FormulaRequest::BlackScholesDelta {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                style,
+            } => Ok(FormulaKind::BlackScholesDelta {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+                style: Self::option_style(*style),
+            }),
+            FormulaRequest::BlackScholesGamma {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Ok(FormulaKind::BlackScholesGamma {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+            }),
+            FormulaRequest::BlackScholesVega {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+            } => Ok(FormulaKind::BlackScholesVega {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+            }),
+            FormulaRequest::BlackScholesTheta {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                style,
+            } => Ok(FormulaKind::BlackScholesTheta {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+                style: Self::option_style(*style),
+            }),
+            FormulaRequest::BlackScholesRho {
+                spot,
+                strike,
+                risk_free_rate,
+                volatility,
+                time_to_maturity,
+                style,
+            } => Ok(FormulaKind::BlackScholesRho {
+                spot: self.port(spot)?,
+                strike: self.port(strike)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                volatility: self.port(volatility)?,
+                time_to_maturity: self.port(time_to_maturity)?,
+                style: Self::option_style(*style),
+            }),
         }
+    }
+
+    fn option_style(style: OptionStyle) -> casiros_dag::graph::OptionStyle {
+        return match style {
+            OptionStyle::Call => casiros_dag::graph::OptionStyle::Call,
+            OptionStyle::Put => casiros_dag::graph::OptionStyle::Put,
+        };
     }
 
     fn port(&self, request: &PortRequest) -> Result<Port, EngineBuilderError> {

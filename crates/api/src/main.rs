@@ -18,12 +18,15 @@
 
 use std::sync::Arc;
 
+use actix_cors::Cors;
+use actix_files::Files;
 use actix_web::{App, HttpServer, middleware, web};
 use casiros_api::auth::{AuthConfig, RateLimiter, auth_middleware};
 use casiros_api::handlers;
 use casiros_api::openapi;
 use casiros_api::repositories::{InMemorySnapshotRepository, SnapshotRepo};
 use casiros_api::snapshot_handlers;
+use casiros_api::streaming_handlers;
 use tracing::{info, instrument};
 
 /// Application entry point.
@@ -54,6 +57,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .app_data(web::Data::from(Arc::clone(&snapshot_repo)))
+            .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
             .wrap(middleware::from_fn(move |req, next| {
                 let auth_config = Arc::clone(&auth_config);
@@ -61,9 +65,14 @@ async fn main() -> std::io::Result<()> {
                 auth_middleware(req, next, auth_config, rate_limiter)
             }))
             .service(openapi::swagger_ui())
+            .service(Files::new("/dashboard", "web").index_file("index.html"))
             .route("/healthz", web::get().to(handlers::healthz))
             .route("/evaluate", web::post().to(handlers::evaluate))
             .route("/simulate", web::post().to(handlers::simulate))
+            .route(
+                "/simulate/stream",
+                web::post().to(streaming_handlers::simulate_stream),
+            )
             .route(
                 "/snapshots",
                 web::post().to(snapshot_handlers::save_snapshot),

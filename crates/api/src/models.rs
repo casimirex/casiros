@@ -10,6 +10,16 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+/// Side of an option contract used by option-related formula requests.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum OptionStyle {
+    /// A call option gives the holder the right to buy the underlying.
+    Call,
+    /// A put option gives the holder the right to sell the underlying.
+    Put,
+}
+
 /// A single node in a DAG request.
 #[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -134,6 +144,114 @@ pub enum FormulaRequest {
         volatility: PortRequest,
         /// Time to maturity binding.
         time_to_maturity: PortRequest,
+    },
+
+    /// Cox-Ross-Rubinstein binomial tree European call option price.
+    BinomialOptionCall {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+        /// Number of time-steps binding.
+        steps: PortRequest,
+    },
+
+    /// Cox-Ross-Rubinstein binomial tree European put option price.
+    BinomialOptionPut {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+        /// Number of time-steps binding.
+        steps: PortRequest,
+    },
+
+    /// Black-Scholes delta of a European option.
+    BlackScholesDelta {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+        /// Option style.
+        style: OptionStyle,
+    },
+
+    /// Black-Scholes gamma of a European option.
+    BlackScholesGamma {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+    },
+
+    /// Black-Scholes vega of a European option.
+    BlackScholesVega {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+    },
+
+    /// Black-Scholes theta of a European option.
+    BlackScholesTheta {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+        /// Option style.
+        style: OptionStyle,
+    },
+
+    /// Black-Scholes rho of a European option.
+    BlackScholesRho {
+        /// Spot price binding.
+        spot: PortRequest,
+        /// Strike price binding.
+        strike: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Volatility binding.
+        volatility: PortRequest,
+        /// Time to maturity binding.
+        time_to_maturity: PortRequest,
+        /// Option style.
+        style: OptionStyle,
     },
 }
 

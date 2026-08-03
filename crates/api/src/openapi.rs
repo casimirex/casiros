@@ -44,11 +44,13 @@ use crate::snapshot_handlers;
         models::EdgeRequest,
         models::DistributionRequest,
         models::BindingRequest,
+        models::OptionStyle,
         models::SaveSnapshotRequest,
         models::SaveSnapshotResponse,
         models::DeleteSnapshotRequest,
         models::SnapshotResponse,
         models::SnapshotListResponse,
+        models::SnapshotSummaryResponse,
     ))
 )]
 pub struct ApiDoc;

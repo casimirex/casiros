@@ -17,4 +17,5 @@ pub mod models;
 pub mod openapi;
 pub mod repositories;
 pub mod snapshot_handlers;
+pub mod streaming_handlers;
 pub mod validation;
