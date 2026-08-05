@@ -10,6 +10,7 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
+pub mod admin_handlers;
 pub mod audit;
 pub mod audit_handlers;
 pub mod audit_middleware;

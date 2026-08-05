@@ -21,6 +21,7 @@ use std::sync::Arc;
 use actix_cors::Cors;
 use actix_files::Files;
 use actix_web::{App, HttpServer, middleware, web};
+use casiros_api::admin_handlers;
 use casiros_api::audit::{AuditSink, InMemoryAuditLog, PostgresAuditLog};
 use casiros_api::audit_handlers;
 use casiros_api::audit_middleware::audit_middleware;
@@ -142,6 +143,24 @@ async fn main() -> std::io::Result<()> {
                 web::post().to(job_handlers::cancel_job),
             )
             .route("/ws/jobs/{id}", web::get().to(job_ws_handlers::job_ws))
+            // Admin endpoints (protected by CASIROS_ADMIN_KEY).
+            .route(
+                "/admin/tenants",
+                web::get().to(admin_handlers::list_tenants),
+            )
+            .route(
+                "/admin/tenants",
+                web::post().to(admin_handlers::provision_tenant),
+            )
+            .route(
+                "/admin/tenants/{id}/stats",
+                web::get().to(admin_handlers::tenant_stats),
+            )
+            .route("/admin/keys", web::post().to(admin_handlers::create_key))
+            .route(
+                "/admin/keys/{id}/revoke",
+                web::post().to(admin_handlers::revoke_key),
+            )
     })
     .bind(bind_addr)?
     .run()
