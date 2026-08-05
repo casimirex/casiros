@@ -1,8 +1,10 @@
-//! Benchmark DAG evaluation throughput.
+//! Benchmark DAG evaluation throughput, with and without formula cache.
 #![allow(missing_docs)]
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use casiros_dag::cache::InMemoryFormulaCache;
 use casiros_dag::graph::{CausalityEngine, FormulaKind, Port};
 use criterion::{Criterion, criterion_group, criterion_main};
 use rust_decimal_macros::dec;
@@ -53,5 +55,18 @@ fn bench_dag_evaluate(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_dag_evaluate);
+fn bench_dag_evaluate_with_cache(c: &mut Criterion) {
+    let cache = Arc::new(InMemoryFormulaCache::new());
+    let (engine, inputs) = build_chain_engine();
+    let engine = engine.with_cache(cache);
+
+    // First evaluation populates the cache.
+    engine.evaluate(&inputs).unwrap();
+
+    c.bench_function("dag_evaluate_cached", |b| {
+        b.iter(|| engine.evaluate(&inputs).unwrap());
+    });
+}
+
+criterion_group!(benches, bench_dag_evaluate, bench_dag_evaluate_with_cache);
 criterion_main!(benches);
