@@ -128,7 +128,7 @@ async fn main() -> std::io::Result<()> {
                 auth_middleware(req, next, auth_config, tenant_resolver, rate_limiter)
             }))
             .service(openapi::swagger_ui())
-            .service(Files::new("/dashboard", "web").index_file("index.html"))
+            .service(Files::new("/dashboard", dashboard_dir()).index_file("index.html"))
             // Versioned API scope — all routes are registered under /v1/
             // and also at the root level for backward compatibility.
             .service(
@@ -245,6 +245,36 @@ async fn main() -> std::io::Result<()> {
     .bind(bind_addr)?
     .run()
     .await
+}
+
+/// Locates the dashboard's static assets.
+///
+/// A bare relative path resolves against the process working directory, so the
+/// dashboard 404s whenever the server is started from anywhere but the repo
+/// root — including inside the Docker image, whose WORKDIR is `/app`. Checking
+/// several known locations makes the route work regardless of how the binary
+/// was launched.
+fn dashboard_dir() -> std::path::PathBuf {
+    let candidates = [
+        // Explicit override wins.
+        std::env::var("CASIROS_WEB_DIR").ok().map(Into::into),
+        // Alongside the binary in a container image.
+        Some(std::path::PathBuf::from("/app/web")),
+        // Repo root, for `cargo run` and for tests started from the workspace.
+        Some(std::path::PathBuf::from("web")),
+        // Sibling of the executable, for an unpacked release archive.
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join("web"))),
+    ];
+    for candidate in candidates.into_iter().flatten() {
+        if candidate.join("index.html").is_file() {
+            return candidate;
+        }
+    }
+    // Nothing found: fall back to the historical relative path so the route
+    // still registers and returns 404 rather than the server failing to start.
+    return std::path::PathBuf::from("web");
 }
 
 /// The persistence backends shared by every worker thread.

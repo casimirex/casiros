@@ -137,11 +137,11 @@ async fn execute_job(
 
     while completed < total {
         // Check for cancellation before each batch.
-        if let Ok(current) = store.get(&job.tenant_id, &job.workspace_id, &job.id).await {
-            if current.status == JobStatus::Cancelled {
-                info!(job_id = %job.id, "Job was cancelled");
-                return Ok(());
-            }
+        if let Ok(current) = store.get(&job.tenant_id, &job.workspace_id, &job.id).await
+            && current.status == JobStatus::Cancelled
+        {
+            info!(job_id = %job.id, "Job was cancelled");
+            return Ok(());
         }
 
         let batch = BATCH_SIZE.min(total - completed);

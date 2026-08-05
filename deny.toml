@@ -26,6 +26,11 @@ allow = [
     "Unicode-3.0",
     "MPL-2.0",
     "OpenSSL",
+    # Permissive, OSI-approved, and unavoidable: these arrive transitively
+    # through actix-web (foldhash, zlib-rs via flate2) and the ahash chain
+    # (tiny-keccak). Both are more permissive than MIT.
+    "Zlib",
+    "CC0-1.0",
 ]
 confidence-threshold = 0.8
 

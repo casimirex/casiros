@@ -55,10 +55,12 @@ jobs:
         with:
           shared-key: "casiros-test"
 
+      # Serial: the Postgres job-store tests operate on the shared
+      # simulation_jobs queue, so concurrent runs claim each other's jobs.
       - name: Run all tests (unit, integration, and doc-tests)
         env:
-          CASIROS_POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
-        run: cargo test --workspace --all-targets --all-features
+          CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
+        run: cargo test --workspace --all-targets --all-features -- --test-threads=1
 
   docs:
     name: Documentation
@@ -116,7 +118,7 @@ jobs:
 
       - name: Generate coverage report
         env:
-          CASIROS_POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
+          CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
         run: cargo tarpaulin --workspace --all-features --out Xml --timeout 120
 
       - name: Upload coverage to Codecov
