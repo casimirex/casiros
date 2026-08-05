@@ -566,6 +566,7 @@ impl EngineBuilder {
     fn port(&self, request: &PortRequest) -> Result<Port, EngineBuilderError> {
         match request {
             PortRequest::Constant(value) => Ok(Port::Constant(*value)),
+            PortRequest::Series(values) => Ok(Port::Series(values.clone())),
             PortRequest::Output { node } => {
                 let id = self
                     .name_to_id

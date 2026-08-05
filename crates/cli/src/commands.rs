@@ -322,10 +322,11 @@ fn formula_request_from_kind(
         port: &Port,
         id_to_name: &HashMap<casiros_dag::graph::NodeId, String>,
     ) -> casiros_api::models::PortRequest {
-        match *port {
-            Port::Constant(value) => casiros_api::models::PortRequest::Constant(value),
+        match port {
+            Port::Constant(value) => casiros_api::models::PortRequest::Constant(*value),
+            Port::Series(values) => casiros_api::models::PortRequest::Series(values.clone()),
             Port::Output(id) => casiros_api::models::PortRequest::Output {
-                node: id_to_name.get(&id).cloned().unwrap_or_default(),
+                node: id_to_name.get(id).cloned().unwrap_or_default(),
             },
         }
     }

@@ -22,14 +22,20 @@ use crate::error::DagError;
 #[serde(transparent)]
 pub struct NodeId(pub usize);
 
-/// A port binding: either a constant value or the output of another node.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// A port binding: a constant, a series of constants, or another node's output.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Port {
     /// A literal constant value.
     Constant(Decimal),
     /// The computed output of another node.
     Output(NodeId),
+    /// A literal series of values, for formulas that consume a sequence such as
+    /// a cash-flow schedule or a price history.
+    ///
+    /// Scalar ports cannot express a series: resolving one yields a single
+    /// `Decimal`, so any string encoding of a list collapses to one element.
+    Series(Vec<Decimal>),
 }
 
 /// The kind of computation a node performs.
@@ -406,7 +412,7 @@ pub enum FormulaKind {
         z_score: Port,
     },
 
-    /// Discounted cash flow over a comma-separated cash-flow series.
+    /// Discounted cash flow over a cash-flow series.
     DiscountedCashFlow {
         /// Comma-separated cash-flow series input port.
         cash_flows: Port,
@@ -414,7 +420,7 @@ pub enum FormulaKind {
         discount_rate: Port,
     },
 
-    /// Macaulay duration over a comma-separated cash-flow series.
+    /// Macaulay duration over a cash-flow series.
     MacaulayDuration {
         /// Comma-separated cash-flow series input port.
         cash_flows: Port,
@@ -430,7 +436,7 @@ pub enum FormulaKind {
         yield_per_period: Port,
     },
 
-    /// Convexity over a comma-separated cash-flow series.
+    /// Convexity over a cash-flow series.
     Convexity {
         /// Comma-separated cash-flow series input port.
         cash_flows: Port,
@@ -966,6 +972,12 @@ impl CausalityEngine {
                 .get(&id)
                 .copied()
                 .ok_or(DagError::MissingDependency { id }),
+            // A single-element series is unambiguous; anything longer cannot be
+            // collapsed to one number without silently discarding data.
+            Port::Series(ref values) if values.len() == 1 => Ok(values[0]),
+            Port::Series(_) => Err(DagError::InvalidPeriod {
+                value: Decimal::ZERO,
+            }),
         }
     }
 
@@ -1476,27 +1488,11 @@ impl CausalityEngine {
         outputs: &HashMap<NodeId, Decimal>,
         node_id: NodeId,
     ) -> Result<Decimal, DagError> {
-        let prices_value = Self::resolve_port(prices, outputs)?;
+        let series = Self::parse_decimal_series(prices, outputs)?;
         let window_value = Self::resolve_port(window, outputs)?;
         let window_u = window_value.to_u32().ok_or(DagError::InvalidPeriod {
             value: window_value,
         })?;
-
-        // The DAG operates on scalar ports. A price series is represented as a
-        // single comma-separated Decimal value encoded as a string. This is a
-        // pragmatic MVP encoding for vector inputs; future phases may introduce a
-        // first-class vector port type.
-        let series: Vec<Decimal> = prices_value
-            .to_string()
-            .split(',')
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(|s| {
-                s.parse().map_err(|_| DagError::InvalidPeriod {
-                    value: prices_value,
-                })
-            })
-            .collect::<Result<_, _>>()?;
 
         return casiros_core::markets::simple_moving_average(&series, window_u as usize)
             .map_err(|err| Self::wrap_formula_error(node_id, err));
@@ -1876,18 +1872,18 @@ impl CausalityEngine {
             .map_err(|err| Self::wrap_formula_error(node_id, err));
     }
 
+    /// Resolves a port that supplies a sequence of values.
+    ///
+    /// [`Port::Series`] carries the sequence directly. A scalar port yields a
+    /// single-element series, which keeps single-flow models working.
     fn parse_decimal_series(
         port: &Port,
         outputs: &HashMap<NodeId, Decimal>,
     ) -> Result<Vec<Decimal>, DagError> {
-        let value = Self::resolve_port(port, outputs)?;
-        return value
-            .to_string()
-            .split(',')
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(|s| s.parse().map_err(|_| DagError::InvalidPeriod { value }))
-            .collect::<Result<_, _>>();
+        if let Port::Series(values) = port {
+            return Ok(values.clone());
+        }
+        return Ok(vec![Self::resolve_port(port, outputs)?]);
     }
 
     fn eval_discounted_cash_flow(
@@ -1984,20 +1980,9 @@ impl CausalityEngine {
         outputs: &HashMap<NodeId, Decimal>,
         node_id: NodeId,
     ) -> Result<Decimal, DagError> {
-        let a = Self::resolve_port(asset_returns, outputs)?;
-        let m = Self::resolve_port(market_returns, outputs)?;
-        // Beta requires arrays; parse comma-separated values.
-        let asset_vec: Vec<Decimal> = a
-            .to_string()
-            .split(',')
-            .filter_map(|s| s.trim().parse::<Decimal>().ok())
-            .collect();
-        let market_vec: Vec<Decimal> = m
-            .to_string()
-            .split(',')
-            .filter_map(|s| s.trim().parse::<Decimal>().ok())
-            .collect();
-        return casiros_core::markets::beta(&asset_vec, &market_vec)
+        let asset = Self::parse_decimal_series(asset_returns, outputs)?;
+        let market = Self::parse_decimal_series(market_returns, outputs)?;
+        return casiros_core::markets::beta(&asset, &market)
             .map_err(|err| Self::wrap_formula_error(node_id, err));
     }
 
@@ -2236,6 +2221,56 @@ mod tests {
             engine.topological_order(),
             Err(DagError::CycleDetected { .. })
         ));
+    }
+
+    #[test]
+    fn series_port_supplies_a_full_sequence() {
+        // A scalar port cannot express a series: resolving one yields a single
+        // Decimal, so any string encoding collapses to one element. This test
+        // pins that Port::Series carries every value through to the formula.
+        let mut engine = CausalityEngine::new();
+        let sma = engine.add_formula(
+            "sma",
+            FormulaKind::SimpleMovingAverage {
+                prices: Port::Series(vec![dec!(10), dec!(12), dec!(14), dec!(16), dec!(18)]),
+                window: Port::Constant(dec!(3)),
+            },
+        );
+        let outputs = engine.evaluate(&HashMap::new()).unwrap();
+        // Mean of the last three prices: (14 + 16 + 18) / 3 = 16.
+        assert_eq!(outputs[&sma], dec!(16));
+        assert_eq!(outputs.len(), 1);
+    }
+
+    #[test]
+    fn scalar_port_still_yields_a_one_element_series() {
+        let mut engine = CausalityEngine::new();
+        let dcf = engine.add_formula(
+            "dcf",
+            FormulaKind::DiscountedCashFlow {
+                cash_flows: Port::Constant(dec!(100)),
+                discount_rate: Port::Constant(dec!(0.10)),
+            },
+        );
+        let outputs = engine.evaluate(&HashMap::new()).unwrap();
+        assert_eq!(outputs[&dcf].round_dp(4), dec!(90.9091));
+        assert_eq!(outputs.len(), 1);
+    }
+
+    #[test]
+    fn multi_element_series_is_rejected_where_a_scalar_is_required() {
+        // Collapsing a multi-element series into one number would silently
+        // discard data, so a scalar port must refuse it.
+        let mut engine = CausalityEngine::new();
+        engine.add_formula(
+            "fv",
+            FormulaKind::FutureValue {
+                present_value: Port::Series(vec![dec!(100), dec!(200)]),
+                rate: Port::Constant(dec!(0.05)),
+                periods: Port::Constant(dec!(10)),
+            },
+        );
+        assert!(engine.evaluate(&HashMap::new()).is_err());
     }
 
     #[test]

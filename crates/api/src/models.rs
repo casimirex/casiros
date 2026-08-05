@@ -516,6 +516,9 @@ pub enum FormulaRequest {
 pub enum PortRequest {
     /// A literal constant value.
     Constant(Decimal),
+    /// A literal series of values, for formulas that consume a sequence such as
+    /// a cash-flow schedule or a price history. Written as a JSON array.
+    Series(Vec<Decimal>),
     /// A reference to the output of another node.
     Output {
         /// Name of the source node.
