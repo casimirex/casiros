@@ -191,12 +191,22 @@ where
         None => default_principal(),
     };
 
+    // Resolve per-key rate limit, falling back to the global default.
+    let rpm = match &key {
+        Some(key) => resolver
+            .resolve_rpm(key)
+            .await
+            .unwrap_or(config.rate_limit_rpm),
+        None => config.rate_limit_rpm,
+    };
+
     let rate_limit_key = format!(
         "{}:{}",
         principal.tenant_id.as_str(),
         principal.workspace_id.as_str()
     );
-    if limiter.is_rate_limited(&rate_limit_key, config.rate_limit_rpm) {
+    if limiter.is_rate_limited(&rate_limit_key, rpm) {
+        crate::metrics::inc_rate_limit_denial(principal.tenant_id.as_str());
         return Ok(req.into_response(HttpResponse::TooManyRequests().json(
             crate::models::ErrorResponse {
                 error: "Rate limit exceeded".to_string(),

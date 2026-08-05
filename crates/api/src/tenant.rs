@@ -18,6 +18,14 @@ pub trait TenantResolver: Send + Sync {
     /// Returns `None` when the key is unknown or revoked.
     async fn resolve(&self, api_key: &str) -> Option<Principal>;
 
+    /// Returns the per-key rate limit in requests per minute, if one is
+    /// configured. When `None`, the global `rate_limit_rpm` from
+    /// [`AuthConfig`](crate::auth::AuthConfig) is used instead.
+    async fn resolve_rpm(&self, api_key: &str) -> Option<u32> {
+        let _ = api_key;
+        return None;
+    }
+
     /// Returns every principal this resolver can produce.
     ///
     /// Used at startup to provision the tenant and workspace rows that the
@@ -35,23 +43,31 @@ pub trait TenantResolver: Send + Sync {
 /// Parses `CASIROS_API_KEY_TENANTS` with the format:
 ///
 /// ```text
-/// key1:tenant_1:workspace_1,key2:tenant_2:workspace_2
+/// key1:tenant_1:workspace_1,key2:tenant_2:workspace_2:200
 /// ```
 ///
-/// When the variable is unset, every key resolves to the default
-/// `tenant_default` / `workspace_default` principal so that local development
-/// remains simple.
+/// Each entry is `key:tenant_id:workspace_id` with an optional fourth field
+/// for the per-key rate limit in requests per minute. When the variable is
+/// unset, every key resolves to the default `tenant_default` / `workspace_default`
+/// principal so that local development remains simple.
 #[derive(Debug, Clone, Default)]
 pub struct InMemoryTenantResolver {
     /// API key → principal lookup table.
     mapping: HashMap<String, Principal>,
+
+    /// Per-key rate limits (requests per minute). Keys not in this map use
+    /// the global default from `AuthConfig`.
+    rate_limits: HashMap<String, u32>,
 }
 
 impl InMemoryTenantResolver {
     /// Creates a resolver from an explicit key → principal map.
     #[must_use]
     pub fn new(mapping: HashMap<String, Principal>) -> Self {
-        return Self { mapping };
+        return Self {
+            mapping,
+            rate_limits: HashMap::new(),
+        };
     }
 
     /// Creates a resolver from the `CASIROS_API_KEY_TENANTS` environment
@@ -63,15 +79,17 @@ impl InMemoryTenantResolver {
 
     /// Parses a comma-separated tenant mapping string.
     ///
-    /// Each entry must be `key:tenant_id:workspace_id`. Malformed entries are
-    /// ignored so that a single typo does not disable authentication.
+    /// Each entry must be `key:tenant_id:workspace_id` with an optional fourth
+    /// field `:rpm` for the per-key rate limit. Malformed entries are ignored
+    /// so that a single typo does not disable authentication.
     #[must_use]
     pub fn parse(source: Option<&str>) -> Self {
         let mut mapping = HashMap::new();
+        let mut rate_limits = HashMap::new();
         if let Some(source) = source {
             for entry in source.split(',') {
                 let parts: Vec<&str> = entry.split(':').collect();
-                if parts.len() != 3 {
+                if parts.len() < 3 || parts.len() > 4 {
                     continue;
                 }
                 let key = parts[0].trim().to_string();
@@ -81,10 +99,18 @@ impl InMemoryTenantResolver {
                 let Ok(workspace) = WorkspaceId::new(parts[2].trim()) else {
                     continue;
                 };
-                mapping.insert(key, Principal::new(tenant, workspace, "api_key"));
+                mapping.insert(key.clone(), Principal::new(tenant, workspace, "api_key"));
+                if parts.len() == 4 {
+                    if let Ok(rpm) = parts[3].trim().parse::<u32>() {
+                        rate_limits.insert(key, rpm);
+                    }
+                }
             }
         }
-        return Self::new(mapping);
+        return Self {
+            mapping,
+            rate_limits,
+        };
     }
 
     /// Returns a resolver that maps every key to the default tenant/workspace.
@@ -100,10 +126,10 @@ impl InMemoryTenantResolver {
         let tenant = TenantId::new("tenant_default").expect("static default tenant is valid");
         let workspace =
             WorkspaceId::new("workspace_default").expect("static default workspace is valid");
-        return Self::new(HashMap::from([(
-            String::new(),
-            Principal::new(tenant, workspace, "default"),
-        )]));
+        return Self {
+            mapping: HashMap::from([(String::new(), Principal::new(tenant, workspace, "default"))]),
+            rate_limits: HashMap::new(),
+        };
     }
 }
 
@@ -119,6 +145,10 @@ impl TenantResolver for InMemoryTenantResolver {
 
     fn known_principals(&self) -> Vec<Principal> {
         return self.mapping.values().cloned().collect();
+    }
+
+    async fn resolve_rpm(&self, api_key: &str) -> Option<u32> {
+        return self.rate_limits.get(api_key).copied();
     }
 }
 
@@ -171,6 +201,28 @@ mod tests {
         let resolver = InMemoryTenantResolver::parse(None);
         assert!(resolver.known_principals().is_empty());
         assert_eq!(resolver.known_principals().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn parse_with_rpm_stores_rate_limit() {
+        let resolver = InMemoryTenantResolver::parse(Some("alpha:tenant_a:workspace_a:200"));
+        let rpm = resolver.resolve_rpm("alpha").await;
+        assert_eq!(rpm, Some(200));
+    }
+
+    #[tokio::test]
+    async fn parse_without_rpm_returns_none() {
+        let resolver = InMemoryTenantResolver::parse(Some("alpha:tenant_a:workspace_a"));
+        let rpm = resolver.resolve_rpm("alpha").await;
+        assert_eq!(rpm, None);
+    }
+
+    #[tokio::test]
+    async fn parse_ignores_malformed_rpm() {
+        let resolver =
+            InMemoryTenantResolver::parse(Some("alpha:tenant_a:workspace_a:not_a_number"));
+        let rpm = resolver.resolve_rpm("alpha").await;
+        assert_eq!(rpm, None);
     }
 
     #[tokio::test]
