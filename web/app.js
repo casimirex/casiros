@@ -214,3 +214,166 @@ $("listSnapshotsBtn").addEventListener("click", async () => {
     show("snapshotOut", err.message, true);
   }
 });
+
+// Default job request
+const defaultJob = {
+  nodes: [
+    { input: { name: "principal" } },
+    {
+      formula: {
+        name: "fv",
+        kind: {
+          formula: "future_value",
+          present_value: { node: "principal" },
+          rate: 0.05,
+          periods: 10,
+        },
+      },
+    },
+  ],
+  edges: [{ dependency: "principal", dependent: "fv" }],
+  bindings: [
+    {
+      node: "principal",
+      distribution: { kind: "uniform", low: 90, high: 110 },
+    },
+  ],
+  target: "fv",
+  universe_count: 1000,
+  seed: 42,
+};
+$("jobJson").value = JSON.stringify(defaultJob, null, 2);
+
+$("createJobBtn").addEventListener("click", async () => {
+  try {
+    const body = JSON.parse($("jobJson").value);
+    const data = await api("/simulate/jobs", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    show("jobOut", data);
+  } catch (err) {
+    show("jobOut", err.message, true);
+  }
+});
+
+$("getJobBtn").addEventListener("click", async () => {
+  try {
+    const id = $("jobId").value.trim();
+    if (!id) throw new Error("job id is required");
+    const data = await api(`/simulate/jobs/${encodeURIComponent(id)}`);
+    show("jobOut", data);
+  } catch (err) {
+    show("jobOut", err.message, true);
+  }
+});
+
+$("cancelJobBtn").addEventListener("click", async () => {
+  try {
+    const id = $("jobId").value.trim();
+    if (!id) throw new Error("job id is required");
+    const data = await api(`/simulate/jobs/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+    });
+    show("jobOut", data);
+  } catch (err) {
+    show("jobOut", err.message, true);
+  }
+});
+
+$("auditBtn").addEventListener("click", async () => {
+  try {
+    const limit = $("auditLimit").value || 10;
+    const offset = $("auditOffset").value || 0;
+    const data = await api(`/audit?limit=${limit}&offset=${offset}`);
+    show("auditOut", data);
+  } catch (err) {
+    show("auditOut", err.message, true);
+  }
+});
+
+function adminHeaders() {
+  const key = $("adminKey").value.trim();
+  if (!key) throw new Error("admin key is required");
+  return { "Content-Type": "application/json", "X-Admin-Key": key };
+}
+
+async function adminApi(path, options = {}) {
+  const res = await fetch(`${baseUrl()}${path}`, {
+    ...options,
+    headers: { ...adminHeaders(), ...options.headers },
+  });
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = text;
+  }
+  if (!res.ok) {
+    throw new Error(data.error || text || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+$("adminListTenantsBtn").addEventListener("click", async () => {
+  try {
+    const data = await adminApi("/admin/tenants");
+    show("adminOut", data);
+  } catch (err) {
+    show("adminOut", err.message, true);
+  }
+});
+
+$("adminProvisionTenantBtn").addEventListener("click", async () => {
+  try {
+    const id = prompt("Tenant ID:");
+    if (!id) return;
+    const data = await adminApi("/admin/tenants", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    });
+    show("adminOut", data);
+  } catch (err) {
+    show("adminOut", err.message, true);
+  }
+});
+
+$("adminTenantStatsBtn").addEventListener("click", async () => {
+  try {
+    const id = $("adminTenantId").value.trim();
+    if (!id) throw new Error("tenant id is required");
+    const data = await adminApi(`/admin/tenants/${encodeURIComponent(id)}/stats`);
+    show("adminOut", data);
+  } catch (err) {
+    show("adminOut", err.message, true);
+  }
+});
+
+$("adminCreateKeyBtn").addEventListener("click", async () => {
+  try {
+    const tenantId = $("adminKeyTenantId").value.trim();
+    const workspaceId = $("adminKeyWorkspaceId").value.trim();
+    if (!tenantId || !workspaceId) throw new Error("tenant and workspace ids are required");
+    const data = await adminApi("/admin/keys", {
+      method: "POST",
+      body: JSON.stringify({ tenant_id: tenantId, workspace_id: workspaceId }),
+    });
+    show("adminOut", data);
+  } catch (err) {
+    show("adminOut", err.message, true);
+  }
+});
+
+$("adminRevokeKeyBtn").addEventListener("click", async () => {
+  try {
+    const id = $("adminRevokeKeyId").value.trim();
+    if (!id) throw new Error("key id is required");
+    const data = await adminApi(`/admin/keys/${encodeURIComponent(id)}/revoke`, {
+      method: "POST",
+    });
+    show("adminOut", data);
+  } catch (err) {
+    show("adminOut", err.message, true);
+  }
+});

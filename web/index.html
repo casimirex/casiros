@@ -59,6 +59,53 @@
       </div>
       <pre id="snapshotOut" class="output"></pre>
     </section>
+
+    <section class="card">
+      <h2>Jobs</h2>
+      <textarea id="jobJson" rows="12" spellcheck="false"></textarea>
+      <div class="row">
+        <input id="jobId" type="text" placeholder="job-id (for get/cancel)" />
+        <button id="createJobBtn">Create</button>
+        <button id="getJobBtn">Get</button>
+        <button id="cancelJobBtn">Cancel</button>
+      </div>
+      <pre id="jobOut" class="output"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Audit</h2>
+      <div class="row">
+        <input id="auditLimit" type="number" value="10" min="1" max="1000" placeholder="limit" />
+        <input id="auditOffset" type="number" value="0" min="0" placeholder="offset" />
+        <button id="auditBtn">List audit events</button>
+      </div>
+      <pre id="auditOut" class="output"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Admin</h2>
+      <div class="row">
+        <input id="adminKey" type="password" placeholder="CASIROS_ADMIN_KEY" />
+      </div>
+      <div class="row">
+        <button id="adminListTenantsBtn">List tenants</button>
+        <button id="adminProvisionTenantBtn">Provision tenant</button>
+      </div>
+      <div class="row">
+        <input id="adminTenantId" type="text" placeholder="tenant-id" />
+        <button id="adminTenantStatsBtn">Tenant stats</button>
+      </div>
+      <div class="row">
+        <input id="adminKeyTenantId" type="text" placeholder="tenant-id" />
+        <input id="adminKeyWorkspaceId" type="text" placeholder="workspace-id" />
+        <button id="adminCreateKeyBtn">Create key</button>
+      </div>
+      <div class="row">
+        <input id="adminRevokeKeyId" type="text" placeholder="key-id" />
+        <button id="adminRevokeKeyBtn">Revoke key</button>
+      </div>
+      <pre id="adminOut" class="output"></pre>
+    </section>
   </main>
 
   <footer>
