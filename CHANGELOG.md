@@ -5,6 +5,35 @@ All notable changes to the CASIROS project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-05
+
+### Added
+
+- **OpenTelemetry export** (Phase 8):
+  - HTTP/protobuf transport via reqwest (avoids tower 0.4.x conflict).
+  - Feature-gated behind `otel` feature flag.
+  - Configured via `CASIROS_OTLP_ENDPOINT` environment variable.
+
+- **Formula catalog expansion**:
+  - `beta` — systematic risk measure.
+  - `sortino_ratio` — downside risk-adjusted return.
+  - `calmar_ratio` — return / maximum drawdown.
+  - `altman_z_score` — bankruptcy prediction.
+  - `tax_shield` — present value of debt tax shield.
+  - `adjusted_present_value` — APV valuation.
+
+- **Documentation site**:
+  - MkDocs site with Material theme (dark/light mode).
+  - Home, Getting Started, API Reference, Deployment, Architecture,
+    and Development pages.
+  - GitHub Actions workflow for GitHub Pages deployment.
+  - OpenAPI spec exported at build time.
+
+- **API versioning**:
+  - All routes available under `/v1/` prefix.
+  - Root-level routes preserved for backward compatibility.
+  - Version configurable via `CASIROS_API_VERSION` env var.
+
 ## [0.5.0] - 2026-08-05
 
 ### Added
