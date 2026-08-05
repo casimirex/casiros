@@ -21,7 +21,7 @@ use crate::snapshot_handlers;
 #[openapi(
     info(
         title = "CASIROS API",
-        version = "0.6.0",
+        version = "0.7.0",
         description = "NASA/JPL-grade Financial Physics Engine & Multiverse Simulator"
     ),
     paths(

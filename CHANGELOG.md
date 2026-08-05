@@ -5,6 +5,26 @@ All notable changes to the CASIROS project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-05
+
+### Added
+
+- **6 formulas wired through DAG and API** (Phase 9):
+  - Beta, Sortino ratio, Calmar ratio, Altman Z-score, tax shield,
+    and adjusted present value are now available via the REST API
+    and CLI, not just the core library.
+
+- **FormulaCache wired into evaluator**:
+  - `CausalityEngine::evaluate()` now checks the formula result cache
+    before computing each node, avoiding recomputation for identical
+    inputs.
+  - `EngineBuilder::with_cache()` lets API handlers pass a shared cache.
+  - Synchronous `get_sync`/`put_sync` methods on `FormulaCache` trait
+    for use in synchronous evaluation contexts.
+
+- **Benchmark updates**:
+  - New `dag_evaluate_cached` benchmark measuring cache hit throughput.
+
 ## [0.6.0] - 2026-08-05
 
 ### Added
