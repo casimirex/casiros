@@ -99,6 +99,9 @@ sqlx = { version = "0.8", features = [
     "time",
 ] }
 
+# Metrics
+prometheus = { version = "0.13", features = ["process"] }
+
 # Identifiers and timestamps
 uuid = { version = "1", features = ["v4", "serde"] }
 time = { version = "0.3", features = ["serde", "formatting", "parsing"] }

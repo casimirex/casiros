@@ -30,6 +30,8 @@ use casiros_api::handlers;
 use casiros_api::job_handlers;
 use casiros_api::job_store::InMemoryJobStore;
 use casiros_api::job_ws_handlers;
+use casiros_api::metrics;
+use casiros_api::metrics_middleware;
 use casiros_api::openapi;
 use casiros_api::repositories::{
     InMemorySnapshotRepository, PostgresSnapshotRepository, SnapshotRepo,
@@ -62,6 +64,7 @@ async fn main() -> std::io::Result<()> {
     let bind_addr = app_config.bind_addr.clone();
 
     info!("CASIROS API starting on {}", bind_addr);
+    metrics::init_metrics();
 
     let auth_config = Arc::new(AuthConfig::from_env());
     let tenant_resolver: Arc<dyn TenantResolver> = build_tenant_resolver();
@@ -86,6 +89,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::from(Arc::clone(&snapshot_repo)))
             .app_data(web::Data::from(Arc::clone(&audit_sink)))
             .app_data(web::Data::from(Arc::clone(&job_store)))
+            .wrap(middleware::from_fn(metrics_middleware::metrics_middleware))
             .wrap(Cors::permissive())
             .wrap(TracingMiddleware::new())
             // Wrappers run outermost-last, so this audit layer executes inside
@@ -103,6 +107,7 @@ async fn main() -> std::io::Result<()> {
             .service(openapi::swagger_ui())
             .service(Files::new("/dashboard", "web").index_file("index.html"))
             .route("/healthz", web::get().to(handlers::healthz))
+            .route("/metrics", web::get().to(handlers::metrics))
             .route("/evaluate", web::post().to(handlers::evaluate))
             .route("/simulate", web::post().to(handlers::simulate))
             .route(

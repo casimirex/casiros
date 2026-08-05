@@ -24,6 +24,21 @@ pub async fn healthz() -> impl Responder {
     return HttpResponse::Ok().json(HealthzResponse::ok());
 }
 
+/// Prometheus metrics endpoint.
+///
+/// Returns all registered metrics in Prometheus text format. This endpoint is
+/// public (no authentication required) so that monitoring systems can scrape it
+/// without an API key.
+#[instrument(name = "metrics")]
+pub async fn metrics() -> impl Responder {
+    match crate::metrics::render() {
+        Ok(body) => HttpResponse::Ok()
+            .content_type("text/plain; charset=utf-8")
+            .body(body),
+        Err(err) => HttpResponse::InternalServerError().body(err),
+    }
+}
+
 /// Evaluates a causality graph with fixed inputs.
 #[utoipa::path(
     post,

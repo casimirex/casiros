@@ -23,8 +23,9 @@ use tracing::{info, warn};
 use crate::tenant::{InMemoryTenantResolver, TenantResolver};
 
 /// Paths that are always accessible without authentication.
-const PUBLIC_PATHS: [&str; 5] = [
+const PUBLIC_PATHS: [&str; 6] = [
     "/healthz",
+    "/metrics",
     "/openapi.json",
     "/swagger-ui",
     "/swagger-ui/",
