@@ -230,3 +230,94 @@ pub fn internal_growth_rate(
     }
     return Ok(numerator / denominator);
 }
+
+/// Calculates the present value of the tax shield from debt financing.
+///
+/// The tax shield is the reduction in taxable income from interest payments
+/// on debt. Its present value is the corporate tax rate times the debt amount.
+///
+/// # Mathematical Definition
+///
+/// \[ PV(\text{Tax Shield}) = T_c \times D \]
+///
+/// where \(T_c\) is the corporate tax rate and \(D\) is the debt amount.
+///
+/// # Constraints
+///
+/// - `tax_rate` MUST be in the range [0, 1].
+/// - `debt` MUST be non-negative.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::RangeViolation`] if `tax_rate` is outside [0, 1].
+/// Returns [`CalculationError::NegativeValueInvalid`] if `debt` is negative.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::corporate::tax_shield;
+/// use rust_decimal_macros::dec;
+///
+/// let shield = tax_shield(dec!(0.21), dec!(1_000_000)).unwrap();
+/// assert_eq!(shield, dec!(210_000));
+/// ```
+pub fn tax_shield(tax_rate: Decimal, debt: Decimal) -> Result<Decimal, CalculationError> {
+    if tax_rate < Decimal::ZERO || tax_rate > Decimal::ONE {
+        return Err(CalculationError::RangeViolation {
+            context: "tax_shield - tax_rate",
+            value: tax_rate,
+        });
+    }
+    if debt < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "tax_shield - debt",
+            value: debt,
+        });
+    }
+    return Ok(tax_rate * debt);
+}
+
+/// Calculates the adjusted present value (APV) of a project or firm.
+///
+/// APV separates the value of the unlevered project from the financing
+/// side effects (primarily the tax shield on debt).
+///
+/// # Mathematical Definition
+///
+/// \[ APV = NPV_{\text{unlevered}} + PV(\text{Tax Shield}) \]
+///
+/// # Constraints
+///
+/// All inputs MUST be non-negative.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::NegativeValueInvalid`] if any input is negative.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::corporate::adjusted_present_value;
+/// use rust_decimal_macros::dec;
+///
+/// let apv = adjusted_present_value(dec!(500_000), dec!(210_000)).unwrap();
+/// assert_eq!(apv, dec!(710_000));
+/// ```
+pub fn adjusted_present_value(
+    unlevered_npv: Decimal,
+    pv_tax_shield: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if unlevered_npv < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "adjusted_present_value - unlevered_npv",
+            value: unlevered_npv,
+        });
+    }
+    if pv_tax_shield < Decimal::ZERO {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "adjusted_present_value - pv_tax_shield",
+            value: pv_tax_shield,
+        });
+    }
+    return Ok(unlevered_npv + pv_tax_shield);
+}

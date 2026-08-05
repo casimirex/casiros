@@ -408,3 +408,66 @@ pub fn cash_conversion_cycle(
 ) -> Result<Decimal, CalculationError> {
     return Ok(days_inventory_outstanding + days_sales_outstanding - days_payables_outstanding);
 }
+
+/// Calculates the Altman Z-score for bankruptcy prediction.
+///
+/// The Z-score combines five financial ratios to predict the probability
+/// of bankruptcy within two years. A score above 3.0 indicates safety,
+/// between 1.8 and 3.0 is a grey zone, and below 1.8 indicates distress.
+///
+/// # Mathematical Definition
+///
+/// \[ Z = 1.2A + 1.4B + 3.3C + 0.6D + 1.0E \]
+///
+/// where:
+/// - A = working capital / total assets
+/// - B = retained earnings / total assets
+/// - C = EBIT / total assets
+/// - D = market value of equity / book value of liabilities
+/// - E = sales / total assets
+///
+/// # Constraints
+///
+/// All inputs MUST be non-negative.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::NegativeValueInvalid`] if any input is negative.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::financial::altman_z_score;
+/// use rust_decimal_macros::dec;
+///
+/// let z = altman_z_score(
+///     dec!(0.30), dec!(0.20), dec!(0.25), dec!(2.0), dec!(1.5)
+/// ).unwrap();
+/// assert!(z > dec!(3.0));
+/// ```
+pub fn altman_z_score(
+    working_capital_to_assets: Decimal,
+    retained_earnings_to_assets: Decimal,
+    ebit_to_assets: Decimal,
+    equity_to_liabilities: Decimal,
+    sales_to_assets: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if working_capital_to_assets < Decimal::ZERO
+        || retained_earnings_to_assets < Decimal::ZERO
+        || ebit_to_assets < Decimal::ZERO
+        || equity_to_liabilities < Decimal::ZERO
+        || sales_to_assets < Decimal::ZERO
+    {
+        return Err(CalculationError::NegativeValueInvalid {
+            context: "altman_z_score",
+            value: Decimal::ZERO,
+        });
+    }
+    return Ok(
+        dec!(1.2) * working_capital_to_assets
+            + dec!(1.4) * retained_earnings_to_assets
+            + dec!(3.3) * ebit_to_assets
+            + dec!(0.6) * equity_to_liabilities
+            + sales_to_assets,
+    );
+}
