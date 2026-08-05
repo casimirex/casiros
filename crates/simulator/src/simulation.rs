@@ -20,7 +20,7 @@ use crate::error::SimulationError;
 
 /// Statistics aggregated across all simulated universes for a single target
 /// node.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SimulationResult {
     /// Number of universes that contributed to the statistics.
     pub count: usize,

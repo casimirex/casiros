@@ -1,8 +1,9 @@
 //! CASIROS background worker.
 //!
 //! This binary connects to `PostgreSQL`, claims queued simulation jobs, executes
-//! them, and writes results back. Multiple workers can run concurrently; each
-//! uses `FOR UPDATE SKIP LOCKED` to avoid double-claiming.
+//! them in batches with progress checkpointing, and writes results back. Multiple
+//! workers can run concurrently; each uses `FOR UPDATE SKIP LOCKED` to avoid
+//! double-claiming.
 //!
 //! ## Usage
 //!
@@ -20,12 +21,18 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use casiros_api::engine_builder::{EngineBuilder, distribution_from_request};
 use casiros_api::job_store::PostgresJobStore;
+use casiros_core::job::{JobProgress, JobStatus};
 use casiros_dag::job::JobStore;
-use tracing::{error, info, instrument};
+use casiros_simulator::simulation::MonteCarloConfig;
+use tracing::{error, info, instrument, warn};
 
 /// How long the worker waits between claim attempts when the queue is empty.
 const POLL_INTERVAL: Duration = Duration::from_secs(5);
+
+/// Number of universes to simulate in a single batch before checkpointing.
+const BATCH_SIZE: usize = 100;
 
 /// Application entry point.
 #[instrument(name = "worker_main")]
@@ -68,11 +75,11 @@ async fn main() {
     }
 }
 
-/// Executes one simulation job: builds the engine, runs universes, and records
-/// the result.
+/// Executes one simulation job in batches with progress checkpointing.
 ///
-/// The cognitive-complexity score comes from the `map_err` closures that turn
-/// each fallible step into a `String` error; the control flow is strictly linear.
+/// The control flow is strictly linear; the cognitive-complexity score comes
+/// from the `map_err` closures that turn each fallible step into a `String`
+/// error.
 #[allow(clippy::cognitive_complexity)]
 async fn execute_job(
     store: &Arc<PostgresJobStore>,
@@ -81,20 +88,101 @@ async fn execute_job(
     info!(job_id = %job.id, "Executing job");
 
     // Parse the simulation request from the job payload.
-    let nodes: Vec<casiros_api::models::NodeRequest> = serde_json::from_value(job.request.clone())
-        .map_err(|err| format!("failed to parse job request: {err}"))?;
+    let request: casiros_api::models::CreateJobRequest =
+        serde_json::from_value(job.request.clone())
+            .map_err(|err| format!("failed to parse job request: {err}"))?;
 
-    let mut builder = casiros_api::engine_builder::EngineBuilder::new();
+    // Build the engine from the request.
+    let mut builder = EngineBuilder::new();
     builder
-        .add_nodes(&nodes)
+        .add_nodes(&request.nodes)
         .map_err(|err| format!("failed to build engine: {err}"))?;
+    builder
+        .add_edges(&request.edges)
+        .map_err(|err| format!("failed to add edges: {err}"))?;
 
-    // For now, run the simulation synchronously and mark complete.
-    // A production worker would batch universes and checkpoint progress.
-    let result = serde_json::json!({"status": "completed"});
+    let Some(target_id) = builder.node_id(&request.target) else {
+        store
+            .fail(
+                &job.id,
+                format!("target node '{}' not found", request.target),
+            )
+            .await
+            .ok();
+        return Err(format!("target node '{}' not found", request.target));
+    };
+
+    // Build the Monte Carlo config.
+    let mut config = MonteCarloConfig::new(request.universe_count, request.seed.unwrap_or(42))
+        .map_err(|err| format!("failed to create config: {err}"))?;
+
+    for binding in &request.bindings {
+        let Some(node_id) = builder.node_id(&binding.node) else {
+            store
+                .fail(
+                    &job.id,
+                    format!("binding node '{}' not found", binding.node),
+                )
+                .await
+                .ok();
+            return Err(format!("binding node '{}' not found", binding.node));
+        };
+        config.bind(node_id, distribution_from_request(&binding.distribution));
+    }
+
+    let engine = builder.build();
+    let total = request.universe_count;
+    let mut completed = 0;
+    let mut all_values: Vec<rust_decimal::Decimal> = Vec::with_capacity(total);
+
+    while completed < total {
+        // Check for cancellation before each batch.
+        if let Ok(current) = store.get(&job.tenant_id, &job.workspace_id, &job.id).await {
+            if current.status == JobStatus::Cancelled {
+                info!(job_id = %job.id, "Job was cancelled");
+                return Ok(());
+            }
+        }
+
+        let batch = BATCH_SIZE.min(total - completed);
+        match config.run_batch(&engine, target_id, completed, batch) {
+            Ok(values) => {
+                all_values.extend(values);
+                completed += batch;
+
+                let progress = JobProgress {
+                    universes_total: total,
+                    universes_completed: completed,
+                    last_checkpoint_at: Some(time::OffsetDateTime::now_utc()),
+                };
+                store
+                    .update_progress(&job.id, &progress)
+                    .await
+                    .map_err(|err| format!("failed to update progress: {err}"))?;
+
+                info!(
+                    job_id = %job.id,
+                    completed,
+                    total,
+                    "Batch completed"
+                );
+            }
+            Err(err) => {
+                warn!(job_id = %job.id, error = %err, "Batch failed");
+                store.fail(&job.id, err.to_string()).await.ok();
+                return Err(format!("simulation failed: {err}"));
+            }
+        }
+    }
+
+    // Aggregate and complete.
+    let result = MonteCarloConfig::aggregate(all_values)
+        .map_err(|err| format!("failed to aggregate results: {err}"))?;
+    let result_json =
+        serde_json::to_value(result).map_err(|err| format!("failed to serialize result: {err}"))?;
 
     store
-        .complete(&job.id, result)
+        .complete(&job.id, result_json)
         .await
         .map_err(|err| format!("failed to complete job: {err}"))?;
 

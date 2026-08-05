@@ -723,6 +723,9 @@ pub struct CreateJobRequest {
     /// Directed edges between nodes.
     pub edges: Vec<EdgeRequest>,
 
+    /// Input nodes to perturb, each with a distribution.
+    pub bindings: Vec<BindingRequest>,
+
     /// Name of the node whose output should be aggregated.
     pub target: String,
 
