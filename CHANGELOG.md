@@ -5,6 +5,42 @@ All notable changes to the CASIROS project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-05
+
+### Added
+
+- **Prometheus metrics** (Phase 6):
+  - `GET /metrics` endpoint returning Prometheus text format (public, no auth).
+  - Request count and duration histograms by method, path, and status.
+  - Rate-limit denial counter by tenant.
+  - Job state transition counter by status.
+  - Audit write failure counter.
+
+- **Per-key rate limit tiers**:
+  - `CASIROS_API_KEY_TENANTS` now supports an optional 4th field for per-key
+    RPM: `key:tenant:workspace:rpm`.
+  - Falls back to the global `CASIROS_RATE_LIMIT_RPM` when no per-key limit
+    is configured.
+
+- **Redis-backed FormulaCache**:
+  - `RedisFormulaCache` implements the `FormulaCache` trait using Redis
+    SETEX/GET with configurable TTL.
+  - Feature-gated behind the `redis` feature flag.
+
+- **Stateful simulation runner**:
+  - Worker now processes universes in batches of 100 with progress
+    checkpointing after each batch.
+  - Checks for cancellation before each batch for graceful stop.
+  - Results are aggregated via `MonteCarloConfig::aggregate`.
+
+- **Admin API**:
+  - `GET /admin/tenants` — list tenants.
+  - `POST /admin/tenants` — provision a new tenant.
+  - `GET /admin/tenants/{id}/stats` — usage statistics.
+  - `POST /admin/keys` — generate a new API key.
+  - `POST /admin/keys/{id}/revoke` — revoke an API key.
+  - All admin endpoints protected by `CASIROS_ADMIN_KEY`.
+
 ## [0.3.0] - 2026-08-05
 
 ### Added

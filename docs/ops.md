@@ -252,3 +252,71 @@ Future phases will add OpenTelemetry export.
 
 - 401: `Authorization: Bearer <key>` header is missing or invalid.
 - 429: The configured rate limit was exceeded; see `CASIROS_RATE_LIMIT_RPM`.
+  Per-key rate limits can be set via the 4th field in `CASIROS_API_KEY_TENANTS`.
+
+## Metrics
+
+CASIROS exposes a Prometheus-compatible `/metrics` endpoint at `GET /metrics`.
+This endpoint is public and does not require authentication.
+
+### Available Metrics
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `casiros_http_requests_total` | Counter | method, path, status | Total HTTP requests |
+| `casiros_http_request_duration_seconds` | Histogram | method, path | Request duration |
+| `casiros_rate_limit_denials_total` | Counter | tenant | Rate-limit denials |
+| `casiros_jobs_total` | Counter | status | Job state transitions |
+| `casiros_audit_write_failures_total` | Counter | — | Audit write failures |
+
+### Prometheus Scrape Configuration
+
+```yaml
+scrape_configs:
+  - job_name: 'casiros'
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['localhost:8080']
+```
+
+## Admin API
+
+The admin API provides runtime management of tenants and API keys. All admin
+endpoints require the `X-Admin-Key` header set to the value of
+`CASIROS_ADMIN_KEY`.
+
+### Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/admin/tenants` | List all tenants |
+| `POST` | `/admin/tenants` | Provision a new tenant |
+| `GET` | `/admin/tenants/{id}/stats` | Usage statistics for a tenant |
+| `POST` | `/admin/keys` | Generate a new API key |
+| `POST` | `/admin/keys/{id}/revoke` | Revoke an API key |
+
+### Example
+
+```bash
+export CASIROS_ADMIN_KEY="admin-secret-123"
+
+# List tenants
+curl -H "X-Admin-Key: admin-secret-123" http://localhost:8080/admin/tenants
+
+# Create a new API key
+curl -X POST -H "X-Admin-Key: admin-secret-123" \
+  -H "Content-Type: application/json" \
+  -d '{"tenant_id":"tenant_acme","workspace_id":"workspace_prod"}' \
+  http://localhost:8080/admin/keys
+```
+
+## Redis Cache
+
+When the `redis` feature is enabled, the DAG formula cache can use Redis
+instead of in-memory storage. Configure via environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `CASIROS_REDIS__URL` | `redis://127.0.0.1:6379` | Redis connection URL |
+| `CASIROS_REDIS__TTL` | `3600` | Cache entry TTL in seconds |
