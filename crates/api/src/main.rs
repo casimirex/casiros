@@ -85,6 +85,7 @@ async fn main() -> std::io::Result<()> {
         info!(otel_endpoint = %endpoint, "OpenTelemetry initialised");
     }
 
+    let api_version = std::env::var("CASIROS_API_VERSION").unwrap_or_else(|_| "v1".to_string());
     info!("CASIROS API starting on {}", bind_addr);
     metrics::init_metrics();
 
@@ -128,6 +129,65 @@ async fn main() -> std::io::Result<()> {
             }))
             .service(openapi::swagger_ui())
             .service(Files::new("/dashboard", "web").index_file("index.html"))
+            // Versioned API scope — all routes are registered under /v1/
+            // and also at the root level for backward compatibility.
+            .service(
+                web::scope(&format!("/{api_version}"))
+                    .route("/healthz", web::get().to(handlers::healthz))
+                    .route("/metrics", web::get().to(handlers::metrics))
+                    .route("/evaluate", web::post().to(handlers::evaluate))
+                    .route("/simulate", web::post().to(handlers::simulate))
+                    .route(
+                        "/simulate/stream",
+                        web::post().to(streaming_handlers::simulate_stream),
+                    )
+                    .route(
+                        "/ws/simulate",
+                        web::get().to(websocket_handlers::simulate_ws),
+                    )
+                    .route(
+                        "/snapshots",
+                        web::post().to(snapshot_handlers::save_snapshot),
+                    )
+                    .route(
+                        "/snapshots",
+                        web::get().to(snapshot_handlers::list_snapshots),
+                    )
+                    .route(
+                        "/snapshots/{id}",
+                        web::get().to(snapshot_handlers::load_snapshot),
+                    )
+                    .route(
+                        "/snapshots/{id}",
+                        web::delete().to(snapshot_handlers::delete_snapshot),
+                    )
+                    .route("/audit", web::get().to(audit_handlers::list_audit_events))
+                    .route("/simulate/jobs", web::post().to(job_handlers::create_job))
+                    .route("/simulate/jobs/{id}", web::get().to(job_handlers::get_job))
+                    .route(
+                        "/simulate/jobs/{id}/cancel",
+                        web::post().to(job_handlers::cancel_job),
+                    )
+                    .route("/ws/jobs/{id}", web::get().to(job_ws_handlers::job_ws))
+                    .route(
+                        "/admin/tenants",
+                        web::get().to(admin_handlers::list_tenants),
+                    )
+                    .route(
+                        "/admin/tenants",
+                        web::post().to(admin_handlers::provision_tenant),
+                    )
+                    .route(
+                        "/admin/tenants/{id}/stats",
+                        web::get().to(admin_handlers::tenant_stats),
+                    )
+                    .route("/admin/keys", web::post().to(admin_handlers::create_key))
+                    .route(
+                        "/admin/keys/{id}/revoke",
+                        web::post().to(admin_handlers::revoke_key),
+                    ),
+            )
+            // Root-level routes for backward compatibility.
             .route("/healthz", web::get().to(handlers::healthz))
             .route("/metrics", web::get().to(handlers::metrics))
             .route("/evaluate", web::post().to(handlers::evaluate))
@@ -164,7 +224,6 @@ async fn main() -> std::io::Result<()> {
                 web::post().to(job_handlers::cancel_job),
             )
             .route("/ws/jobs/{id}", web::get().to(job_ws_handlers::job_ws))
-            // Admin endpoints (protected by CASIROS_ADMIN_KEY).
             .route(
                 "/admin/tenants",
                 web::get().to(admin_handlers::list_tenants),

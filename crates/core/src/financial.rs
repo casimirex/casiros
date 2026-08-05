@@ -463,11 +463,9 @@ pub fn altman_z_score(
             value: Decimal::ZERO,
         });
     }
-    return Ok(
-        dec!(1.2) * working_capital_to_assets
-            + dec!(1.4) * retained_earnings_to_assets
-            + dec!(3.3) * ebit_to_assets
-            + dec!(0.6) * equity_to_liabilities
-            + sales_to_assets,
-    );
+    return Ok(dec!(1.2) * working_capital_to_assets
+        + dec!(1.4) * retained_earnings_to_assets
+        + dec!(3.3) * ebit_to_assets
+        + dec!(0.6) * equity_to_liabilities
+        + sales_to_assets);
 }

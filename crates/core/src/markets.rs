@@ -371,10 +371,7 @@ pub fn sortino_ratio(
 /// let ratio = calmar_ratio(dec!(0.15), dec!(0.20)).unwrap();
 /// assert!(ratio < dec!(1));
 /// ```
-pub fn calmar_ratio(
-    cagr: Decimal,
-    max_drawdown: Decimal,
-) -> Result<Decimal, CalculationError> {
+pub fn calmar_ratio(cagr: Decimal, max_drawdown: Decimal) -> Result<Decimal, CalculationError> {
     if max_drawdown <= Decimal::ZERO {
         return Err(CalculationError::InvalidInput {
             message: "max drawdown must be positive".to_string(),
