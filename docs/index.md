@@ -32,6 +32,12 @@ The [Operator's Handbook](handbook.html) is a complete 19-chapter manual taking
 you from your first health check through multi-tenant production deployment.
 Every command and response in it was captured from a running instance.
 
+## Formula Reference
+
+The [Formula Reference](formulas.html) explains all 45 formulas in plain
+language, each with its mathematics, a worked example, and a screenshot of that
+request running in the dashboard.
+
 ## Quick Start
 
 ```bash

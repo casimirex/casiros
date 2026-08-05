@@ -307,7 +307,7 @@
       running instance.
     </p>
     <dl class="specsheet">
-      <div class="spec"><dt>Formulas</dt><dd>51 wired</dd></div>
+      <div class="spec"><dt>Formulas</dt><dd>45 wired</dd></div>
       <div class="spec"><dt>Crates</dt><dd>9</dd></div>
       <div class="spec"><dt>Test suites</dt><dd>35 passing</dd></div>
       <div class="spec"><dt>Unsafe code</dt><dd>0 lines</dd></div>
@@ -1665,7 +1665,7 @@ INFO Batch completed job_id=f363b830… completed=1000 total=1000</span>
       </div>
 
       <p>
-        Fifty-one formulas are callable through the API. Each is named by its
+        Forty-five formulas are callable through the API. Each is named by its
         <code>formula</code> field; every port accepts either a constant or
         <code>{"node": "name"}</code>.
       </p>
@@ -1777,8 +1777,18 @@ INFO Batch completed job_id=f363b830… completed=1000 total=1000</span>
         <span class="note-label">Series-valued ports</span>
         <p>
           <code>cash_flows</code>, <code>prices</code>, <code>asset_returns</code>, and
-          <code>market_returns</code> take a series encoded as a comma-separated string
-          rather than a JSON array.
+          <code>market_returns</code> take a JSON array:
+          <code>"prices": [10, 12, 14, 16, 18]</code>. Any other port accepts a single
+          number or <code>{"node": "name"}</code>.
+        </p>
+      </div>
+
+      <div class="note ok">
+        <span class="note-label">Full reference</span>
+        <p>
+          The <a href="formulas.html">Formula Reference</a> covers all 45 in detail —
+          each with a plain-English explanation, its mathematics, a worked example, and
+          a screenshot of that request running in the dashboard.
         </p>
       </div>
     </section>
