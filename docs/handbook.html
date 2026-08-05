@@ -268,6 +268,10 @@
     border-radius: 5px; padding: 20px; overflow-x: auto;
   }
   .diagram svg { display: block; min-width: 520px; width: 100%; height: auto; }
+  .shot {
+    display: block; width: 100%; height: auto; border-radius: 5px;
+    border: 1px solid var(--rule); box-shadow: var(--shadow); background: var(--panel);
+  }
 
   /* ---------- Steps ---------- */
   .steps { counter-reset: s; list-style: none; padding: 0; max-width: 68ch; }
@@ -573,47 +577,13 @@ INFO casiros_api: Using Postgres snapshot, audit, and job backends</span></pre><
       </p>
 
       <figure>
-        <div class="diagram">
-          <svg viewBox="0 0 560 330" role="img" aria-label="Layout map of the dashboard showing seven stacked panels: Connection, Evaluate, Simulate, Snapshots, Jobs, Audit, and Admin.">
-            <g font-family="ui-monospace, monospace" font-size="11">
-              <rect x="10" y="8" width="540" height="30" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
-              <text x="24" y="27" fill="currentColor" font-weight="700">CASIROS Dashboard</text>
-
-              <rect x="10" y="46" width="540" height="38" rx="3" fill="none" stroke="currentColor" stroke-opacity=".45"/>
-              <text x="24" y="63" fill="currentColor" font-weight="700">Connection</text>
-              <text x="24" y="77" fill="currentColor" opacity=".62">base URL &middot; API key &middot; [Check health]</text>
-
-              <rect x="10" y="92" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
-              <text x="24" y="109" fill="currentColor" font-weight="700">Evaluate</text>
-              <text x="24" y="124" fill="currentColor" opacity=".62">JSON editor + bar chart</text>
-
-              <rect x="284" y="92" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
-              <text x="298" y="109" fill="currentColor" font-weight="700">Simulate</text>
-              <text x="298" y="124" fill="currentColor" opacity=".62">JSON editor + stats chart</text>
-
-              <rect x="10" y="152" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
-              <text x="24" y="169" fill="currentColor" font-weight="700">Snapshots</text>
-              <text x="24" y="184" fill="currentColor" opacity=".62">Save / Load / Delete / List</text>
-
-              <rect x="284" y="152" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
-              <text x="298" y="169" fill="currentColor" font-weight="700">Jobs</text>
-              <text x="298" y="184" fill="currentColor" opacity=".62">Create / Get / Cancel</text>
-
-              <rect x="10" y="212" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
-              <text x="24" y="229" fill="currentColor" font-weight="700">Audit</text>
-              <text x="24" y="244" fill="currentColor" opacity=".62">limit / offset &middot; [List events]</text>
-
-              <rect x="284" y="212" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
-              <text x="298" y="229" fill="currentColor" font-weight="700">Admin</text>
-              <text x="298" y="244" fill="currentColor" opacity=".62">tenants &middot; keys &middot; stats</text>
-
-              <rect x="10" y="272" width="540" height="46" rx="3" fill="none" stroke="currentColor" stroke-opacity=".2" stroke-dasharray="3 3"/>
-              <text x="24" y="291" fill="currentColor" opacity=".55">Output area — JSON response, green on success, red on error</text>
-              <text x="24" y="307" fill="currentColor" opacity=".45">Footer: OpenAPI JSON &middot; Swagger UI</text>
-            </g>
-          </svg>
-        </div>
-        <figcaption>Figure 4.1 — Dashboard panel layout map</figcaption>
+        <img class="shot" src="img/dashboard-overview.png" width="1000" height="1133"
+             alt="The CASIROS dashboard in a browser: a dark page with stacked cards
+                  titled Connection, Evaluate, and Simulate. The Connection card holds
+                  an API base URL field reading http://localhost:8080, an API key field,
+                  and a Check health button. Each card below has a JSON editor and a
+                  run button.">
+        <figcaption>Figure 4.1 — The dashboard on first load</figcaption>
       </figure>
 
       <ol class="steps">
@@ -635,13 +605,38 @@ INFO casiros_api: Using Postgres snapshot, audit, and job backends</span></pre><
         </li>
       </ol>
 
-      <div class="note">
-        <span class="note-label">Also available</span>
-        <p>
-          <a href="http://localhost:8080/swagger-ui">/swagger-ui</a> renders the full
-          OpenAPI specification with try-it-now forms for every documented endpoint.
-        </p>
-      </div>
+      <figure>
+        <img class="shot" src="img/dashboard-evaluate.png" width="1000" height="1094"
+             alt="The dashboard after running an evaluation. The Connection card shows
+                  a green health response reading status ok. The Evaluate card shows the
+                  returned JSON with principal 100.0 and fv 162.88946267774140625000,
+                  and below it a bar chart with two bars labelled principal and fv.">
+        <figcaption>Figure 4.2 — After pressing Run evaluation: response and chart</figcaption>
+      </figure>
+
+      <figure>
+        <img class="shot" src="img/dashboard-simulate.png" width="852" height="722"
+             alt="The Simulate card showing a completed Monte Carlo run: count 1000,
+                  mean 52.13, median 53.48, min 0.04, max 99.98, with a bar chart of
+                  those four statistics.">
+        <figcaption>Figure 4.3 — The Simulate panel with summary statistics charted</figcaption>
+      </figure>
+
+      <h3>Swagger UI</h3>
+      <p>
+        <a href="http://localhost:8080/swagger-ui">/swagger-ui</a> renders the full
+        OpenAPI specification, grouped by handler, with try-it-now forms for every
+        documented endpoint.
+      </p>
+
+      <figure>
+        <img class="shot" src="img/swagger-ui.png" width="1000" height="859"
+             alt="Swagger UI showing the CASIROS API version 0.7.0 against OAS 3.1,
+                  with endpoints grouped under audit_handlers, handlers, job_handlers,
+                  and snapshot_handlers. Each row shows an HTTP method badge, the path,
+                  and a one-line description.">
+        <figcaption>Figure 4.4 — Swagger UI, generated from the live OpenAPI spec</figcaption>
+      </figure>
     </section>
 
     <!-- ============ 05 ============ -->
