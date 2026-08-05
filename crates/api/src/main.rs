@@ -29,6 +29,7 @@ use casiros_api::config::AppConfig;
 use casiros_api::handlers;
 use casiros_api::job_handlers;
 use casiros_api::job_store::InMemoryJobStore;
+use casiros_api::job_ws_handlers;
 use casiros_api::openapi;
 use casiros_api::repositories::{
     InMemorySnapshotRepository, PostgresSnapshotRepository, SnapshotRepo,
@@ -135,6 +136,7 @@ async fn main() -> std::io::Result<()> {
                 "/simulate/jobs/{id}/cancel",
                 web::post().to(job_handlers::cancel_job),
             )
+            .route("/ws/jobs/{id}", web::get().to(job_ws_handlers::job_ws))
     })
     .bind(bind_addr)?
     .run()
