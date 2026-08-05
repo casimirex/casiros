@@ -130,6 +130,26 @@ fn protected_paths_still_require_a_key() {
     }
 }
 
+/// The dashboard must be served regardless of the process working directory.
+///
+/// Regression test: the static-files route used a bare relative path, so it
+/// resolved against the working directory. Started from anywhere but the repo
+/// root — including the Docker image, whose WORKDIR is /app — /dashboard
+/// returned 404. The image also never copied web/ at all.
+#[test]
+fn dashboard_is_served_from_any_working_directory() {
+    let api = ApiServer::start_from_dir(std::path::Path::new("/"));
+    let resp = client()
+        .get(format!("{}/dashboard", api.base))
+        .send()
+        .expect("request completes");
+    assert!(
+        resp.status().is_success(),
+        "/dashboard should not depend on the working directory, got {}",
+        resp.status()
+    );
+}
+
 /// A path that merely looks versioned must not be treated as public.
 #[test]
 fn version_lookalike_paths_are_not_public() {

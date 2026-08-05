@@ -100,10 +100,10 @@ impl InMemoryTenantResolver {
                     continue;
                 };
                 mapping.insert(key.clone(), Principal::new(tenant, workspace, "api_key"));
-                if parts.len() == 4 {
-                    if let Ok(rpm) = parts[3].trim().parse::<u32>() {
-                        rate_limits.insert(key, rpm);
-                    }
+                if parts.len() == 4
+                    && let Ok(rpm) = parts[3].trim().parse::<u32>()
+                {
+                    rate_limits.insert(key, rpm);
                 }
             }
         }

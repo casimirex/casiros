@@ -147,8 +147,10 @@ pub fn inc_job(status: &str) {
 /// Records an audit write failure.
 pub fn inc_audit_write_failure() {
     if let Some(counter) = AUDIT_WRITE_FAILURES.get() {
+        // prometheus 0.14 made the label-values generic over AsRef<str>, so an
+        // empty slice needs an explicit element type.
         counter
-            .get_metric_with_label_values(&[])
+            .get_metric_with_label_values(&[] as &[&str])
             .map(|c| c.inc())
             .ok();
     }

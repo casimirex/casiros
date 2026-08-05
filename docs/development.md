@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Rust 1.85+ (stable)
+- Rust 1.88+ (stable)
 - PostgreSQL 16+ (for integration tests)
 - Docker (optional, for containerized development)
 

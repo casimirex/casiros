@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Build stage
 # -----------------------------------------------------------------------------
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 
 WORKDIR /usr/src/casiros
 
@@ -30,6 +30,8 @@ WORKDIR /app
 COPY --from=builder /usr/src/casiros/target/release/casiros-api /usr/local/bin/casiros-api
 COPY --from=builder /usr/src/casiros/migrations /app/migrations
 COPY --from=builder /usr/src/casiros/config/default.toml /app/config/default.toml
+# The dashboard is served from disk; without this the /dashboard route 404s.
+COPY --from=builder /usr/src/casiros/web /app/web
 
 USER casiros
 

@@ -21,7 +21,7 @@ cd casiros
 cargo run -p casiros-api
 ```
 
-Requires Rust 1.85+ and a running PostgreSQL instance.
+Requires Rust 1.88+ and a running PostgreSQL instance.
 
 ### Python SDK
 

@@ -73,6 +73,21 @@ fn binary(name: &str) -> PathBuf {
 /// There is an unavoidable race between releasing the port and the server
 /// binding it, but the window is small and the alternative — a fixed port —
 /// makes concurrent test runs collide outright.
+/// Returns the workspace root, derived from the test binary's location.
+///
+/// The binary is at `<root>/target/<profile>/deps/<name>`; popping the file
+/// name plus three directories reaches the root. Walking up until `web/` is
+/// found instead keeps this correct if the layout ever changes.
+fn repo_root() -> PathBuf {
+    let mut dir = std::env::current_exe().expect("test executable path is known");
+    while dir.pop() {
+        if dir.join("web").join("index.html").is_file() {
+            return dir;
+        }
+    }
+    panic!("could not locate the workspace root from the test binary path");
+}
+
 fn free_port() -> u16 {
     let listener = TcpListener::bind("127.0.0.1:0").expect("can bind an ephemeral port");
     return listener
@@ -118,6 +133,19 @@ impl ApiServer {
         return Self::start(&[]);
     }
 
+    /// Starts the API with its working directory set elsewhere.
+    ///
+    /// Used to prove that nothing the server serves depends on where it was
+    /// launched from.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the binary is missing or does not become healthy in time.
+    #[must_use]
+    pub fn start_from_dir(cwd: &std::path::Path) -> Self {
+        return Self::start_inner(&[], Some(cwd));
+    }
+
     /// Starts the API with extra environment variables layered on the defaults.
     ///
     /// # Panics
@@ -125,11 +153,17 @@ impl ApiServer {
     /// Panics if the binary is missing or does not become healthy in time.
     #[must_use]
     pub fn start(extra: &[(&str, String)]) -> Self {
+        return Self::start_inner(extra, None);
+    }
+
+    /// Shared spawn path for [`start`](Self::start) and
+    /// [`start_from_dir`](Self::start_from_dir).
+    fn start_inner(extra: &[(&str, String)], cwd: Option<&std::path::Path>) -> Self {
         // Retry on port collision. Concurrent tests can be handed the same
         // ephemeral port; the loser exits with AddrInUse and must try again
         // rather than attach itself to the winner's server.
         for attempt in 0..5 {
-            if let Some(server) = Self::try_start(extra) {
+            if let Some(server) = Self::try_start(extra, cwd) {
                 return server;
             }
             std::thread::sleep(Duration::from_millis(50 * (attempt + 1)));
@@ -139,7 +173,7 @@ impl ApiServer {
 
     /// One spawn attempt. Returns `None` if the process exited before becoming
     /// healthy, which in practice means the port was taken.
-    fn try_start(extra: &[(&str, String)]) -> Option<Self> {
+    fn try_start(extra: &[(&str, String)], cwd: Option<&std::path::Path>) -> Option<Self> {
         let port = free_port();
         let seq = SEQ.fetch_add(1, Ordering::SeqCst);
 
@@ -153,10 +187,17 @@ impl ApiServer {
             )
             .env("CASIROS_ADMIN_KEY", ADMIN_KEY)
             .env("CASIROS_SEQ", seq.to_string())
+            // Cargo runs test binaries from an arbitrary directory, so point
+            // the server at the repo's web/ explicitly rather than relying on
+            // the working directory.
+            .env("CASIROS_WEB_DIR", repo_root().join("web"))
             .stdout(Stdio::piped())
             .stderr(Stdio::null());
         for (k, v) in extra {
             cmd.env(k, v);
+        }
+        if let Some(dir) = cwd {
+            cmd.current_dir(dir);
         }
 
         let mut child = cmd.spawn().expect("casiros-api starts");
@@ -215,10 +256,10 @@ impl ApiServer {
             if !matches!(self.child.try_wait(), Ok(None)) {
                 return false;
             }
-            if let Ok(resp) = reqwest::blocking::get(&url) {
-                if resp.status().is_success() {
-                    return true;
-                }
+            if let Ok(resp) = reqwest::blocking::get(&url)
+                && resp.status().is_success()
+            {
+                return true;
             }
             std::thread::sleep(Duration::from_millis(100));
         }

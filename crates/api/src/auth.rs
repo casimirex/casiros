@@ -307,19 +307,19 @@ fn log_auth_state(api_keys: Option<&HashSet<String>>, rate_limit_rpm: u32) {
 
 fn extract_key(req: &actix_web::HttpRequest) -> Option<String> {
     // Prefer X-API-Key header.
-    if let Some(value) = req.headers().get("X-API-Key") {
-        if let Ok(text) = value.to_str() {
-            return Some(text.trim().to_string());
-        }
+    if let Some(value) = req.headers().get("X-API-Key")
+        && let Ok(text) = value.to_str()
+    {
+        return Some(text.trim().to_string());
     }
 
     // Fall back to Authorization: Bearer <key>.
-    if let Some(value) = req.headers().get(header::AUTHORIZATION) {
-        if let Ok(text) = value.to_str() {
-            let trimmed = text.trim();
-            if trimmed.to_lowercase().starts_with("bearer ") {
-                return Some(trimmed[7..].trim().to_string());
-            }
+    if let Some(value) = req.headers().get(header::AUTHORIZATION)
+        && let Ok(text) = value.to_str()
+    {
+        let trimmed = text.trim();
+        if trimmed.to_lowercase().starts_with("bearer ") {
+            return Some(trimmed[7..].trim().to_string());
         }
     }
 
