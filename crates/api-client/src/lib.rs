@@ -14,10 +14,11 @@
 use std::time::Duration;
 
 pub use casiros_api::models::{
-    BindingRequest, DeleteSnapshotRequest, DistributionRequest, EdgeRequest, ErrorResponse,
-    EvaluateRequest, EvaluateResponse, FormulaRequest, HealthzResponse, NodeRequest, PortRequest,
-    SaveSnapshotRequest, SaveSnapshotResponse, SimulateRequest, SimulateResponse,
-    SnapshotListResponse, SnapshotResponse, SnapshotSummaryResponse,
+    BindingRequest, CreateJobRequest, CreateJobResponse, DeleteSnapshotRequest,
+    DistributionRequest, EdgeRequest, ErrorResponse, EvaluateRequest, EvaluateResponse,
+    FormulaRequest, HealthzResponse, JobResponse, NodeRequest, PortRequest, SaveSnapshotRequest,
+    SaveSnapshotResponse, SimulateRequest, SimulateResponse, SnapshotListResponse,
+    SnapshotResponse, SnapshotSummaryResponse,
 };
 use reqwest::{Client, Url};
 
@@ -171,6 +172,49 @@ impl CasirosClient {
     /// if the server returns an error status.
     pub async fn list_snapshots(&self) -> Result<SnapshotListResponse, ClientError> {
         return self.get("snapshots").await;
+    }
+
+    /// Calls `POST /simulate/jobs`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::Http`] on transport failure or [`ClientError::Api`]
+    /// if the server returns an error status.
+    pub async fn create_job(
+        &self,
+        request: &CreateJobRequest,
+    ) -> Result<CreateJobResponse, ClientError> {
+        return self.post("simulate/jobs", request).await;
+    }
+
+    /// Calls `GET /simulate/jobs/{id}`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::Http`] on transport failure or [`ClientError::Api`]
+    /// if the server returns an error status.
+    pub async fn get_job(&self, id: &str) -> Result<JobResponse, ClientError> {
+        return self.get(&format!("simulate/jobs/{id}")).await;
+    }
+
+    /// Calls `POST /simulate/jobs/{id}/cancel`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ClientError::Http`] on transport failure or [`ClientError::Api`]
+    /// if the server returns an error status.
+    pub async fn cancel_job(&self, id: &str) -> Result<(), ClientError> {
+        let url = self.resolve(&format!("simulate/jobs/{id}/cancel"));
+        let response = self.client.post(url).send().await?;
+        let status = response.status();
+        if !status.is_success() {
+            let error = response
+                .json::<ErrorResponse>()
+                .await
+                .map_err(|err| ClientError::Decode(err.to_string()))?;
+            return Err(ClientError::Api { error: error.error });
+        }
+        return Ok(());
     }
 
     async fn get<R: serde::de::DeserializeOwned>(&self, path: &str) -> Result<R, ClientError> {

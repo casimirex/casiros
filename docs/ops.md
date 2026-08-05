@@ -33,14 +33,17 @@ CASIROS uses layered configuration (lowest to highest precedence):
 | `CASIROS_SNAPSHOT__BACKEND` | `memory` | `memory` or `postgres`. |
 | `CASIROS_POSTGRES__URL` | — | Postgres connection string when backend is `postgres`. |
 | `CASIROS_API__KEYS` | — | Comma-separated API keys for authenticated endpoints. |
+| `CASIROS_API_KEY_TENANTS` | — | Key-to-tenant mapping: `key1:tenant_1:workspace_1,key2:tenant_2:workspace_2`. When unset, all keys share the default tenant. |
+| `CASIROS_RATE_LIMIT_RPM` | `60` | Per-tenant/workspace rate limit in requests per minute. |
 
-Example for a Postgres-backed deployment:
+Example for a Postgres-backed deployment with tenant isolation:
 
 ```bash
 export CASIROS_BIND_ADDR=0.0.0.0:8080
 export CASIROS_SNAPSHOT__BACKEND=postgres
 export CASIROS_POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros
 export CASIROS_API__KEYS="prod-key-1,prod-key-2"
+export CASIROS_API_KEY_TENANTS="prod-key-1:tenant_acme:workspace_prod,prod-key-2:tenant_beta:workspace_staging"
 cargo run -p casiros-api
 ```
 
@@ -67,10 +70,77 @@ The bundled `docker-compose.yml` starts:
 - Use `GET /healthz` for both liveness and readiness probes.
 - Run SQLx migrations before starting new pods (see below).
 
+## Tenant Isolation
+
+When `CASIROS_API_KEY_TENANTS` is set, each API key maps to a specific tenant
+and workspace. All snapshots, audit events, and simulation jobs are scoped to
+the caller's tenant. Cross-tenant access is rejected at the storage layer.
+
+The default tenant/workspace (`tenant_default`/`workspace_default`) is used
+when no mapping is configured. This preserves backward compatibility for
+single-tenant deployments.
+
+## Audit Log
+
+Every authenticated request leaves an immutable audit event recording who did
+what, to which resource, and how it turned out. The trail is append-only: there
+is no update or delete operation.
+
+- `GET /audit` returns the calling tenant's events, newest first.
+- Query parameters: `limit` (clamped to 1–1000) and `offset`.
+- Audit writes are best-effort: a backend failure is logged but does not fail
+  the request. Monitor the `audit.write_failed` log target for alerts.
+
+### Audit Events Table
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | UUID | Unique event identifier |
+| `tenant_id` | TEXT | Owning tenant |
+| `workspace_id` | TEXT | Owning workspace |
+| `api_key_id` | TEXT | API key used |
+| `action` | ENUM | `evaluate`, `simulate`, `snapshot_create`, `snapshot_read`, `snapshot_delete`, `job_create`, `job_read`, `job_cancel` |
+| `resource` | TEXT | Path or resource identifier |
+| `result` | ENUM | `success`, `forbidden`, `not_found`, `error` |
+| `metadata` | JSONB | HTTP method, status code, and similar |
+
+## Async Simulation Jobs
+
+Long-running simulations can be enqueued as background jobs and queried
+asynchronously:
+
+- `POST /simulate/jobs` — enqueue a new simulation job (returns 202 with a
+  job ID).
+- `GET /simulate/jobs/{id}` — poll job status, progress, and result.
+- `POST /simulate/jobs/{id}/cancel` — cancel a queued or running job.
+- `GET /ws/jobs/{id}` — WebSocket that streams progress frames every 500ms
+  until the job completes or fails.
+
+### Job Lifecycle
+
+```
+Queued → Running → Completed
+                  → Failed
+                  → Cancelled
+```
+
+### Worker Binary
+
+The `casiros-worker` binary claims and executes queued jobs:
+
+```bash
+export CASIROS_POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros
+cargo run -p casiros-worker
+```
+
+Multiple workers can run concurrently. Each uses `FOR UPDATE SKIP LOCKED` to
+avoid double-claiming. Workers poll every 5 seconds when the queue is empty.
+
 ## Postgres Snapshots
 
 When `CASIROS_SNAPSHOT__BACKEND=postgres`, the API automatically runs pending
-SQLx migrations on startup. The migration file is at `migrations/0001_initial.sql`.
+SQLx migrations on startup. The migration files are at `migrations/0001_initial.sql`
+through `migrations/0004_simulation_jobs.sql`.
 
 ### Manual Migration
 
