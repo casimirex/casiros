@@ -87,15 +87,20 @@ function show(id, data, isError = false) {
   el.className = "output " + (isError ? "error" : "success");
 }
 
-let evaluateChart = null;
-let simulateChart = null;
+// Chart instances keyed by canvas id, so a re-run can dispose the previous
+// chart before drawing a new one on the same canvas.
+//
+// These must NOT be stashed on `window` keyed by canvas id: browsers already
+// expose elements as window properties under their id, so `window["evaluateChart"]`
+// resolves to the <canvas> element and calling .destroy() on it throws.
+const charts = {};
 
 function renderBarChart(canvasId, labels, values, title) {
   const ctx = $(canvasId).getContext("2d");
-  if (window[canvasId]) {
-    window[canvasId].destroy();
+  if (charts[canvasId]) {
+    charts[canvasId].destroy();
   }
-  window[canvasId] = new Chart(ctx, {
+  charts[canvasId] = new Chart(ctx, {
     type: "bar",
     data: {
       labels,

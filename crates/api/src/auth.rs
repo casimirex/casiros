@@ -23,13 +23,19 @@ use tracing::{info, warn};
 use crate::tenant::{InMemoryTenantResolver, TenantResolver};
 
 /// Paths that are always accessible without authentication.
-const PUBLIC_PATHS: [&str; 6] = [
+///
+/// These serve static assets and operational probes, never tenant data. The
+/// dashboard is included because a browser loading a page cannot attach an
+/// `X-API-Key` header — the user supplies their key inside the page, and the
+/// dashboard's own fetch calls then carry it to the protected endpoints.
+const PUBLIC_PATHS: [&str; 7] = [
     "/healthz",
     "/metrics",
     "/openapi.json",
     "/swagger-ui",
     "/swagger-ui/",
     "/api-docs",
+    "/dashboard",
 ];
 
 /// Runtime authentication configuration.
@@ -341,6 +347,14 @@ mod tests {
     fn unversioned_public_paths_bypass_auth() {
         assert!(is_public_path("/healthz"));
         assert!(is_public_path("/metrics"));
+    }
+
+    #[test]
+    fn dashboard_assets_bypass_auth() {
+        // A browser cannot attach an X-API-Key header when loading a page, so
+        // the dashboard and its assets must be reachable unauthenticated.
+        assert!(is_public_path("/dashboard"));
+        assert!(is_public_path("/dashboard/app.js"));
     }
 
     #[test]
