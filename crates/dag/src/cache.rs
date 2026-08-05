@@ -50,6 +50,28 @@ pub trait FormulaCache: Send + Sync {
 
     /// Stores a result for a key, replacing any previous value.
     async fn put(&self, key: CacheKey, value: EvaluationResult);
+
+    /// Synchronous version of [`get`](FormulaCache::get).
+    ///
+    /// The default implementation panics because the trait is fundamentally
+    /// async. Implementations that are inherently synchronous (e.g.,
+    /// in-memory) MUST override this method.
+    fn get_sync(&self, _key: &CacheKey) -> Option<EvaluationResult> {
+        panic!(
+            "FormulaCache::get_sync is not implemented; use the async get() method or override get_sync()"
+        );
+    }
+
+    /// Synchronous version of [`put`](FormulaCache::put).
+    ///
+    /// The default implementation panics because the trait is fundamentally
+    /// async. Implementations that are inherently synchronous (e.g.,
+    /// in-memory) MUST override this method.
+    fn put_sync(&self, _key: CacheKey, _value: EvaluationResult) {
+        panic!(
+            "FormulaCache::put_sync is not implemented; use the async put() method or override put_sync()"
+        );
+    }
 }
 
 /// In-memory formula cache backed by a `HashMap`.
@@ -93,11 +115,19 @@ impl InMemoryFormulaCache {
 #[async_trait]
 impl FormulaCache for InMemoryFormulaCache {
     async fn get(&self, key: &CacheKey) -> Option<EvaluationResult> {
+        return self.get_sync(key);
+    }
+
+    async fn put(&self, key: CacheKey, value: EvaluationResult) {
+        self.put_sync(key, value);
+    }
+
+    fn get_sync(&self, key: &CacheKey) -> Option<EvaluationResult> {
         let entries = self.entries.lock().ok()?;
         return entries.get(key).cloned();
     }
 
-    async fn put(&self, key: CacheKey, value: EvaluationResult) {
+    fn put_sync(&self, key: CacheKey, value: EvaluationResult) {
         let mut entries = self.entries.lock().expect("cache mutex poisoned");
         entries.insert(key, value);
     }

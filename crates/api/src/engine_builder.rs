@@ -5,7 +5,9 @@
 //! human-readable strings suitable for HTTP 400 responses.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use casiros_dag::cache::FormulaCache;
 use casiros_dag::graph::{CausalityEngine, FormulaKind, NodeId, Port};
 use rust_decimal::Decimal;
 
@@ -112,6 +114,13 @@ impl EngineBuilder {
                 .map_err(|err| EngineBuilderError::GraphError(err.to_string()))?;
         }
         return Ok(());
+    }
+
+    /// Attaches a formula result cache to the engine.
+    #[must_use]
+    pub fn with_cache(mut self, cache: Arc<dyn FormulaCache>) -> Self {
+        self.engine = self.engine.with_cache(cache);
+        return self;
     }
 
     /// Consumes the builder and returns the constructed engine.

@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::DagError;
 
 /// Unique identifier for a node in the causality graph.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct NodeId(pub usize);
 
@@ -576,12 +576,38 @@ impl Node {
 /// them in topological order. The engine is immutable during evaluation:
 /// graph construction requires `&mut self`, while evaluation requires only
 /// `&self`.
-#[derive(Debug, Default)]
 pub struct CausalityEngine {
     graph: DiGraph<NodeId, ()>,
     nodes: HashMap<NodeId, Node>,
     indices: HashMap<NodeId, NodeIndex>,
     next_id: usize,
+    /// Optional formula result cache for memoization.
+    cache: Option<std::sync::Arc<dyn crate::cache::FormulaCache>>,
+}
+
+impl std::fmt::Debug for CausalityEngine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("CausalityEngine")
+            .field("graph", &self.graph)
+            .field("nodes", &self.nodes)
+            .field("indices", &self.indices)
+            .field("next_id", &self.next_id)
+            .field("cache", &self.cache.as_ref().map(|_| "Some(FormulaCache)"))
+            .finish();
+    }
+}
+
+impl Default for CausalityEngine {
+    fn default() -> Self {
+        return Self {
+            graph: DiGraph::new(),
+            nodes: HashMap::new(),
+            indices: HashMap::new(),
+            next_id: 0,
+            cache: None,
+        };
+    }
 }
 
 impl CausalityEngine {
@@ -598,6 +624,17 @@ impl CausalityEngine {
     #[must_use]
     pub fn new() -> Self {
         return Self::default();
+    }
+
+    /// Attaches a formula result cache to this engine.
+    ///
+    /// When a cache is set, the evaluator checks it before computing each
+    /// formula node. Identical inputs produce a cache hit, avoiding
+    /// recomputation.
+    #[must_use]
+    pub fn with_cache(mut self, cache: std::sync::Arc<dyn crate::cache::FormulaCache>) -> Self {
+        self.cache = Some(cache);
+        return self;
     }
 
     /// Returns the number of nodes currently in the graph.
@@ -756,12 +793,53 @@ impl CausalityEngine {
             let node = self.nodes.get(&id).ok_or(DagError::NodeNotFound { id })?;
             let value: Decimal = match &node.kind {
                 NodeKind::Input => *inputs.get(&id).ok_or(DagError::MissingInput { id })?,
-                NodeKind::Formula(formula) => Self::evaluate_formula(formula, &outputs, id)?,
+                NodeKind::Formula(formula) => {
+                    // Check the formula result cache before computing.
+                    if let Some(ref cache) = self.cache {
+                        let deps = self.dependency_inputs(id, &outputs);
+                        let key = crate::cache::CacheKey {
+                            node: id,
+                            inputs: deps,
+                        };
+                        if let Some(cached) = cache.get_sync(&key) {
+                            cached.value
+                        } else {
+                            let value = Self::evaluate_formula(formula, &outputs, id)?;
+                            cache.put_sync(key, crate::cache::EvaluationResult { value });
+                            value
+                        }
+                    } else {
+                        Self::evaluate_formula(formula, &outputs, id)?
+                    }
+                }
             };
             outputs.insert(id, value);
         }
 
         return Ok(outputs);
+    }
+
+    /// Collects the dependency inputs for a node from the current outputs.
+    fn dependency_inputs(
+        &self,
+        id: NodeId,
+        outputs: &HashMap<NodeId, Decimal>,
+    ) -> Vec<(NodeId, Decimal)> {
+        let mut deps: Vec<(NodeId, Decimal)> = Vec::new();
+        if let Some(&idx) = self.indices.get(&id) {
+            let mut neighbors: Vec<NodeId> = self
+                .graph
+                .neighbors_directed(idx, petgraph::Direction::Incoming)
+                .filter_map(|n| self.graph.node_weight(n).copied())
+                .collect();
+            neighbors.sort();
+            for dep_id in neighbors {
+                if let Some(&value) = outputs.get(&dep_id) {
+                    deps.push((dep_id, value));
+                }
+            }
+        }
+        return deps;
     }
 
     /// Returns the nodes in topological evaluation order.
