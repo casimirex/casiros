@@ -9,8 +9,8 @@ services:
     environment:
       - CASIROS_BIND_ADDR=0.0.0.0:8080
       - CASIROS_LOG_LEVEL=info
-      - CASIROS_SNAPSHOT__BACKEND=memory
-      - CASIROS_POSTGRES__URL=postgresql://casiros:casiros@postgres:5432/casiros
+      - CASIROS__SNAPSHOT__BACKEND=memory
+      - CASIROS__POSTGRES__URL=postgresql://casiros:casiros@postgres:5432/casiros
     depends_on:
       postgres:
         condition: service_healthy
@@ -28,7 +28,7 @@ services:
       target: worker
     container_name: casiros-worker
     environment:
-      - CASIROS_POSTGRES__URL=postgresql://casiros:casiros@postgres:5432/casiros
+      - CASIROS__POSTGRES__URL=postgresql://casiros:casiros@postgres:5432/casiros
       - CASIROS_LOG_LEVEL=info
     depends_on:
       postgres:

@@ -14,7 +14,7 @@ use casiros_dag::job::JobStore;
 use serde::Serialize;
 use tracing::{info, instrument};
 
-use crate::job_store::InMemoryJobStore;
+use crate::job_store::JobStoreHandle;
 use crate::models::ErrorResponse;
 
 /// How often the WebSocket handler polls the job store for updates.
@@ -54,7 +54,7 @@ pub async fn job_ws(
     req: HttpRequest,
     body: web::Payload,
     id: web::Path<String>,
-    store: web::Data<InMemoryJobStore>,
+    store: web::Data<JobStoreHandle>,
 ) -> impl Responder {
     info!("WebSocket job progress connection requested for id {}", id);
 
@@ -88,7 +88,7 @@ pub async fn job_ws(
 /// terminal state.
 async fn stream_job_progress(
     mut session: actix_ws::Session,
-    store: Arc<InMemoryJobStore>,
+    store: Arc<JobStoreHandle>,
     job_id: JobId,
 ) -> Result<(), actix_ws::Closed> {
     // Use a default principal since the WebSocket handshake happens before

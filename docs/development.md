@@ -17,7 +17,7 @@ cd casiros
 docker compose up -d postgres
 
 # Run the full test suite
-CASIROS_POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros \
+CASIROS__POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros \
   cargo test --workspace --all-features
 ```
 

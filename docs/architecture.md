@@ -109,7 +109,7 @@ Client → GET /simulate/jobs/{id} → JobStore::get() → Response
 ### Redis
 
 Optional cache for memoized formula evaluations. Configured via
-`CASIROS_REDIS__URL` when the `redis` feature is enabled.
+`CASIROS__REDIS__URL` when the `redis` feature is enabled.
 
 ## Security
 

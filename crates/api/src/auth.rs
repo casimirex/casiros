@@ -239,10 +239,37 @@ fn default_principal() -> Principal {
     return Principal::new(tenant, workspace, "default");
 }
 
+/// Returns true when a path bypasses authentication.
+///
+/// Version prefixes such as `/v1` are stripped before matching, so that
+/// `/v1/healthz` and `/v1/metrics` stay reachable by monitoring systems that
+/// cannot present an API key — the same as their unversioned aliases.
 fn is_public_path(path: &str) -> bool {
+    if matches_public(path) {
+        return true;
+    }
+    return strip_version_prefix(path).is_some_and(matches_public);
+}
+
+/// Matches a path against the public path list.
+fn matches_public(path: &str) -> bool {
     return PUBLIC_PATHS
         .iter()
         .any(|public| path == *public || path.starts_with(public));
+}
+
+/// Strips a leading `/vN` version segment, returning the remainder.
+///
+/// Returns `None` when the first segment is not a version marker, so that a
+/// resource literally named `/version-history` is never treated as versioned.
+fn strip_version_prefix(path: &str) -> Option<&str> {
+    let rest = path.strip_prefix("/v")?;
+    let digits_end = rest.find('/')?;
+    let (digits, remainder) = rest.split_at(digits_end);
+    if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    return Some(remainder);
 }
 
 fn parse_api_keys_from_env() -> Option<HashSet<String>> {
@@ -309,6 +336,32 @@ pub fn build_tenant_resolver() -> Arc<dyn TenantResolver> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unversioned_public_paths_bypass_auth() {
+        assert!(is_public_path("/healthz"));
+        assert!(is_public_path("/metrics"));
+    }
+
+    #[test]
+    fn versioned_public_paths_bypass_auth() {
+        assert!(is_public_path("/v1/healthz"));
+        assert!(is_public_path("/v2/metrics"));
+    }
+
+    #[test]
+    fn versioned_protected_paths_still_require_auth() {
+        assert!(!is_public_path("/v1/evaluate"));
+        assert!(!is_public_path("/v1/admin/tenants"));
+    }
+
+    #[test]
+    fn version_lookalike_paths_are_not_stripped() {
+        // A resource literally named "/vault/..." must not be mistaken for a
+        // version prefix and silently exempted from authentication.
+        assert!(!is_public_path("/vault/healthz"));
+        assert!(!is_public_path("/version-history/metrics"));
+    }
 
     #[test]
     fn rate_limiter_allows_under_limit() {

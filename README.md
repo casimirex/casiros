@@ -272,20 +272,20 @@ powers the typed `casiros-api-client` crate.
 
 Configuration is layered from `config/default.toml` (embedded fallback), an optional
 `config/default.toml` at runtime, and environment variables prefixed with `CASIROS_`.
-Nested keys use double underscores, e.g. `CASIROS_SNAPSHOT__BACKEND` overrides `[snapshot].backend`.
+Nested keys use double underscores, e.g. `CASIROS__SNAPSHOT__BACKEND` overrides `[snapshot].backend`.
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `CASIROS_BIND_ADDR` | `127.0.0.1:8080` | HTTP server bind address |
 | `CASIROS_LOG_LEVEL` | `info` | Tracing filter (`info`, `debug`, etc.) |
 | `CASIROS_RATE_LIMIT_RPM` | `60` | Per-API-key rate limit |
-| `CASIROS_SNAPSHOT__BACKEND` | `memory` | Snapshot backend: `memory` or `postgres` |
-| `CASIROS_POSTGRES__URL` | `postgresql://casiros:casiros@localhost:5432/casiros` | PostgreSQL connection URL |
+| `CASIROS__SNAPSHOT__BACKEND` | `memory` | Snapshot backend: `memory` or `postgres` |
+| `CASIROS__POSTGRES__URL` | `postgresql://casiros:casiros@localhost:5432/casiros` | PostgreSQL connection URL |
 
 ```bash
 CASIROS_BIND_ADDR=0.0.0.0:3000 \
-CASIROS_SNAPSHOT__BACKEND=postgres \
-CASIROS_POSTGRES__URL=postgresql://user:pass@localhost:5432/casiros \
+CASIROS__SNAPSHOT__BACKEND=postgres \
+CASIROS__POSTGRES__URL=postgresql://user:pass@localhost:5432/casiros \
   cargo run -p casiros-api
 ```
 

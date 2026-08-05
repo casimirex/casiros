@@ -29,7 +29,7 @@ use casiros_api::auth::{AuthConfig, RateLimiter, auth_middleware, build_tenant_r
 use casiros_api::config::AppConfig;
 use casiros_api::handlers;
 use casiros_api::job_handlers;
-use casiros_api::job_store::InMemoryJobStore;
+use casiros_api::job_store::{InMemoryJobStore, JobStoreHandle, PostgresJobStore};
 use casiros_api::job_ws_handlers;
 use casiros_api::metrics;
 use casiros_api::metrics_middleware;
@@ -92,10 +92,10 @@ async fn main() -> std::io::Result<()> {
     let auth_config = Arc::new(AuthConfig::from_env());
     let tenant_resolver: Arc<dyn TenantResolver> = build_tenant_resolver();
     let rate_limiter = Arc::new(RateLimiter::new());
-    let job_store = Arc::new(InMemoryJobStore::new());
     let Backends {
         snapshot_repo,
         audit_sink,
+        job_store,
     } = build_backends(&app_config, tenant_resolver.as_ref())
         .await
         .map_err(std::io::Error::other)?;
@@ -254,6 +254,12 @@ struct Backends {
 
     /// Audit trail persistence.
     audit_sink: Arc<AuditSink>,
+
+    /// Simulation job persistence.
+    ///
+    /// Must be Postgres-backed for the standalone worker to see enqueued
+    /// jobs; the in-memory store is visible only to this process.
+    job_store: Arc<JobStoreHandle>,
 }
 
 /// Builds the snapshot repository and audit log from configuration.
@@ -268,10 +274,11 @@ async fn build_backends(
         return build_postgres_backends(&app_config.postgres.url, resolver).await;
     }
 
-    info!("Using in-memory snapshot and audit backends");
+    info!("Using in-memory snapshot, audit, and job backends");
     return Ok(Backends {
         snapshot_repo: Arc::new(SnapshotRepo::new(InMemorySnapshotRepository::new())),
         audit_sink: Arc::new(AuditSink::new(InMemoryAuditLog::new())),
+        job_store: Arc::new(JobStoreHandle::new(InMemoryJobStore::new())),
     });
 }
 
@@ -295,13 +302,15 @@ async fn build_postgres_backends(
         .await
         .map_err(|err| format!("failed to run migrations: {err}"))?;
 
-    let audit_log = PostgresAuditLog::new(pool);
+    let audit_log = PostgresAuditLog::new(pool.clone());
     provision_known_tenants(&audit_log, resolver).await?;
+    let job_store = PostgresJobStore::new(pool);
 
-    info!("Using Postgres snapshot and audit backends");
+    info!("Using Postgres snapshot, audit, and job backends");
     return Ok(Backends {
         snapshot_repo: Arc::new(SnapshotRepo::new(repo)),
         audit_sink: Arc::new(AuditSink::new(audit_log)),
+        job_store: Arc::new(JobStoreHandle::new(job_store)),
     });
 }
 

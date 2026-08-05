@@ -30,9 +30,9 @@ CASIROS uses layered configuration (lowest to highest precedence):
 | `CASIROS_BIND_ADDR` | `127.0.0.1:8080` | HTTP/WS bind address. Use `0.0.0.0:8080` in containers. |
 | `CASIROS_LOG_LEVEL` | `info` | Log level (`trace`, `debug`, `info`, `warn`, `error`). |
 | `CASIROS_RATE_LIMIT_RPM` | `60` | Per-key rate limit in requests per minute. |
-| `CASIROS_SNAPSHOT__BACKEND` | `memory` | `memory` or `postgres`. |
-| `CASIROS_POSTGRES__URL` | — | Postgres connection string when backend is `postgres`. |
-| `CASIROS_API__KEYS` | — | Comma-separated API keys for authenticated endpoints. |
+| `CASIROS__SNAPSHOT__BACKEND` | `memory` | `memory` or `postgres`. |
+| `CASIROS__POSTGRES__URL` | — | Postgres connection string when backend is `postgres`. |
+| `CASIROS_API_KEYS` | — | Comma-separated API keys for authenticated endpoints. |
 | `CASIROS_API_KEY_TENANTS` | — | Key-to-tenant mapping: `key1:tenant_1:workspace_1,key2:tenant_2:workspace_2`. When unset, all keys share the default tenant. |
 | `CASIROS_RATE_LIMIT_RPM` | `60` | Per-tenant/workspace rate limit in requests per minute. |
 
@@ -40,9 +40,9 @@ Example for a Postgres-backed deployment with tenant isolation:
 
 ```bash
 export CASIROS_BIND_ADDR=0.0.0.0:8080
-export CASIROS_SNAPSHOT__BACKEND=postgres
-export CASIROS_POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros
-export CASIROS_API__KEYS="prod-key-1,prod-key-2"
+export CASIROS__SNAPSHOT__BACKEND=postgres
+export CASIROS__POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros
+export CASIROS_API_KEYS="prod-key-1,prod-key-2"
 export CASIROS_API_KEY_TENANTS="prod-key-1:tenant_acme:workspace_prod,prod-key-2:tenant_beta:workspace_staging"
 cargo run -p casiros-api
 ```
@@ -65,7 +65,7 @@ The bundled `docker-compose.yml` starts:
 ### Kubernetes / Helm Checklist
 
 - Mount `config/default.toml` as a `ConfigMap` if you want to override defaults.
-- Store `CASIROS_API__KEYS` and `CASIROS_POSTGRES__URL` in a `Secret`.
+- Store `CASIROS_API_KEYS` and `CASIROS__POSTGRES__URL` in a `Secret`.
 - Expose port `8080` for HTTP and WebSocket traffic.
 - Use `GET /healthz` for both liveness and readiness probes.
 - Run SQLx migrations before starting new pods (see below).
@@ -129,7 +129,7 @@ Queued → Running → Completed
 The `casiros-worker` binary claims and executes queued jobs:
 
 ```bash
-export CASIROS_POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros
+export CASIROS__POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros
 cargo run -p casiros-worker
 ```
 
@@ -138,7 +138,7 @@ avoid double-claiming. Workers poll every 5 seconds when the queue is empty.
 
 ## Postgres Snapshots
 
-When `CASIROS_SNAPSHOT__BACKEND=postgres`, the API automatically runs pending
+When `CASIROS__SNAPSHOT__BACKEND=postgres`, the API automatically runs pending
 SQLx migrations on startup. The migration files are at `migrations/0001_initial.sql`
 through `migrations/0004_simulation_jobs.sql`.
 
@@ -181,10 +181,10 @@ The `healthz` endpoint is public and does not require an API key.
 
 ## API Key Rotation
 
-API keys are provided at startup via `CASIROS_API__KEYS` as a comma-separated
+API keys are provided at startup via `CASIROS_API_KEYS` as a comma-separated
 list. To rotate:
 
-1. Add the new key to `CASIROS_API__KEYS` alongside the old key.
+1. Add the new key to `CASIROS_API_KEYS` alongside the old key.
 2. Restart/redeploy all API instances.
 3. Update clients to use the new key.
 4. Remove the old key and restart/redeploy again.
@@ -233,8 +233,8 @@ Future phases will add OpenTelemetry export.
 
 ### Service starts but snapshots fail
 
-- Check `CASIROS_SNAPSHOT__BACKEND` is set to the intended value.
-- For Postgres, verify `CASIROS_POSTGRES__URL` and that migrations have run.
+- Check `CASIROS__SNAPSHOT__BACKEND` is set to the intended value.
+- For Postgres, verify `CASIROS__POSTGRES__URL` and that migrations have run.
 - Look for `DagError::Repository` in logs.
 
 ### High latency on `/simulate`
@@ -318,5 +318,5 @@ instead of in-memory storage. Configure via environment variables:
 
 | Variable | Default | Description |
 |---|---|---|
-| `CASIROS_REDIS__URL` | `redis://127.0.0.1:6379` | Redis connection URL |
-| `CASIROS_REDIS__TTL` | `3600` | Cache entry TTL in seconds |
+| `CASIROS__REDIS__URL` | `redis://127.0.0.1:6379` | Redis connection URL |
+| `CASIROS__REDIS__TTL` | `3600` | Cache entry TTL in seconds |

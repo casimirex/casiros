@@ -14,7 +14,7 @@ use time::OffsetDateTime;
 use tracing::{info, instrument};
 
 use crate::engine_builder::EngineBuilder;
-use crate::job_store::InMemoryJobStore;
+use crate::job_store::JobStoreHandle;
 use crate::models::{
     CreateJobRequest, CreateJobResponse, ErrorResponse, JobResponse, JobStatusResponse,
 };
@@ -51,7 +51,7 @@ fn default_principal() -> Principal {
 pub async fn create_job(
     req: HttpRequest,
     payload: web::Json<CreateJobRequest>,
-    store: web::Data<InMemoryJobStore>,
+    store: web::Data<JobStoreHandle>,
 ) -> impl Responder {
     info!("Create job request received");
     let principal = principal_from_request(&req);
@@ -109,7 +109,7 @@ pub async fn create_job(
 pub async fn get_job(
     req: HttpRequest,
     id: web::Path<String>,
-    store: web::Data<InMemoryJobStore>,
+    store: web::Data<JobStoreHandle>,
 ) -> impl Responder {
     info!("Get job request received for id {}", id);
     let principal = principal_from_request(&req);
@@ -144,10 +144,7 @@ pub async fn get_job(
     )
 )]
 #[instrument(name = "cancel_job", skip(store))]
-pub async fn cancel_job(
-    id: web::Path<String>,
-    store: web::Data<InMemoryJobStore>,
-) -> impl Responder {
+pub async fn cancel_job(id: web::Path<String>, store: web::Data<JobStoreHandle>) -> impl Responder {
     info!("Cancel job request received for id {}", id);
     let Ok(job_id) = id.parse::<JobId>() else {
         return HttpResponse::BadRequest().json(ErrorResponse {

@@ -19,8 +19,8 @@ CASIROS uses layered configuration (lowest to highest precedence):
 | `CASIROS_API_KEYS` | — | Comma-separated API keys |
 | `CASIROS_API_KEY_TENANTS` | — | Key-to-tenant mapping |
 | `CASIROS_ADMIN_KEY` | — | Admin API key |
-| `CASIROS_SNAPSHOT__BACKEND` | `memory` | `memory` or `postgres` |
-| `CASIROS_POSTGRES__URL` | — | Postgres connection string |
+| `CASIROS__SNAPSHOT__BACKEND` | `memory` | `memory` or `postgres` |
+| `CASIROS__POSTGRES__URL` | — | Postgres connection string |
 | `CASIROS_OTLP_ENDPOINT` | — | OpenTelemetry collector URL |
 
 ### Tenant Mapping
@@ -75,7 +75,7 @@ metadata:
   name: casiros-config
 stringData:
   CASIROS_API_KEYS: "prod-key-1,prod-key-2"
-  CASIROS_POSTGRES__URL: "postgresql://user:pass@host:5432/casiros"
+  CASIROS__POSTGRES__URL: "postgresql://user:pass@host:5432/casiros"
   CASIROS_ADMIN_KEY: "admin-secret"
 ```
 
