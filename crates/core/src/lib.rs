@@ -38,6 +38,7 @@ pub mod prelude {
     //! Re-exports for ergonomic use across the workspace.
     pub use crate::audit::{AuditAction, AuditEvent, AuditResult, Pagination};
     pub use crate::error::CalculationError;
+    pub use crate::job::{JobId, JobProgress, JobStatus};
     pub use crate::tenant::{Principal, TenantId, WorkspaceId};
     pub use crate::types::{Amounts, Dollar, Periods, Rate, Ratio};
     pub use rust_decimal::Decimal;
@@ -50,6 +51,7 @@ pub mod corporate;
 pub mod error;
 pub mod financial;
 pub mod general;
+pub mod job;
 pub mod markets;
 pub mod narrative;
 pub mod options;

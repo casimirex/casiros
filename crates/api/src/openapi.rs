@@ -9,6 +9,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::audit_handlers;
 use crate::handlers;
+use crate::job_handlers;
 use crate::models;
 use crate::snapshot_handlers;
 
@@ -32,6 +33,9 @@ use crate::snapshot_handlers;
         snapshot_handlers::delete_snapshot,
         snapshot_handlers::list_snapshots,
         audit_handlers::list_audit_events,
+        job_handlers::create_job,
+        job_handlers::get_job,
+        job_handlers::cancel_job,
     ),
     components(schemas(
         models::HealthzResponse,
@@ -56,6 +60,11 @@ use crate::snapshot_handlers;
         models::AuditListQuery,
         models::AuditEventResponse,
         models::AuditListResponse,
+        models::CreateJobRequest,
+        models::CreateJobResponse,
+        models::JobResponse,
+        models::JobProgressResponse,
+        models::JobStatusResponse,
     ))
 )]
 pub struct ApiDoc;

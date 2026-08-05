@@ -27,6 +27,8 @@ use casiros_api::audit_middleware::audit_middleware;
 use casiros_api::auth::{AuthConfig, RateLimiter, auth_middleware, build_tenant_resolver};
 use casiros_api::config::AppConfig;
 use casiros_api::handlers;
+use casiros_api::job_handlers;
+use casiros_api::job_store::InMemoryJobStore;
 use casiros_api::openapi;
 use casiros_api::repositories::{
     InMemorySnapshotRepository, PostgresSnapshotRepository, SnapshotRepo,
@@ -63,6 +65,7 @@ async fn main() -> std::io::Result<()> {
     let auth_config = Arc::new(AuthConfig::from_env());
     let tenant_resolver: Arc<dyn TenantResolver> = build_tenant_resolver();
     let rate_limiter = Arc::new(RateLimiter::new());
+    let job_store = Arc::new(InMemoryJobStore::new());
     let Backends {
         snapshot_repo,
         audit_sink,
@@ -76,9 +79,12 @@ async fn main() -> std::io::Result<()> {
         let rate_limiter = Arc::clone(&rate_limiter);
         let audit_for_middleware = Arc::clone(&audit_sink);
 
+        let job_store = Arc::clone(&job_store);
+
         App::new()
             .app_data(web::Data::from(Arc::clone(&snapshot_repo)))
             .app_data(web::Data::from(Arc::clone(&audit_sink)))
+            .app_data(web::Data::from(Arc::clone(&job_store)))
             .wrap(Cors::permissive())
             .wrap(TracingMiddleware::new())
             // Wrappers run outermost-last, so this audit layer executes inside
@@ -123,6 +129,12 @@ async fn main() -> std::io::Result<()> {
                 web::delete().to(snapshot_handlers::delete_snapshot),
             )
             .route("/audit", web::get().to(audit_handlers::list_audit_events))
+            .route("/simulate/jobs", web::post().to(job_handlers::create_job))
+            .route("/simulate/jobs/{id}", web::get().to(job_handlers::get_job))
+            .route(
+                "/simulate/jobs/{id}/cancel",
+                web::post().to(job_handlers::cancel_job),
+            )
     })
     .bind(bind_addr)?
     .run()

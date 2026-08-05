@@ -713,3 +713,106 @@ pub struct AuditListResponse {
     /// The events, newest first.
     pub events: Vec<AuditEventResponse>,
 }
+
+/// Request body for `POST /simulate/jobs`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct CreateJobRequest {
+    /// Nodes that make up the DAG.
+    pub nodes: Vec<NodeRequest>,
+
+    /// Directed edges between nodes.
+    pub edges: Vec<EdgeRequest>,
+
+    /// Name of the node whose output should be aggregated.
+    pub target: String,
+
+    /// Number of universes to simulate.
+    pub universe_count: usize,
+
+    /// Optional RNG seed for reproducibility.
+    pub seed: Option<u64>,
+}
+
+/// Response body for `POST /simulate/jobs`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct CreateJobResponse {
+    /// Unique job identifier.
+    pub id: String,
+
+    /// Initial job status (always `queued`).
+    pub status: String,
+}
+
+/// Response body for `GET /simulate/jobs/{id}`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct JobResponse {
+    /// Unique job identifier.
+    pub id: String,
+
+    /// Current lifecycle status.
+    pub status: String,
+
+    /// Progress information.
+    pub progress: JobProgressResponse,
+
+    /// Serialised simulation results, present when completed.
+    pub result: Option<serde_json::Value>,
+
+    /// Error message, present when failed.
+    pub error: Option<String>,
+
+    /// RFC 3339 creation timestamp.
+    pub created_at: String,
+
+    /// RFC 3339 last-updated timestamp.
+    pub updated_at: String,
+}
+
+impl JobResponse {
+    /// Converts a domain [`casiros_dag::job::SimulationJob`] into its wire form.
+    #[must_use]
+    pub fn from_job(job: &casiros_dag::job::SimulationJob) -> Self {
+        return Self {
+            id: job.id.to_string(),
+            status: job.status.as_str().to_string(),
+            progress: JobProgressResponse {
+                universes_total: job.progress.universes_total,
+                universes_completed: job.progress.universes_completed,
+                fraction: job.progress.fraction(),
+            },
+            result: job.result.clone(),
+            error: job.error.clone(),
+            created_at: job
+                .created_at
+                .format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_default(),
+            updated_at: job
+                .updated_at
+                .format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_default(),
+        };
+    }
+}
+
+/// Progress summary returned in job responses.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct JobProgressResponse {
+    /// Total universes the job intends to simulate.
+    pub universes_total: usize,
+
+    /// Universes completed so far.
+    pub universes_completed: usize,
+
+    /// Completion fraction in `0.0..=1.0`.
+    pub fraction: f64,
+}
+
+/// Response body for `POST /simulate/jobs/{id}/cancel`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct JobStatusResponse {
+    /// Unique job identifier.
+    pub id: String,
+
+    /// Updated job status.
+    pub status: String,
+}
