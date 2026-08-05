@@ -19,5 +19,11 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true }
 
+redis = { workspace = true, optional = true }
+
 [dev-dependencies]
 tokio = { workspace = true }
+
+[features]
+default = []
+redis = ["dep:redis"]

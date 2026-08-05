@@ -32,7 +32,7 @@ pub struct CacheKey {
 }
 
 /// Result of a cached formula evaluation.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct EvaluationResult {
     /// The computed value.
     pub value: Decimal,
@@ -193,5 +193,75 @@ mod tests {
                 value: Decimal::new(2, 0)
             })
         );
+    }
+}
+
+/// `Redis`-backed formula cache for sharing across API server instances.
+///
+/// Entries are stored with a configurable TTL. The key format is
+/// `cache:formula:{node_id}:{hash}` where `hash` is a deterministic hash
+/// of the cache key.
+///
+/// This implementation is only available when the `redis` feature is enabled.
+#[cfg(feature = "redis")]
+#[derive(Clone)]
+pub struct RedisFormulaCache {
+    /// Redis connection manager for automatic reconnection.
+    conn: redis::aio::ConnectionManager,
+
+    /// Entry time-to-live in seconds.
+    ttl_secs: usize,
+}
+
+#[cfg(feature = "redis")]
+impl std::fmt::Debug for RedisFormulaCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("RedisFormulaCache")
+            .field("conn", &"redis::aio::ConnectionManager")
+            .field("ttl_secs", &self.ttl_secs)
+            .finish();
+    }
+}
+
+#[cfg(feature = "redis")]
+impl RedisFormulaCache {
+    /// Creates a cache backed by an existing Redis connection manager.
+    #[must_use]
+    pub fn new(conn: redis::aio::ConnectionManager, ttl_secs: usize) -> Self {
+        return Self { conn, ttl_secs };
+    }
+
+    /// Builds the Redis key for a cache entry.
+    fn redis_key(key: &CacheKey) -> String {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        key.hash(&mut hasher);
+        return format!("cache:formula:{}:{:x}", key.node.0, hasher.finish());
+    }
+}
+
+#[cfg(feature = "redis")]
+#[async_trait]
+impl FormulaCache for RedisFormulaCache {
+    async fn get(&self, key: &CacheKey) -> Option<EvaluationResult> {
+        let redis_key = Self::redis_key(key);
+        let value: Option<String> = redis::cmd("GET")
+            .arg(&redis_key)
+            .query_async(&mut self.conn.clone())
+            .await
+            .ok()?;
+        return value.and_then(|v| serde_json::from_str(&v).ok());
+    }
+
+    async fn put(&self, key: CacheKey, value: EvaluationResult) {
+        let redis_key = Self::redis_key(&key);
+        let value_json = serde_json::to_string(&value).unwrap_or_default();
+        let _: Result<(), _> = redis::cmd("SETEX")
+            .arg(&redis_key)
+            .arg(self.ttl_secs)
+            .arg(&value_json)
+            .query_async(&mut self.conn.clone())
+            .await;
     }
 }
