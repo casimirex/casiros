@@ -42,6 +42,11 @@ time = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true }
+opentelemetry-otlp = { workspace = true, optional = true }
+tracing-opentelemetry = { workspace = true, optional = true }
+
 [dev-dependencies]
 rust_decimal_macros = { workspace = true }
 tokio-tungstenite = { workspace = true }
@@ -49,3 +54,4 @@ futures-util = { workspace = true }
 
 [features]
 default = []
+otel = ["dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-otlp", "dep:tracing-opentelemetry"]

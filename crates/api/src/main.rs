@@ -42,6 +42,10 @@ use casiros_api::streaming_handlers;
 use casiros_api::tenant::TenantResolver;
 use casiros_api::tracing_middleware::TracingMiddleware;
 use casiros_api::websocket_handlers;
+#[cfg(feature = "otel")]
+use opentelemetry::trace::TracerProvider as _;
+#[cfg(feature = "otel")]
+use opentelemetry_otlp::WithExportConfig;
 use tracing::{info, instrument};
 
 /// Application entry point.
@@ -63,6 +67,23 @@ async fn main() -> std::io::Result<()> {
         .init();
 
     let bind_addr = app_config.bind_addr.clone();
+
+    // Initialise OpenTelemetry when CASIROS_OTLP_ENDPOINT is set.
+    // Uses HTTP/protobuf transport (reqwest) to avoid the tower 0.4.x
+    // compatibility issue with the gRPC/tonic transport.
+    #[cfg(feature = "otel")]
+    if let Ok(endpoint) = std::env::var("CASIROS_OTLP_ENDPOINT") {
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_http()
+            .with_endpoint(&endpoint)
+            .build()
+            .expect("OTel exporter must build");
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_simple_exporter(exporter)
+            .build();
+        let _tracer = provider.tracer("casiros-api");
+        info!(otel_endpoint = %endpoint, "OpenTelemetry initialised");
+    }
 
     info!("CASIROS API starting on {}", bind_addr);
     metrics::init_metrics();
