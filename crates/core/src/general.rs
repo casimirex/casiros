@@ -525,3 +525,148 @@ pub fn continuous_compounding_future_value(
     let growth_factor = exponent.exp();
     return Ok(present_value * growth_factor);
 }
+
+/// Calculates the net present value of a series of cash flows.
+///
+/// # Mathematical Definition
+///
+/// \[ NPV = \sum_{t=0}^{n} \frac{CF_t}{(1 + r)^t} \]
+///
+/// where `CF_0` is typically the initial investment (negative) and `CF_1..CF_n`
+/// are the expected future cash flows.
+///
+/// # Constraints
+///
+/// - `rate` MUST be > -1.0.
+/// - `cash_flows` MUST contain at least one element.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidRate`] if `rate` <= -1.0.
+/// Returns [`CalculationError::InvalidInput`] if `cash_flows` is empty.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::general::net_present_value;
+/// use rust_decimal_macros::dec;
+///
+/// let npv = net_present_value(dec!(0.10), &[dec!(-1000), dec!(300), dec!(400), dec!(500), dec!(600)]).unwrap();
+/// assert!(npv > dec!(0));
+/// ```
+pub fn net_present_value(rate: Decimal, cash_flows: &[Decimal]) -> Result<Decimal, CalculationError> {
+    if rate <= dec!(-1) {
+        return Err(CalculationError::InvalidRate { rate });
+    }
+    if cash_flows.is_empty() {
+        return Err(CalculationError::InvalidInput {
+            message: "cash_flows must not be empty".to_string(),
+        });
+    }
+    let mut npv = Decimal::ZERO;
+    let mut discount_factor = Decimal::ONE;
+    let one_plus_rate = Decimal::ONE + rate;
+    for cf in cash_flows {
+        npv += cf / discount_factor;
+        discount_factor *= one_plus_rate;
+    }
+    return Ok(npv);
+}
+
+/// Approximates the internal rate of return using the secant method.
+///
+/// # Mathematical Definition
+///
+/// Finds `r` such that:
+///
+/// \[ \sum_{t=0}^{n} \frac{CF_t}{(1 + r)^t} = 0 \]
+///
+/// # Constraints
+///
+/// - `cash_flows` MUST contain at least one positive and one negative value.
+/// - `max_iterations` MUST be > 0.
+/// - `tolerance` MUST be > 0.
+///
+/// # Errors
+///
+/// Returns [`CalculationError::InvalidInput`] if the cash flows do not have
+/// both positive and negative values, or if `max_iterations` or `tolerance`
+/// are invalid.
+/// Returns [`CalculationError::Convergence`] if the method does not converge.
+///
+/// # Examples
+///
+/// ```
+/// use casiros_core::general::internal_rate_of_return;
+/// use rust_decimal_macros::dec;
+///
+/// let irr = internal_rate_of_return(&[dec!(-1000), dec!(300), dec!(400), dec!(500), dec!(600)], 100, dec!(0.0001)).unwrap();
+/// assert!(irr > dec!(0));
+/// ```
+pub fn internal_rate_of_return(
+    cash_flows: &[Decimal],
+    max_iterations: usize,
+    tolerance: Decimal,
+) -> Result<Decimal, CalculationError> {
+    if cash_flows.is_empty() {
+        return Err(CalculationError::InvalidInput {
+            message: "cash_flows must not be empty".to_string(),
+        });
+    }
+    if max_iterations == 0 {
+        return Err(CalculationError::InvalidInput {
+            message: "max_iterations must be > 0".to_string(),
+        });
+    }
+    if tolerance <= Decimal::ZERO {
+        return Err(CalculationError::InvalidInput {
+            message: "tolerance must be > 0".to_string(),
+        });
+    }
+
+    let has_positive = cash_flows.iter().any(|cf| *cf > Decimal::ZERO);
+    let has_negative = cash_flows.iter().any(|cf| *cf < Decimal::ZERO);
+    if !has_positive || !has_negative {
+        return Err(CalculationError::InvalidInput {
+            message: "cash_flows must contain both positive and negative values".to_string(),
+        });
+    }
+
+    // Helper to compute NPV at a given rate.
+    let npv_at = |rate: Decimal| -> Result<Decimal, CalculationError> {
+        let mut npv = Decimal::ZERO;
+        let mut discount_factor = Decimal::ONE;
+        let one_plus_rate = Decimal::ONE + rate;
+        for cf in cash_flows {
+            npv += cf / discount_factor;
+            discount_factor *= one_plus_rate;
+        }
+        return Ok(npv);
+    };
+
+    let mut r0 = dec!(0.05);
+    let mut r1 = dec!(0.15);
+    let mut f0 = npv_at(r0)?;
+    let mut f1 = npv_at(r1)?;
+
+    for _ in 0..max_iterations {
+        let df = f1 - f0;
+        if df == Decimal::ZERO {
+            return Err(CalculationError::Convergence {
+                message: "IRR derivative is zero".to_string(),
+            });
+        }
+        let r2 = r1 - f1 * (r1 - r0) / df;
+        if (r2 - r1).abs() < tolerance {
+            return Ok(r2);
+        }
+        r0 = r1;
+        f0 = f1;
+        r1 = r2;
+        f1 = npv_at(r1)?;
+    }
+
+    return Err(CalculationError::Convergence {
+        message: "IRR did not converge".to_string(),
+    });
+}
