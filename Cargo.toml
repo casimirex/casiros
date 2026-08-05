@@ -9,6 +9,7 @@ members = [
     "crates/cli",
     "crates/macros",
     "crates/worker",
+    "crates/e2e",
 ]
 resolver = "3"
 
@@ -72,7 +73,7 @@ utoipa = { version = "5", features = ["decimal"] }
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "blocking"] }
 
 # WebSocket client
 tokio-tungstenite = "0.26"

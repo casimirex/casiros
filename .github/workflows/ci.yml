@@ -55,10 +55,71 @@ jobs:
         with:
           shared-key: "casiros-test"
 
+      # Serial: the Postgres job-store tests operate on the shared
+      # simulation_jobs queue, so concurrent runs claim each other's jobs.
       - name: Run all tests (unit, integration, and doc-tests)
         env:
-          CASIROS_POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
-        run: cargo test --workspace --all-targets --all-features
+          CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
+        run: cargo test --workspace --all-targets --all-features -- --test-threads=1
+
+  smoke:
+    name: End-to-End Smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: casiros
+          POSTGRES_PASSWORD: casiros
+          POSTGRES_DB: casiros
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "casiros-smoke"
+
+      # The smoke tests launch these binaries as subprocesses, so they must
+      # exist before the tests run.
+      - name: Build server binaries
+        run: cargo build -p casiros-api -p casiros-worker
+
+      - name: Run end-to-end smoke tests
+        env:
+          CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
+        run: cargo test -p casiros-e2e -- --test-threads=2
+
+      - name: Install browser smoke dependencies
+        run: npm install puppeteer-core@23 --no-save
+
+      # Drives the dashboard in headless Chrome. Catches defects no Rust test
+      # can see: unhandled exceptions in page scripts, assets that 404, charts
+      # that fail to render.
+      - name: Start API for browser smoke
+        env:
+          CASIROS__BIND_ADDR: 127.0.0.1:8080
+          CASIROS__SNAPSHOT__BACKEND: postgres
+          CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
+          CASIROS_API_KEYS: smoke-key
+        run: |
+          ./target/debug/casiros-api &
+          for _ in $(seq 1 60); do
+            curl -fsS http://localhost:8080/healthz >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://localhost:8080/healthz
+
+      - name: Run browser smoke test
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/browser-smoke.js http://localhost:8080 smoke-key
 
   docs:
     name: Documentation
@@ -116,7 +177,7 @@ jobs:
 
       - name: Generate coverage report
         env:
-          CASIROS_POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
+          CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
         run: cargo tarpaulin --workspace --all-features --out Xml --timeout 120
 
       - name: Upload coverage to Codecov

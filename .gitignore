@@ -31,3 +31,7 @@ __pycache__/
 *.pyo
 .Python
 *.egg-info/
+
+# Browser smoke test dependencies (installed on demand)
+node_modules/
+package-lock.json
