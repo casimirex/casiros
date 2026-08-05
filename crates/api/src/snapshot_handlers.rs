@@ -3,8 +3,14 @@
 //! These handlers use the concrete [`SnapshotRepo`] wrapper so the same code
 //! works with in-memory, Postgres, or S3 backends while remaining compatible
 //! with `utoipa` `OpenAPI` generation.
+//!
+//! # Tenant/Workspace Scope
+//!
+//! All operations are scoped to the authenticated principal attached to the
+//! request by the authentication middleware.
 
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse, Responder, web};
+use casiros_core::tenant::Principal;
 use casiros_dag::repository::SnapshotRepository;
 use tracing::{info, instrument};
 
@@ -14,6 +20,30 @@ use crate::models::{
     SnapshotResponse, SnapshotSummaryResponse,
 };
 use crate::repositories::SnapshotRepo;
+
+/// Returns the principal for the current request.
+///
+/// The authentication middleware inserts a [`Principal`] into the request
+/// extensions. If it is missing (for example, in a test that does not include
+/// the middleware), a default tenant/workspace is returned so handlers remain
+/// callable.
+#[must_use]
+fn principal_from_request(req: &HttpRequest) -> Principal {
+    return req
+        .extensions()
+        .get::<Principal>()
+        .cloned()
+        .unwrap_or_else(default_principal);
+}
+
+/// Default principal used when middleware has not injected one.
+fn default_principal() -> Principal {
+    let tenant = casiros_core::tenant::TenantId::new("tenant_default")
+        .expect("static default tenant is valid");
+    let workspace = casiros_core::tenant::WorkspaceId::new("workspace_default")
+        .expect("static default workspace is valid");
+    return Principal::new(tenant, workspace, "anonymous");
+}
 
 /// Saves a causality graph as a named snapshot.
 #[utoipa::path(
@@ -27,10 +57,12 @@ use crate::repositories::SnapshotRepo;
 )]
 #[instrument(name = "save_snapshot", skip(payload, repo))]
 pub async fn save_snapshot(
+    req: HttpRequest,
     payload: web::Json<SaveSnapshotRequest>,
     repo: web::Data<SnapshotRepo>,
 ) -> impl Responder {
     info!("Save snapshot request received for id {}", payload.id);
+    let principal = principal_from_request(&req);
 
     let mut builder = EngineBuilder::new();
     if let Err(err) = builder.add_nodes(&payload.nodes) {
@@ -47,7 +79,15 @@ pub async fn save_snapshot(
     let engine = builder.build();
     let snapshot = engine.to_snapshot();
 
-    return match repo.save(&payload.id, &snapshot).await {
+    return match repo
+        .save(
+            principal.tenant_id,
+            principal.workspace_id,
+            &payload.id,
+            &snapshot,
+        )
+        .await
+    {
         Ok(()) => HttpResponse::Ok().json(SaveSnapshotResponse {
             id: payload.id.clone(),
         }),
@@ -70,10 +110,18 @@ pub async fn save_snapshot(
     )
 )]
 #[instrument(name = "load_snapshot", skip(repo))]
-pub async fn load_snapshot(id: web::Path<String>, repo: web::Data<SnapshotRepo>) -> impl Responder {
+pub async fn load_snapshot(
+    req: HttpRequest,
+    id: web::Path<String>,
+    repo: web::Data<SnapshotRepo>,
+) -> impl Responder {
     info!("Load snapshot request received for id {}", id);
+    let principal = principal_from_request(&req);
 
-    return match repo.load(&id).await {
+    return match repo
+        .load(principal.tenant_id, principal.workspace_id, &id)
+        .await
+    {
         Ok(snapshot) => match serde_json::to_value(&snapshot) {
             Ok(data) => HttpResponse::Ok().json(SnapshotResponse {
                 id: id.to_string(),
@@ -103,12 +151,17 @@ pub async fn load_snapshot(id: web::Path<String>, repo: web::Data<SnapshotRepo>)
 )]
 #[instrument(name = "delete_snapshot", skip(repo))]
 pub async fn delete_snapshot(
+    req: HttpRequest,
     id: web::Path<String>,
     repo: web::Data<SnapshotRepo>,
 ) -> impl Responder {
     info!("Delete snapshot request received for id {}", id);
+    let principal = principal_from_request(&req);
 
-    return match repo.delete(&id).await {
+    return match repo
+        .delete(principal.tenant_id, principal.workspace_id, &id)
+        .await
+    {
         Ok(()) => HttpResponse::Ok().finish(),
         Err(err) => HttpResponse::NotFound().json(ErrorResponse {
             error: err.to_string(),
@@ -125,10 +178,11 @@ pub async fn delete_snapshot(
     )
 )]
 #[instrument(name = "list_snapshots", skip(repo))]
-pub async fn list_snapshots(repo: web::Data<SnapshotRepo>) -> impl Responder {
+pub async fn list_snapshots(req: HttpRequest, repo: web::Data<SnapshotRepo>) -> impl Responder {
     info!("List snapshots request received");
+    let principal = principal_from_request(&req);
 
-    return match repo.list().await {
+    return match repo.list(principal.tenant_id, principal.workspace_id).await {
         Ok(summaries) => HttpResponse::Ok().json(SnapshotListResponse {
             snapshots: summaries
                 .into_iter()

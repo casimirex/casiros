@@ -634,3 +634,185 @@ pub struct SnapshotListResponse {
     /// List of stored snapshots.
     pub snapshots: Vec<SnapshotSummaryResponse>,
 }
+
+/// Query parameters for `GET /audit`.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, ToSchema)]
+pub struct AuditListQuery {
+    /// Page size. Clamped to `1..=1000` by the domain layer.
+    pub limit: Option<u32>,
+
+    /// Number of rows to skip.
+    pub offset: Option<u32>,
+}
+
+/// A single audit event returned by `GET /audit`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct AuditEventResponse {
+    /// Unique event identifier.
+    pub id: String,
+
+    /// RFC 3339 timestamp of the event.
+    pub timestamp: String,
+
+    /// Tenant that owned the request.
+    pub tenant_id: String,
+
+    /// Workspace in which the request ran.
+    pub workspace_id: String,
+
+    /// Identifier of the API key used.
+    pub api_key_id: String,
+
+    /// Action that was attempted.
+    pub action: String,
+
+    /// Resource the action addressed.
+    pub resource: String,
+
+    /// Outcome of the attempt.
+    pub result: String,
+
+    /// Failure detail, when the outcome was an error.
+    pub error: Option<String>,
+
+    /// Contextual metadata such as HTTP method and status.
+    pub metadata: std::collections::HashMap<String, String>,
+}
+
+impl AuditEventResponse {
+    /// Converts a domain [`casiros_core::audit::AuditEvent`] into its wire form.
+    ///
+    /// Timestamps are rendered as RFC 3339. A timestamp that cannot be formatted
+    /// falls back to an empty string rather than failing the whole response.
+    #[must_use]
+    pub fn from_event(event: &casiros_core::audit::AuditEvent) -> Self {
+        return Self {
+            id: event.id.to_string(),
+            timestamp: event
+                .timestamp
+                .format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_default(),
+            tenant_id: event.principal.tenant_id.as_str().to_string(),
+            workspace_id: event.principal.workspace_id.as_str().to_string(),
+            api_key_id: event.principal.api_key_id.clone(),
+            action: event.action.as_str().to_string(),
+            resource: event.resource.clone(),
+            result: event.result.as_str().to_string(),
+            error: event.result.error_message().map(String::from),
+            metadata: event.metadata.clone(),
+        };
+    }
+}
+
+/// Response body for `GET /audit`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct AuditListResponse {
+    /// Number of events in this page.
+    pub total: usize,
+
+    /// The events, newest first.
+    pub events: Vec<AuditEventResponse>,
+}
+
+/// Request body for `POST /simulate/jobs`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct CreateJobRequest {
+    /// Nodes that make up the DAG.
+    pub nodes: Vec<NodeRequest>,
+
+    /// Directed edges between nodes.
+    pub edges: Vec<EdgeRequest>,
+
+    /// Name of the node whose output should be aggregated.
+    pub target: String,
+
+    /// Number of universes to simulate.
+    pub universe_count: usize,
+
+    /// Optional RNG seed for reproducibility.
+    pub seed: Option<u64>,
+}
+
+/// Response body for `POST /simulate/jobs`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct CreateJobResponse {
+    /// Unique job identifier.
+    pub id: String,
+
+    /// Initial job status (always `queued`).
+    pub status: String,
+}
+
+/// Response body for `GET /simulate/jobs/{id}`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct JobResponse {
+    /// Unique job identifier.
+    pub id: String,
+
+    /// Current lifecycle status.
+    pub status: String,
+
+    /// Progress information.
+    pub progress: JobProgressResponse,
+
+    /// Serialised simulation results, present when completed.
+    pub result: Option<serde_json::Value>,
+
+    /// Error message, present when failed.
+    pub error: Option<String>,
+
+    /// RFC 3339 creation timestamp.
+    pub created_at: String,
+
+    /// RFC 3339 last-updated timestamp.
+    pub updated_at: String,
+}
+
+impl JobResponse {
+    /// Converts a domain [`casiros_dag::job::SimulationJob`] into its wire form.
+    #[must_use]
+    pub fn from_job(job: &casiros_dag::job::SimulationJob) -> Self {
+        return Self {
+            id: job.id.to_string(),
+            status: job.status.as_str().to_string(),
+            progress: JobProgressResponse {
+                universes_total: job.progress.universes_total,
+                universes_completed: job.progress.universes_completed,
+                fraction: job.progress.fraction(),
+            },
+            result: job.result.clone(),
+            error: job.error.clone(),
+            created_at: job
+                .created_at
+                .format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_default(),
+            updated_at: job
+                .updated_at
+                .format(&time::format_description::well_known::Rfc3339)
+                .unwrap_or_default(),
+        };
+    }
+}
+
+/// Progress summary returned in job responses.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct JobProgressResponse {
+    /// Total universes the job intends to simulate.
+    pub universes_total: usize,
+
+    /// Universes completed so far.
+    pub universes_completed: usize,
+
+    /// Completion fraction in `0.0..=1.0`.
+    pub fraction: f64,
+}
+
+/// Response body for `POST /simulate/jobs/{id}/cancel`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct JobStatusResponse {
+    /// Unique job identifier.
+    pub id: String,
+
+    /// Updated job status.
+    pub status: String,
+}

@@ -7,7 +7,9 @@
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::audit_handlers;
 use crate::handlers;
+use crate::job_handlers;
 use crate::models;
 use crate::snapshot_handlers;
 
@@ -19,7 +21,7 @@ use crate::snapshot_handlers;
 #[openapi(
     info(
         title = "CASIROS API",
-        version = "0.2.0",
+        version = "0.3.0",
         description = "NASA/JPL-grade Financial Physics Engine & Multiverse Simulator"
     ),
     paths(
@@ -30,6 +32,10 @@ use crate::snapshot_handlers;
         snapshot_handlers::load_snapshot,
         snapshot_handlers::delete_snapshot,
         snapshot_handlers::list_snapshots,
+        audit_handlers::list_audit_events,
+        job_handlers::create_job,
+        job_handlers::get_job,
+        job_handlers::cancel_job,
     ),
     components(schemas(
         models::HealthzResponse,
@@ -51,6 +57,14 @@ use crate::snapshot_handlers;
         models::SnapshotResponse,
         models::SnapshotListResponse,
         models::SnapshotSummaryResponse,
+        models::AuditListQuery,
+        models::AuditEventResponse,
+        models::AuditListResponse,
+        models::CreateJobRequest,
+        models::CreateJobResponse,
+        models::JobResponse,
+        models::JobProgressResponse,
+        models::JobStatusResponse,
     ))
 )]
 pub struct ApiDoc;

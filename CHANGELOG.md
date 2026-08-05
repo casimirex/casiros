@@ -5,15 +5,50 @@ All notable changes to the CASIROS project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-08-05
 
 ### Added
 
-- Phase 4 infrastructure scaffolding:
-  - `config/default.toml` with embedded defaults and `CASIROS_*` environment overrides.
-  - PostgreSQL-backed `SnapshotRepository` with SQLx migrations in `migrations/`.
-  - WebSocket `/ws/simulate` endpoint streaming progress and final results.
-  - Actix-Web tracing middleware replacing the default logger.
+- **Tenant isolation and workspace scoping** (Phase 5):
+  - `TenantId`, `WorkspaceId`, and `Principal` value objects in the domain layer.
+  - `TenantResolver` trait mapping API keys to tenants via `CASIROS_API_KEY_TENANTS`.
+  - All snapshots, audit events, and simulation jobs scoped to a tenant/workspace.
+  - Cross-tenant access rejected at the storage layer.
+
+- **Immutable audit trail**:
+  - `AuditEvent`, `AuditAction`, and `AuditResult` domain types.
+  - `AuditLog` trait with append-only record and tenant-scoped list.
+  - In-memory and PostgreSQL backends behind an `AuditSink` wrapper.
+  - Middleware records one event per authenticated request.
+  - `GET /audit` returns the calling tenant's events, newest first.
+
+- **Async simulation jobs**:
+  - `JobId`, `JobStatus`, `JobProgress` domain types with full lifecycle.
+  - `JobStore` trait with enqueue, claim, progress, complete, fail, cancel.
+  - In-memory and PostgreSQL (`FOR UPDATE SKIP LOCKED`) backends.
+  - `POST /simulate/jobs`, `GET /simulate/jobs/{id}`, `POST /simulate/jobs/{id}/cancel`.
+  - `GET /ws/jobs/{id}` WebSocket streaming progress frames every 500ms.
+
+- **Background worker** (`casiros-worker`):
+  - Standalone binary that claims and executes queued simulation jobs.
+  - Multiple workers can run concurrently without double-claiming.
+
+- **DAG result cache**:
+  - `FormulaCache` trait with `CacheKey` for deterministic memoization.
+  - In-memory implementation for single-process deployments.
+
+- **Client updates**:
+  - `create_job`, `get_job`, `cancel_job` methods on `CasirosClient`.
+  - Job request/response models re-exported from the API crate.
+
+### Fixed
+
+- Migration 0004 declared `result_snapshot_id UUID` referencing `snapshots.id`
+  (TEXT); the foreign key could not be created.
+- Migration 0002 added foreign keys from `snapshots` to `tenants` and
+  `workspaces` without seeding the default tenant/workspace rows.
+- Postgres test fixtures now panic on migration failure instead of silently
+  skipping, so a broken schema can never masquerade as a passing suite.
 
 ## [0.2.0] - 2026-08-03
 

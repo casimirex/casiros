@@ -19,5 +19,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 actix-web = { workspace = true }
+casiros-dag = { workspace = true }
 rust_decimal = { workspace = true }
 rust_decimal_macros = { workspace = true }

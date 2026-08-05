@@ -20,8 +20,11 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
+pub mod audit;
+pub mod cache;
 pub mod error;
 pub mod graph;
+pub mod job;
 pub mod persistence;
 pub mod repository;
 

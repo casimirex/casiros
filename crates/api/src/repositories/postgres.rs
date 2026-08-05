@@ -2,9 +2,10 @@
 //!
 //! Implements [`casiros_dag::repository::SnapshotRepository`] using a `SQLx`
 //! connection pool. Snapshots are stored as JSONB documents keyed by a caller-
-//! supplied identifier.
+//! supplied identifier, scoped to a tenant and workspace.
 
 use async_trait::async_trait;
+use casiros_core::tenant::{TenantId, WorkspaceId};
 use casiros_dag::DagError;
 use casiros_dag::persistence::EngineSnapshot;
 use casiros_dag::repository::{SnapshotRepository, SnapshotSummary};
@@ -42,16 +43,25 @@ impl PostgresSnapshotRepository {
 
 #[async_trait]
 impl SnapshotRepository for PostgresSnapshotRepository {
-    async fn save(&self, id: &str, snapshot: &EngineSnapshot) -> Result<(), DagError> {
+    async fn save(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+        id: &str,
+        snapshot: &EngineSnapshot,
+    ) -> Result<(), DagError> {
         let data = serde_json::to_value(snapshot).map_err(|err| DagError::Repository {
             message: format!("failed to serialize snapshot: {err}"),
         })?;
 
         sqlx::query(
-            "INSERT INTO snapshots (id, data) VALUES ($1, $2)
-             ON CONFLICT (id) DO UPDATE SET data = $2",
+            "INSERT INTO snapshots (id, tenant_id, workspace_id, name, data) \
+             VALUES ($1, $2, $3, $1, $4)
+             ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data",
         )
         .bind(id)
+        .bind(tenant.as_str())
+        .bind(workspace.as_str())
         .bind(data)
         .execute(&self.pool)
         .await
@@ -62,28 +72,46 @@ impl SnapshotRepository for PostgresSnapshotRepository {
         return Ok(());
     }
 
-    async fn load(&self, id: &str) -> Result<EngineSnapshot, DagError> {
-        let row: (serde_json::Value,) = sqlx::query_as("SELECT data FROM snapshots WHERE id = $1")
-            .bind(id)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|err| DagError::Repository {
-                message: format!("postgres load failed: {err}"),
-            })?;
+    async fn load(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+        id: &str,
+    ) -> Result<EngineSnapshot, DagError> {
+        let row: (serde_json::Value,) = sqlx::query_as(
+            "SELECT data FROM snapshots WHERE id = $1 AND tenant_id = $2 AND workspace_id = $3",
+        )
+        .bind(id)
+        .bind(tenant.as_str())
+        .bind(workspace.as_str())
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|err| DagError::Repository {
+            message: format!("postgres load failed: {err}"),
+        })?;
 
         return serde_json::from_value(row.0).map_err(|err| DagError::Repository {
             message: format!("failed to deserialize snapshot: {err}"),
         });
     }
 
-    async fn delete(&self, id: &str) -> Result<(), DagError> {
-        let result = sqlx::query("DELETE FROM snapshots WHERE id = $1")
-            .bind(id)
-            .execute(&self.pool)
-            .await
-            .map_err(|err| DagError::Repository {
-                message: format!("postgres delete failed: {err}"),
-            })?;
+    async fn delete(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+        id: &str,
+    ) -> Result<(), DagError> {
+        let result = sqlx::query(
+            "DELETE FROM snapshots WHERE id = $1 AND tenant_id = $2 AND workspace_id = $3",
+        )
+        .bind(id)
+        .bind(tenant.as_str())
+        .bind(workspace.as_str())
+        .execute(&self.pool)
+        .await
+        .map_err(|err| DagError::Repository {
+            message: format!("postgres delete failed: {err}"),
+        })?;
 
         if result.rows_affected() == 0 {
             return Err(DagError::Repository {
@@ -94,19 +122,29 @@ impl SnapshotRepository for PostgresSnapshotRepository {
         return Ok(());
     }
 
-    async fn list(&self) -> Result<Vec<SnapshotSummary>, DagError> {
-        let rows = sqlx::query("SELECT id FROM snapshots ORDER BY created_at DESC")
-            .fetch_all(&self.pool)
-            .await
-            .map_err(|err| DagError::Repository {
-                message: format!("postgres list failed: {err}"),
-            })?;
+    async fn list(
+        &self,
+        tenant: TenantId,
+        workspace: WorkspaceId,
+    ) -> Result<Vec<SnapshotSummary>, DagError> {
+        let rows = sqlx::query(
+            "SELECT id, name FROM snapshots \
+             WHERE tenant_id = $1 AND workspace_id = $2 \
+             ORDER BY created_at DESC",
+        )
+        .bind(tenant.as_str())
+        .bind(workspace.as_str())
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|err| DagError::Repository {
+            message: format!("postgres list failed: {err}"),
+        })?;
 
         return Ok(rows
             .into_iter()
             .map(|row| SnapshotSummary {
                 id: row.get("id"),
-                name: None,
+                name: row.get("name"),
             })
             .collect());
     }
@@ -138,12 +176,48 @@ mod tests {
             }
         };
         let repo = PostgresSnapshotRepository::new(pool);
-        if let Err(err) = repo.migrate().await {
-            eprintln!("Skipping Postgres tests: migration failed ({err})");
-            return None;
-        }
-        let _ = sqlx::query("TRUNCATE snapshots").execute(&repo.pool).await;
+        // An unreachable database is an environment problem and skips the test,
+        // but a failed migration is a defect in our own schema: fail loudly so a
+        // broken migration can never masquerade as a passing suite.
+        repo.migrate()
+            .await
+            .expect("migrations must apply cleanly against a reachable database");
+        seed_tenants(&repo.pool).await;
+        let _ = sqlx::query("TRUNCATE snapshots CASCADE")
+            .execute(&repo.pool)
+            .await;
         return Some(repo);
+    }
+
+    /// Inserts the tenant/workspace rows the snapshot foreign keys require.
+    async fn seed_tenants(pool: &PgPool) {
+        for (tenant_id, workspace_id) in [
+            ("tenant_test", "workspace_test"),
+            ("tenant_other", "workspace_other"),
+        ] {
+            sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $1) ON CONFLICT DO NOTHING")
+                .bind(tenant_id)
+                .execute(pool)
+                .await
+                .expect("seeding tenant must succeed");
+            sqlx::query(
+                "INSERT INTO workspaces (id, tenant_id, name) VALUES ($1, $2, $1) \
+                 ON CONFLICT DO NOTHING",
+            )
+            .bind(workspace_id)
+            .bind(tenant_id)
+            .execute(pool)
+            .await
+            .expect("seeding workspace must succeed");
+        }
+    }
+
+    fn tenant() -> TenantId {
+        return TenantId::new("tenant_test").unwrap();
+    }
+
+    fn workspace() -> WorkspaceId {
+        return WorkspaceId::new("workspace_test").unwrap();
     }
 
     fn sample_snapshot() -> EngineSnapshot {
@@ -169,8 +243,10 @@ mod tests {
         let snapshot = sample_snapshot();
         let id = "round-trip-1";
 
-        repo.save(id, &snapshot).await.unwrap();
-        let loaded = repo.load(id).await.unwrap();
+        repo.save(tenant(), workspace(), id, &snapshot)
+            .await
+            .unwrap();
+        let loaded = repo.load(tenant(), workspace(), id).await.unwrap();
         assert_eq!(loaded.nodes.len(), snapshot.nodes.len());
     }
 
@@ -181,16 +257,16 @@ mod tests {
         };
         let id = "overwrite-1";
         let first = sample_snapshot();
-        repo.save(id, &first).await.unwrap();
+        repo.save(tenant(), workspace(), id, &first).await.unwrap();
 
         let mut second = sample_snapshot();
         second.nodes.push(casiros_dag::persistence::SnapshotNode {
             name: "extra".to_string(),
             kind: casiros_dag::persistence::SnapshotNodeKind::Input,
         });
-        repo.save(id, &second).await.unwrap();
+        repo.save(tenant(), workspace(), id, &second).await.unwrap();
 
-        let loaded = repo.load(id).await.unwrap();
+        let loaded = repo.load(tenant(), workspace(), id).await.unwrap();
         assert_eq!(loaded.nodes.len(), second.nodes.len());
     }
 
@@ -200,10 +276,12 @@ mod tests {
             return;
         };
         let id = "delete-1";
-        repo.save(id, &sample_snapshot()).await.unwrap();
-        repo.delete(id).await.unwrap();
+        repo.save(tenant(), workspace(), id, &sample_snapshot())
+            .await
+            .unwrap();
+        repo.delete(tenant(), workspace(), id).await.unwrap();
 
-        assert!(repo.load(id).await.is_err());
+        assert!(repo.load(tenant(), workspace(), id).await.is_err());
     }
 
     #[tokio::test]
@@ -213,10 +291,14 @@ mod tests {
         };
         let id_a = "list-a";
         let id_b = "list-b";
-        repo.save(id_a, &sample_snapshot()).await.unwrap();
-        repo.save(id_b, &sample_snapshot()).await.unwrap();
+        repo.save(tenant(), workspace(), id_a, &sample_snapshot())
+            .await
+            .unwrap();
+        repo.save(tenant(), workspace(), id_b, &sample_snapshot())
+            .await
+            .unwrap();
 
-        let list = repo.list().await.unwrap();
+        let list = repo.list(tenant(), workspace()).await.unwrap();
         let ids: Vec<_> = list.into_iter().map(|s| s.id).collect();
         assert!(ids.contains(&id_a.to_string()));
         assert!(ids.contains(&id_b.to_string()));
@@ -227,6 +309,24 @@ mod tests {
         let Some(repo) = create_repo().await else {
             return;
         };
-        assert!(repo.load("missing-id").await.is_err());
+        assert!(
+            repo.load(tenant(), workspace(), "missing-id")
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn cross_tenant_load_is_isolated() {
+        let Some(repo) = create_repo().await else {
+            return;
+        };
+        let id = "isolated-1";
+        repo.save(tenant(), workspace(), id, &sample_snapshot())
+            .await
+            .unwrap();
+
+        let other_tenant = TenantId::new("tenant_other").unwrap();
+        assert!(repo.load(other_tenant, workspace(), id).await.is_err());
     }
 }

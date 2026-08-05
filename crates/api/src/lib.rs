@@ -10,15 +10,22 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
+pub mod audit;
+pub mod audit_handlers;
+pub mod audit_middleware;
 pub mod auth;
 pub mod config;
 pub mod engine_builder;
 pub mod handlers;
+pub mod job_handlers;
+pub mod job_store;
+pub mod job_ws_handlers;
 pub mod models;
 pub mod openapi;
 pub mod repositories;
 pub mod snapshot_handlers;
 pub mod streaming_handlers;
+pub mod tenant;
 pub mod tracing_middleware;
 pub mod validation;
 pub mod websocket_handlers;

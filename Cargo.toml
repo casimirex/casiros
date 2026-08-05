@@ -8,11 +8,12 @@ members = [
     "crates/bench",
     "crates/cli",
     "crates/macros",
+    "crates/worker",
 ]
 resolver = "3"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 authors = ["CASIROS Contributors"]
 license = "MIT OR Apache-2.0"
@@ -25,11 +26,11 @@ documentation = "https://docs.rs/casiros-core"
 
 [workspace.dependencies]
 # Domain
-casiros-core = { path = "crates/core", version = "0.2.0" }
-casiros-dag = { path = "crates/dag", version = "0.2.0" }
-casiros-simulator = { path = "crates/simulator", version = "0.2.0" }
-casiros-api = { path = "crates/api", version = "0.2.0" }
-casiros-macros = { path = "crates/macros", version = "0.2.0" }
+casiros-core = { path = "crates/core", version = "0.3.0" }
+casiros-dag = { path = "crates/dag", version = "0.3.0" }
+casiros-simulator = { path = "crates/simulator", version = "0.3.0" }
+casiros-api = { path = "crates/api", version = "0.3.0" }
+casiros-macros = { path = "crates/macros", version = "0.3.0" }
 
 # Math & finance
 rust_decimal = { version = "1.36", features = ["maths"] }
@@ -89,7 +90,18 @@ rust_xlsxwriter = "0.84"
 config = "0.14"
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "migrate", "json"] }
+sqlx = { version = "0.8", features = [
+    "runtime-tokio",
+    "postgres",
+    "migrate",
+    "json",
+    "uuid",
+    "time",
+] }
+
+# Identifiers and timestamps
+uuid = { version = "1", features = ["v4", "serde"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
 
 # Testing
 assert_cmd = "2"
