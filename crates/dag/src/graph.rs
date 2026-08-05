@@ -465,6 +465,62 @@ pub enum FormulaKind {
         /// Dividend payout ratio input port.
         dividend_payout_ratio: Port,
     },
+
+    /// Beta coefficient — systematic risk.
+    Beta {
+        /// Asset returns port.
+        asset_returns: Port,
+        /// Market returns port.
+        market_returns: Port,
+    },
+
+    /// Sortino ratio — downside risk-adjusted return.
+    SortinoRatio {
+        /// Portfolio return port.
+        portfolio_return: Port,
+        /// Risk-free rate port.
+        risk_free_rate: Port,
+        /// Downside deviation port.
+        downside_deviation: Port,
+    },
+
+    /// Calmar ratio — return / max drawdown.
+    CalmarRatio {
+        /// CAGR port.
+        cagr: Port,
+        /// Maximum drawdown port.
+        max_drawdown: Port,
+    },
+
+    /// Altman Z-score — bankruptcy prediction.
+    AltmanZScore {
+        /// Working capital / total assets port.
+        working_capital_to_assets: Port,
+        /// Retained earnings / total assets port.
+        retained_earnings_to_assets: Port,
+        /// EBIT / total assets port.
+        ebit_to_assets: Port,
+        /// Market equity / book liabilities port.
+        equity_to_liabilities: Port,
+        /// Sales / total assets port.
+        sales_to_assets: Port,
+    },
+
+    /// Present value of the tax shield from debt financing.
+    TaxShield {
+        /// Corporate tax rate port.
+        tax_rate: Port,
+        /// Debt amount port.
+        debt: Port,
+    },
+
+    /// Adjusted present value (APV).
+    AdjustedPresentValue {
+        /// Unlevered NPV port.
+        unlevered_npv: Port,
+        /// PV of tax shield port.
+        pv_tax_shield: Port,
+    },
 }
 
 /// A node in the causality graph.
@@ -1193,6 +1249,46 @@ impl CausalityEngine {
                 roe,
                 dividend_payout_ratio,
             } => Self::eval_internal_growth_rate(roe, dividend_payout_ratio, outputs, node_id),
+            FormulaKind::Beta {
+                asset_returns,
+                market_returns,
+            } => Self::eval_beta(asset_returns, market_returns, outputs, node_id),
+            FormulaKind::SortinoRatio {
+                portfolio_return,
+                risk_free_rate,
+                downside_deviation,
+            } => Self::eval_sortino_ratio(
+                portfolio_return,
+                risk_free_rate,
+                downside_deviation,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::CalmarRatio { cagr, max_drawdown } => {
+                Self::eval_calmar_ratio(cagr, max_drawdown, outputs, node_id)
+            }
+            FormulaKind::AltmanZScore {
+                working_capital_to_assets,
+                retained_earnings_to_assets,
+                ebit_to_assets,
+                equity_to_liabilities,
+                sales_to_assets,
+            } => Self::eval_altman_z_score(
+                working_capital_to_assets,
+                retained_earnings_to_assets,
+                ebit_to_assets,
+                equity_to_liabilities,
+                sales_to_assets,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::TaxShield { tax_rate, debt } => {
+                Self::eval_tax_shield(tax_rate, debt, outputs, node_id)
+            }
+            FormulaKind::AdjustedPresentValue {
+                unlevered_npv,
+                pv_tax_shield,
+            } => Self::eval_adjusted_present_value(unlevered_npv, pv_tax_shield, outputs, node_id),
         }
     }
 
@@ -1801,6 +1897,97 @@ impl CausalityEngine {
         let r = Self::resolve_port(roe, outputs)?;
         let payout = Self::resolve_port(dividend_payout_ratio, outputs)?;
         return casiros_core::corporate::internal_growth_rate(r, payout)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_beta(
+        asset_returns: &Port,
+        market_returns: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let a = Self::resolve_port(asset_returns, outputs)?;
+        let m = Self::resolve_port(market_returns, outputs)?;
+        // Beta requires arrays; parse comma-separated values.
+        let asset_vec: Vec<Decimal> = a
+            .to_string()
+            .split(',')
+            .filter_map(|s| s.trim().parse::<Decimal>().ok())
+            .collect();
+        let market_vec: Vec<Decimal> = m
+            .to_string()
+            .split(',')
+            .filter_map(|s| s.trim().parse::<Decimal>().ok())
+            .collect();
+        return casiros_core::markets::beta(&asset_vec, &market_vec)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_sortino_ratio(
+        portfolio_return: &Port,
+        risk_free_rate: &Port,
+        downside_deviation: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pr = Self::resolve_port(portfolio_return, outputs)?;
+        let rf = Self::resolve_port(risk_free_rate, outputs)?;
+        let dd = Self::resolve_port(downside_deviation, outputs)?;
+        return casiros_core::markets::sortino_ratio(pr, rf, dd)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_calmar_ratio(
+        cagr: &Port,
+        max_drawdown: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let c = Self::resolve_port(cagr, outputs)?;
+        let m = Self::resolve_port(max_drawdown, outputs)?;
+        return casiros_core::markets::calmar_ratio(c, m)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_altman_z_score(
+        working_capital_to_assets: &Port,
+        retained_earnings_to_assets: &Port,
+        ebit_to_assets: &Port,
+        equity_to_liabilities: &Port,
+        sales_to_assets: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let wc = Self::resolve_port(working_capital_to_assets, outputs)?;
+        let re = Self::resolve_port(retained_earnings_to_assets, outputs)?;
+        let ebit = Self::resolve_port(ebit_to_assets, outputs)?;
+        let eq = Self::resolve_port(equity_to_liabilities, outputs)?;
+        let sales = Self::resolve_port(sales_to_assets, outputs)?;
+        return casiros_core::financial::altman_z_score(wc, re, ebit, eq, sales)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_tax_shield(
+        tax_rate: &Port,
+        debt: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let t = Self::resolve_port(tax_rate, outputs)?;
+        let d = Self::resolve_port(debt, outputs)?;
+        return casiros_core::corporate::tax_shield(t, d)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_adjusted_present_value(
+        unlevered_npv: &Port,
+        pv_tax_shield: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let u = Self::resolve_port(unlevered_npv, outputs)?;
+        let p = Self::resolve_port(pv_tax_shield, outputs)?;
+        return casiros_core::corporate::adjusted_present_value(u, p)
             .map_err(|err| Self::wrap_formula_error(node_id, err));
     }
 

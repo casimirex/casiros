@@ -500,6 +500,50 @@ impl EngineBuilder {
                 roe: self.port(roe)?,
                 dividend_payout_ratio: self.port(dividend_payout_ratio)?,
             }),
+            FormulaRequest::Beta {
+                asset_returns,
+                market_returns,
+            } => Ok(FormulaKind::Beta {
+                asset_returns: self.port(asset_returns)?,
+                market_returns: self.port(market_returns)?,
+            }),
+            FormulaRequest::SortinoRatio {
+                portfolio_return,
+                risk_free_rate,
+                downside_deviation,
+            } => Ok(FormulaKind::SortinoRatio {
+                portfolio_return: self.port(portfolio_return)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                downside_deviation: self.port(downside_deviation)?,
+            }),
+            FormulaRequest::CalmarRatio { cagr, max_drawdown } => Ok(FormulaKind::CalmarRatio {
+                cagr: self.port(cagr)?,
+                max_drawdown: self.port(max_drawdown)?,
+            }),
+            FormulaRequest::AltmanZScore {
+                working_capital_to_assets,
+                retained_earnings_to_assets,
+                ebit_to_assets,
+                equity_to_liabilities,
+                sales_to_assets,
+            } => Ok(FormulaKind::AltmanZScore {
+                working_capital_to_assets: self.port(working_capital_to_assets)?,
+                retained_earnings_to_assets: self.port(retained_earnings_to_assets)?,
+                ebit_to_assets: self.port(ebit_to_assets)?,
+                equity_to_liabilities: self.port(equity_to_liabilities)?,
+                sales_to_assets: self.port(sales_to_assets)?,
+            }),
+            FormulaRequest::TaxShield { tax_rate, debt } => Ok(FormulaKind::TaxShield {
+                tax_rate: self.port(tax_rate)?,
+                debt: self.port(debt)?,
+            }),
+            FormulaRequest::AdjustedPresentValue {
+                unlevered_npv,
+                pv_tax_shield,
+            } => Ok(FormulaKind::AdjustedPresentValue {
+                unlevered_npv: self.port(unlevered_npv)?,
+                pv_tax_shield: self.port(pv_tax_shield)?,
+            }),
         }
     }
 

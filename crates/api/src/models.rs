@@ -451,6 +451,62 @@ pub enum FormulaRequest {
         /// Dividend payout ratio binding.
         dividend_payout_ratio: PortRequest,
     },
+
+    /// Beta coefficient — systematic risk.
+    Beta {
+        /// Asset returns binding.
+        asset_returns: PortRequest,
+        /// Market returns binding.
+        market_returns: PortRequest,
+    },
+
+    /// Sortino ratio — downside risk-adjusted return.
+    SortinoRatio {
+        /// Portfolio return binding.
+        portfolio_return: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Downside deviation binding.
+        downside_deviation: PortRequest,
+    },
+
+    /// Calmar ratio — return / max drawdown.
+    CalmarRatio {
+        /// CAGR binding.
+        cagr: PortRequest,
+        /// Maximum drawdown binding.
+        max_drawdown: PortRequest,
+    },
+
+    /// Altman Z-score — bankruptcy prediction.
+    AltmanZScore {
+        /// Working capital / total assets binding.
+        working_capital_to_assets: PortRequest,
+        /// Retained earnings / total assets binding.
+        retained_earnings_to_assets: PortRequest,
+        /// EBIT / total assets binding.
+        ebit_to_assets: PortRequest,
+        /// Market equity / book liabilities binding.
+        equity_to_liabilities: PortRequest,
+        /// Sales / total assets binding.
+        sales_to_assets: PortRequest,
+    },
+
+    /// Present value of the tax shield from debt financing.
+    TaxShield {
+        /// Corporate tax rate binding.
+        tax_rate: PortRequest,
+        /// Debt amount binding.
+        debt: PortRequest,
+    },
+
+    /// Adjusted present value (APV).
+    AdjustedPresentValue {
+        /// Unlevered NPV binding.
+        unlevered_npv: PortRequest,
+        /// PV of tax shield binding.
+        pv_tax_shield: PortRequest,
+    },
 }
 
 /// A port binding: either a literal value or a reference to another node by

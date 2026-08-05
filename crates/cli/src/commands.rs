@@ -702,6 +702,54 @@ fn formula_request_from_kind(
             roe: port(roe, id_to_name),
             dividend_payout_ratio: port(dividend_payout_ratio, id_to_name),
         },
+        FormulaKind::Beta {
+            asset_returns,
+            market_returns,
+        } => casiros_api::models::FormulaRequest::Beta {
+            asset_returns: port(asset_returns, id_to_name),
+            market_returns: port(market_returns, id_to_name),
+        },
+        FormulaKind::SortinoRatio {
+            portfolio_return,
+            risk_free_rate,
+            downside_deviation,
+        } => casiros_api::models::FormulaRequest::SortinoRatio {
+            portfolio_return: port(portfolio_return, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            downside_deviation: port(downside_deviation, id_to_name),
+        },
+        FormulaKind::CalmarRatio { cagr, max_drawdown } => {
+            casiros_api::models::FormulaRequest::CalmarRatio {
+                cagr: port(cagr, id_to_name),
+                max_drawdown: port(max_drawdown, id_to_name),
+            }
+        }
+        FormulaKind::AltmanZScore {
+            working_capital_to_assets,
+            retained_earnings_to_assets,
+            ebit_to_assets,
+            equity_to_liabilities,
+            sales_to_assets,
+        } => casiros_api::models::FormulaRequest::AltmanZScore {
+            working_capital_to_assets: port(working_capital_to_assets, id_to_name),
+            retained_earnings_to_assets: port(retained_earnings_to_assets, id_to_name),
+            ebit_to_assets: port(ebit_to_assets, id_to_name),
+            equity_to_liabilities: port(equity_to_liabilities, id_to_name),
+            sales_to_assets: port(sales_to_assets, id_to_name),
+        },
+        FormulaKind::TaxShield { tax_rate, debt } => {
+            casiros_api::models::FormulaRequest::TaxShield {
+                tax_rate: port(tax_rate, id_to_name),
+                debt: port(debt, id_to_name),
+            }
+        }
+        FormulaKind::AdjustedPresentValue {
+            unlevered_npv,
+            pv_tax_shield,
+        } => casiros_api::models::FormulaRequest::AdjustedPresentValue {
+            unlevered_npv: port(unlevered_npv, id_to_name),
+            pv_tax_shield: port(pv_tax_shield, id_to_name),
+        },
     };
 }
 
