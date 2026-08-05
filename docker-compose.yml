@@ -7,8 +7,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - CASIROS_BIND_ADDR=0.0.0.0:8080
-      - CASIROS_LOG_LEVEL=info
+      - CASIROS__BIND_ADDR=0.0.0.0:8080
+      - CASIROS__LOG_LEVEL=info
       - CASIROS__SNAPSHOT__BACKEND=memory
       - CASIROS__POSTGRES__URL=postgresql://casiros:casiros@postgres:5432/casiros
     depends_on:
@@ -29,7 +29,7 @@ services:
     container_name: casiros-worker
     environment:
       - CASIROS__POSTGRES__URL=postgresql://casiros:casiros@postgres:5432/casiros
-      - CASIROS_LOG_LEVEL=info
+      - CASIROS__LOG_LEVEL=info
     depends_on:
       postgres:
         condition: service_healthy

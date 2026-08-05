@@ -13,8 +13,8 @@ CASIROS uses layered configuration (lowest to highest precedence):
 
 | Variable | Default | Description |
 |---|---|---|
-| `CASIROS_BIND_ADDR` | `127.0.0.1:8080` | HTTP/WS bind address |
-| `CASIROS_LOG_LEVEL` | `info` | Log level |
+| `CASIROS__BIND_ADDR` | `127.0.0.1:8080` | HTTP/WS bind address |
+| `CASIROS__LOG_LEVEL` | `info` | Log level |
 | `CASIROS_RATE_LIMIT_RPM` | `60` | Per-tenant rate limit |
 | `CASIROS_API_KEYS` | — | Comma-separated API keys |
 | `CASIROS_API_KEY_TENANTS` | — | Key-to-tenant mapping |

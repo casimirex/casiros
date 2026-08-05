@@ -33,7 +33,7 @@ COPY --from=builder /usr/src/casiros/config/default.toml /app/config/default.tom
 
 USER casiros
 
-ENV CASIROS_BIND_ADDR=0.0.0.0:8080
+ENV CASIROS__BIND_ADDR=0.0.0.0:8080
 
 EXPOSE 8080
 

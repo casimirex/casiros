@@ -27,8 +27,8 @@ CASIROS uses layered configuration (lowest to highest precedence):
 
 | Environment Variable | Default | Description |
 |---|---|---|
-| `CASIROS_BIND_ADDR` | `127.0.0.1:8080` | HTTP/WS bind address. Use `0.0.0.0:8080` in containers. |
-| `CASIROS_LOG_LEVEL` | `info` | Log level (`trace`, `debug`, `info`, `warn`, `error`). |
+| `CASIROS__BIND_ADDR` | `127.0.0.1:8080` | HTTP/WS bind address. Use `0.0.0.0:8080` in containers. |
+| `CASIROS__LOG_LEVEL` | `info` | Log level (`trace`, `debug`, `info`, `warn`, `error`). |
 | `CASIROS_RATE_LIMIT_RPM` | `60` | Per-key rate limit in requests per minute. |
 | `CASIROS__SNAPSHOT__BACKEND` | `memory` | `memory` or `postgres`. |
 | `CASIROS__POSTGRES__URL` | — | Postgres connection string when backend is `postgres`. |
@@ -39,7 +39,7 @@ CASIROS uses layered configuration (lowest to highest precedence):
 Example for a Postgres-backed deployment with tenant isolation:
 
 ```bash
-export CASIROS_BIND_ADDR=0.0.0.0:8080
+export CASIROS__BIND_ADDR=0.0.0.0:8080
 export CASIROS__SNAPSHOT__BACKEND=postgres
 export CASIROS__POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros
 export CASIROS_API_KEYS="prod-key-1,prod-key-2"
@@ -197,7 +197,7 @@ There is no runtime key management API in the current release.
 
 CASIROS emits structured `tracing` logs. Each HTTP request receives a span
 containing the method, path, status code, and latency. Configure the log level
-with `CASIROS_LOG_LEVEL`.
+with `CASIROS__LOG_LEVEL`.
 
 Example output:
 

@@ -70,7 +70,7 @@ cd python && pip install -e ".[dev]" && pytest
 
 ## API Endpoints
 
-The API server binds to `127.0.0.1:8080` by default (override with `CASIROS_BIND_ADDR`).
+The API server binds to `127.0.0.1:8080` by default (override with `CASIROS__BIND_ADDR`).
 
 ### `GET /healthz`
 
@@ -276,14 +276,14 @@ Nested keys use double underscores, e.g. `CASIROS__SNAPSHOT__BACKEND` overrides 
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `CASIROS_BIND_ADDR` | `127.0.0.1:8080` | HTTP server bind address |
-| `CASIROS_LOG_LEVEL` | `info` | Tracing filter (`info`, `debug`, etc.) |
+| `CASIROS__BIND_ADDR` | `127.0.0.1:8080` | HTTP server bind address |
+| `CASIROS__LOG_LEVEL` | `info` | Tracing filter (`info`, `debug`, etc.) |
 | `CASIROS_RATE_LIMIT_RPM` | `60` | Per-API-key rate limit |
 | `CASIROS__SNAPSHOT__BACKEND` | `memory` | Snapshot backend: `memory` or `postgres` |
 | `CASIROS__POSTGRES__URL` | `postgresql://casiros:casiros@localhost:5432/casiros` | PostgreSQL connection URL |
 
 ```bash
-CASIROS_BIND_ADDR=0.0.0.0:3000 \
+CASIROS__BIND_ADDR=0.0.0.0:3000 \
 CASIROS__SNAPSHOT__BACKEND=postgres \
 CASIROS__POSTGRES__URL=postgresql://user:pass@localhost:5432/casiros \
   cargo run -p casiros-api
@@ -346,7 +346,7 @@ Or with plain Docker:
 
 ```bash
 docker build -t casiros-api:latest .
-docker run -p 8080:8080 -e CASIROS_BIND_ADDR=0.0.0.0:8080 casiros-api:latest
+docker run -p 8080:8080 -e CASIROS__BIND_ADDR=0.0.0.0:8080 casiros-api:latest
 ```
 
 The runtime image uses a non-root user, exposes port `8080`, and includes a
