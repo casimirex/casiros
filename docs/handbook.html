@@ -1,0 +1,1856 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CASIROS Operator's Handbook</title>
+<meta name="description" content="Complete operating manual for CASIROS: from first health check to production deployment.">
+<style>
+  :root {
+    --ground: #f7f8fa;
+    --panel: #ffffff;
+    --panel-2: #eef1f5;
+    --ink: #16202c;
+    --ink-2: #43536a;
+    --ink-3: #6b7d94;
+    --rule: #d5dce5;
+    --rule-2: #e6ebf1;
+    --accent: #b06a12;
+    --accent-bright: #e8a33d;
+    --accent-wash: #fdf3e2;
+    --ok: #1c7a4a;
+    --ok-wash: #e6f4ec;
+    --warn: #9a5a05;
+    --crit: #ad2727;
+    --crit-wash: #fbeaea;
+    --term-bg: #0d1520;
+    --term-ink: #cfdcea;
+    --term-dim: #718496;
+    --shadow: 0 1px 2px rgba(22,32,44,.06), 0 8px 24px rgba(22,32,44,.06);
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: "Inter Tight", "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0b1119;
+      --panel: #121b26;
+      --panel-2: #18232f;
+      --ink: #e3ebf4;
+      --ink-2: #a8bacd;
+      --ink-3: #7d8ea3;
+      --rule: #253243;
+      --rule-2: #1d2733;
+      --accent: #e8a33d;
+      --accent-bright: #f5bd67;
+      --accent-wash: #251b0c;
+      --ok: #4fc98a;
+      --ok-wash: #0e2419;
+      --warn: #e0a24a;
+      --crit: #f2777a;
+      --crit-wash: #2a1416;
+      --term-bg: #060b12;
+      --term-ink: #cfdcea;
+      --term-dim: #66788c;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0b1119; --panel: #121b26; --panel-2: #18232f;
+    --ink: #e3ebf4; --ink-2: #a8bacd; --ink-3: #7d8ea3;
+    --rule: #253243; --rule-2: #1d2733;
+    --accent: #e8a33d; --accent-bright: #f5bd67; --accent-wash: #251b0c;
+    --ok: #4fc98a; --ok-wash: #0e2419; --warn: #e0a24a;
+    --crit: #f2777a; --crit-wash: #2a1416;
+    --term-bg: #060b12; --term-ink: #cfdcea; --term-dim: #66788c;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"] {
+    --ground: #f7f8fa; --panel: #ffffff; --panel-2: #eef1f5;
+    --ink: #16202c; --ink-2: #43536a; --ink-3: #6b7d94;
+    --rule: #d5dce5; --rule-2: #e6ebf1;
+    --accent: #b06a12; --accent-bright: #e8a33d; --accent-wash: #fdf3e2;
+    --ok: #1c7a4a; --ok-wash: #e6f4ec; --warn: #9a5a05;
+    --crit: #ad2727; --crit-wash: #fbeaea;
+    --term-bg: #0d1520; --term-ink: #cfdcea; --term-dim: #718496;
+    --shadow: 0 1px 2px rgba(22,32,44,.06), 0 8px 24px rgba(22,32,44,.06);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; border-radius: 2px; }
+  code { font-family: var(--mono); font-size: .88em; }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    background: var(--panel);
+  }
+  .masthead-inner {
+    max-width: 1180px; margin: 0 auto; padding: 44px 28px 38px;
+    display: grid; gap: 22px;
+  }
+  .stencil {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--accent);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .stencil::after {
+    content: ""; flex: 1; height: 1px; background: var(--rule);
+  }
+  h1 {
+    margin: 0; font-size: clamp(2.1rem, 5.2vw, 3.6rem); line-height: 1.02;
+    letter-spacing: -.03em; font-weight: 700; text-wrap: balance;
+  }
+  .subtitle {
+    margin: 0; max-width: 62ch; color: var(--ink-2); font-size: 1.075rem;
+  }
+  .specsheet {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    border-radius: 3px; overflow: hidden; margin-top: 6px;
+  }
+  .spec { background: var(--panel); padding: 13px 16px; }
+  .spec dt {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-3); margin: 0 0 5px;
+  }
+  .spec dd {
+    margin: 0; font-family: var(--mono); font-size: .93rem;
+    font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Shell ---------- */
+  .shell {
+    max-width: 1180px; margin: 0 auto; padding: 0 28px 100px;
+    display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 52px;
+    align-items: start;
+  }
+  @media (max-width: 940px) {
+    .shell { grid-template-columns: 1fr; gap: 0; }
+    .rail { position: static; border-right: 0; border-bottom: 1px solid var(--rule);
+            padding: 22px 0; margin-bottom: 30px; max-height: none; }
+  }
+
+  /* ---------- Chapter rail ---------- */
+  .rail {
+    position: sticky; top: 0; align-self: start;
+    max-height: 100vh; overflow-y: auto; padding: 34px 20px 34px 0;
+    border-right: 1px solid var(--rule-2);
+  }
+  .rail-head {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ink-3); margin: 0 0 14px;
+  }
+  .rail ol { list-style: none; margin: 0 0 26px; padding: 0; display: grid; gap: 1px; }
+  .rail a {
+    display: grid; grid-template-columns: 24px 1fr; gap: 9px;
+    padding: 7px 8px; border-radius: 3px; text-decoration: none;
+    color: var(--ink-2); font-size: .875rem; line-height: 1.35;
+    border-left: 2px solid transparent;
+  }
+  .rail a:hover { background: var(--panel-2); color: var(--ink); }
+  .rail a .n {
+    font-family: var(--mono); font-size: .72rem; color: var(--accent);
+    font-variant-numeric: tabular-nums; padding-top: 2px;
+  }
+  .tier {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding: 14px 0 7px; border-top: 1px solid var(--rule-2); margin-top: 6px;
+  }
+  .tier:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+
+  /* ---------- Reading column ---------- */
+  main { padding-top: 34px; min-width: 0; }
+  section { scroll-margin-top: 24px; margin-bottom: 62px; }
+  .ch-head { border-top: 2px solid var(--ink); padding-top: 14px; margin-bottom: 22px; }
+  .ch-num {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .16em;
+    color: var(--accent); text-transform: uppercase;
+  }
+  h2 {
+    margin: 6px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.14;
+    letter-spacing: -.022em; font-weight: 700; text-wrap: balance;
+  }
+  h3 {
+    margin: 34px 0 12px; font-size: 1.12rem; letter-spacing: -.012em;
+    font-weight: 650; text-wrap: balance;
+  }
+  h4 {
+    margin: 24px 0 8px; font-size: .95rem; font-weight: 650; color: var(--ink);
+  }
+  p { margin: 0 0 15px; max-width: 68ch; color: var(--ink-2); }
+  main ul, main ol { max-width: 68ch; color: var(--ink-2); padding-left: 20px; margin: 0 0 15px; }
+  main li { margin-bottom: 7px; }
+  strong { color: var(--ink); font-weight: 620; }
+
+  /* ---------- Terminal ---------- */
+  .term {
+    background: var(--term-bg); border: 1px solid var(--rule);
+    border-radius: 5px; overflow: hidden; margin: 18px 0 22px;
+    box-shadow: var(--shadow);
+  }
+  .term-bar {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 13px; border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.03);
+  }
+  .term-dot { width: 9px; height: 9px; border-radius: 50%; background: #34455a; flex: none; }
+  .term-title {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--term-dim); margin-left: 5px;
+  }
+  .term-body { padding: 15px 16px; overflow-x: auto; }
+  .term pre {
+    margin: 0; font-family: var(--mono); font-size: 12.8px; line-height: 1.62;
+    color: var(--term-ink); white-space: pre;
+  }
+  .cmd { color: var(--accent-bright); }
+  .out-ok { color: #5fcf94; }
+  .out-err { color: #f2777a; }
+  .out-dim { color: var(--term-dim); }
+  .out-key { color: #6fb5e8; }
+
+  /* ---------- Callouts ---------- */
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-wash);
+    padding: 13px 16px; border-radius: 0 4px 4px 0; margin: 20px 0; max-width: 68ch;
+  }
+  .note.crit { border-left-color: var(--crit); background: var(--crit-wash); }
+  .note.ok { border-left-color: var(--ok); background: var(--ok-wash); }
+  .note p { margin: 0; color: var(--ink-2); font-size: .93rem; }
+  .note p + p { margin-top: 9px; }
+  .note-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .note.crit .note-label { color: var(--crit); }
+  .note.ok .note-label { color: var(--ok); }
+
+  /* ---------- Tables ---------- */
+  .tw { overflow-x: auto; margin: 18px 0 22px; border: 1px solid var(--rule); border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; background: var(--panel); }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--rule-2); vertical-align: top; }
+  th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600;
+    background: var(--panel-2); white-space: nowrap;
+  }
+  td { color: var(--ink-2); }
+  td code { color: var(--ink); background: var(--panel-2); padding: 1px 5px; border-radius: 3px; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .mono-col { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---------- Pills ---------- */
+  .pill {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    letter-spacing: .09em; text-transform: uppercase; padding: 2px 7px;
+    border-radius: 3px; font-weight: 600; white-space: nowrap;
+  }
+  .p-ok { background: var(--ok-wash); color: var(--ok); }
+  .p-crit { background: var(--crit-wash); color: var(--crit); }
+  .p-warn { background: var(--accent-wash); color: var(--warn); }
+
+  /* ---------- Figure ---------- */
+  figure { margin: 22px 0; }
+  figcaption {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em;
+    color: var(--ink-3); margin-top: 9px; text-transform: uppercase;
+  }
+  .diagram {
+    background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 5px; padding: 20px; overflow-x: auto;
+  }
+  .diagram svg { display: block; min-width: 520px; width: 100%; height: auto; }
+
+  /* ---------- Steps ---------- */
+  .steps { counter-reset: s; list-style: none; padding: 0; max-width: 68ch; }
+  .steps > li {
+    counter-increment: s; position: relative; padding-left: 38px; margin-bottom: 20px;
+  }
+  .steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    width: 25px; height: 25px; border-radius: 3px;
+    background: var(--panel-2); border: 1px solid var(--rule);
+    color: var(--accent); font-family: var(--mono); font-size: 11.5px;
+    font-weight: 700; display: grid; place-items: center;
+  }
+  .steps h4 { margin: 0 0 5px; }
+
+  footer {
+    max-width: 1180px; margin: 0 auto; padding: 30px 28px 60px;
+    border-top: 1px solid var(--rule); color: var(--ink-3); font-size: .85rem;
+  }
+  footer p { color: var(--ink-3); max-width: 68ch; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="stencil">Operator's Handbook &middot; v0.7.0</div>
+    <h1>CASIROS</h1>
+    <p class="subtitle">
+      A complete operating manual for the financial physics engine and multiverse
+      simulator — from your first health check through multi-tenant production
+      deployment. Every command and response in this handbook was captured from a
+      running instance.
+    </p>
+    <dl class="specsheet">
+      <div class="spec"><dt>Formulas</dt><dd>51 wired</dd></div>
+      <div class="spec"><dt>Crates</dt><dd>9</dd></div>
+      <div class="spec"><dt>Test suites</dt><dd>35 passing</dd></div>
+      <div class="spec"><dt>Unsafe code</dt><dd>0 lines</dd></div>
+      <div class="spec"><dt>License</dt><dd>MIT / Apache-2</dd></div>
+    </dl>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <p class="rail-head">Contents</p>
+
+    <p class="tier">Novice</p>
+    <ol>
+      <li><a href="#c1"><span class="n">01</span><span>What CASIROS Is</span></a></li>
+      <li><a href="#c2"><span class="n">02</span><span>Starting the Server</span></a></li>
+      <li><a href="#c3"><span class="n">03</span><span>Your First Calculation</span></a></li>
+      <li><a href="#c4"><span class="n">04</span><span>Reading the Dashboard</span></a></li>
+    </ol>
+
+    <p class="tier">Practitioner</p>
+    <ol start="5">
+      <li><a href="#c5"><span class="n">05</span><span>Building Real Models</span></a></li>
+      <li><a href="#c6"><span class="n">06</span><span>Monte Carlo Simulation</span></a></li>
+      <li><a href="#c7"><span class="n">07</span><span>Saving &amp; Reusing Graphs</span></a></li>
+      <li><a href="#c8"><span class="n">08</span><span>The Command Line</span></a></li>
+      <li><a href="#c9"><span class="n">09</span><span>Errors &amp; What They Mean</span></a></li>
+    </ol>
+
+    <p class="tier">Professional</p>
+    <ol start="10">
+      <li><a href="#c10"><span class="n">10</span><span>Configuration</span></a></li>
+      <li><a href="#c11"><span class="n">11</span><span>Keys, Tenants, Limits</span></a></li>
+      <li><a href="#c12"><span class="n">12</span><span>Async Jobs &amp; Workers</span></a></li>
+      <li><a href="#c13"><span class="n">13</span><span>The Audit Trail</span></a></li>
+      <li><a href="#c14"><span class="n">14</span><span>Admin Operations</span></a></li>
+      <li><a href="#c15"><span class="n">15</span><span>Metrics &amp; Monitoring</span></a></li>
+      <li><a href="#c16"><span class="n">16</span><span>Production Deployment</span></a></li>
+      <li><a href="#c17"><span class="n">17</span><span>Troubleshooting</span></a></li>
+    </ol>
+
+    <p class="tier">Reference</p>
+    <ol start="18">
+      <li><a href="#c18"><span class="n">18</span><span>Formula Catalog</span></a></li>
+      <li><a href="#c19"><span class="n">19</span><span>Endpoint Index</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ============ 01 ============ -->
+    <section id="c1">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 01 &middot; Novice</div>
+        <h2>What CASIROS Is</h2>
+      </div>
+
+      <p>
+        CASIROS computes financial mathematics. You describe a calculation as a
+        <strong>graph</strong> — boxes that hold numbers, and boxes that compute formulas
+        from other boxes — and CASIROS works out the right order to evaluate them and
+        returns the answers.
+      </p>
+      <p>
+        That indirection buys you three things a spreadsheet cannot easily give you:
+        every value is an exact decimal (never a floating-point approximation), the same
+        model can be run thousands of times with randomised inputs, and the whole model
+        is a JSON document you can version, share, and replay.
+      </p>
+
+      <h3>The pieces</h3>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr><th>Component</th><th>What it does</th><th>You'll meet it in</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono-col">casiros-api</td><td>HTTP server exposing every feature</td><td>Chapter 02</td></tr>
+            <tr><td class="mono-col">Dashboard</td><td>Browser UI for exploring the API</td><td>Chapter 04</td></tr>
+            <tr><td class="mono-col">casiros-cli</td><td>Runs models from files, no server needed</td><td>Chapter 08</td></tr>
+            <tr><td class="mono-col">casiros-worker</td><td>Executes long simulations in the background</td><td>Chapter 12</td></tr>
+            <tr><td class="mono-col">PostgreSQL</td><td>Stores snapshots, audit events, and jobs</td><td>Chapter 10</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Two vocabulary words</h3>
+      <p>
+        An <strong>input node</strong> holds a number you supply at run time. A
+        <strong>formula node</strong> computes a value from constants and from other
+        nodes' outputs. An <strong>edge</strong> declares that one node depends on
+        another. CASIROS refuses to evaluate a graph containing a cycle, so a model can
+        never depend on its own output.
+      </p>
+    </section>
+
+    <!-- ============ 02 ============ -->
+    <section id="c2">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 02 &middot; Novice</div>
+        <h2>Starting the Server</h2>
+      </div>
+
+      <p>
+        The fastest path is Docker Compose, which starts the API, a PostgreSQL
+        database, a Redis cache, and the background worker together.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash</span></div>
+        <div class="term-body"><pre><span class="cmd">$ git clone https://github.com/casimirex/casiros.git</span>
+<span class="cmd">$ cd casiros</span>
+<span class="cmd">$ docker compose up -d</span>
+<span class="out-dim"> Container casiros-postgres  Started
+ Container casiros-redis     Started
+ Container casiros-api       Started
+ Container casiros-worker    Started</span></pre></div>
+      </div>
+
+      <p>Confirm it is alive. This endpoint needs no credentials:</p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — health check</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s http://localhost:8080/healthz</span>
+<span class="out-ok">{"status":"ok"}</span></pre></div>
+      </div>
+
+      <div class="note ok">
+        <span class="note-label">Verified</span>
+        <p>
+          That response is the literal output from a running instance. If you see it,
+          the server is up and every remaining chapter will work.
+        </p>
+      </div>
+
+      <h3>Running from source instead</h3>
+      <p>Requires Rust 1.85 or newer and a reachable PostgreSQL.</p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — from source</span></div>
+        <div class="term-body"><pre><span class="cmd">$ docker compose up -d postgres</span>
+<span class="cmd">$ cargo run --release -p casiros-api</span>
+<span class="out-dim">INFO casiros_api: CASIROS API starting on 127.0.0.1:8080
+INFO casiros_api::auth: API authentication enabled with 1 key(s)
+INFO casiros_api: Using Postgres snapshot, audit, and job backends</span></pre></div>
+      </div>
+
+      <p>
+        That third line is worth reading every time you start the server. It tells you
+        which storage backend was actually selected. If it says
+        <em>in-memory</em> when you expected Postgres, your configuration did not take
+        effect — Chapter 10 explains exactly why that happens.
+      </p>
+    </section>
+
+    <!-- ============ 03 ============ -->
+    <section id="c3">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 03 &middot; Novice</div>
+        <h2>Your First Calculation</h2>
+      </div>
+
+      <p>
+        We will compute compound growth: what does $100 become after 10 years at 5%
+        annual interest? Two nodes — an input holding the principal, and a formula
+        computing future value from it.
+      </p>
+
+      <figure>
+        <div class="diagram">
+          <svg viewBox="0 0 560 130" role="img" aria-label="Diagram: a node named principal feeds a node named fv, which computes future value.">
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <g font-family="ui-monospace, monospace" font-size="12">
+              <rect x="14" y="34" width="150" height="58" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+              <text x="30" y="57" fill="currentColor" font-size="10" opacity=".6">INPUT</text>
+              <text x="30" y="76" fill="currentColor" font-weight="700">principal = 100</text>
+
+              <line x1="170" y1="63" x2="238" y2="63" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)" color="currentColor"/>
+              <text x="176" y="53" fill="currentColor" font-size="10" opacity=".55">edge</text>
+
+              <rect x="246" y="20" width="300" height="86" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+              <text x="262" y="42" fill="currentColor" font-size="10" opacity=".6">FORMULA — future_value</text>
+              <text x="262" y="62" fill="currentColor">present_value &#8592; principal</text>
+              <text x="262" y="79" fill="currentColor">rate = 0.05   periods = 10</text>
+              <text x="262" y="96" fill="currentColor" font-weight="700">&#8594; fv</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Figure 3.1 — Graph structure for the future-value model</figcaption>
+      </figure>
+
+      <p>Send it:</p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — POST /evaluate</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -X POST http://localhost:8080/evaluate \
+    -H "Content-Type: application/json" \
+    -H "X-API-Key: demo-key" \
+    -d '{
+      "nodes": [
+        {"input": {"name": "principal"}},
+        {"formula": {"name": "fv", "kind": {
+           "formula": "future_value",
+           "present_value": {"node": "principal"},
+           "rate": 0.05,
+           "periods": 10
+        }}}
+      ],
+      "edges": [{"dependency": "principal", "dependent": "fv"}],
+      "inputs": {"principal": "100"}
+    }'</span>
+
+<span class="out-ok">{
+    "outputs": {
+        "principal": "100",
+        "fv": "162.88946267774414062500"</span>
+<span class="out-ok">    }
+}</span></pre></div>
+      </div>
+
+      <p>
+        $100 becomes <strong>$162.8894626777441406250</strong>. Note the twenty decimal
+        places — that is an exact decimal result, not a rounded float. Note also that
+        the principal is quoted as a <em>string</em> in the request. Amounts always
+        travel as strings so that no JSON parser anywhere in the chain can quietly
+        round them.
+      </p>
+
+      <h3>Anatomy of the request</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">nodes</td><td>Every box in the graph, input or formula</td></tr>
+            <tr><td class="mono-col">edges</td><td>Dependencies — <code>dependency</code> is computed before <code>dependent</code></td></tr>
+            <tr><td class="mono-col">inputs</td><td>Run-time values, keyed by input node name</td></tr>
+            <tr><td class="mono-col">{"node": "x"}</td><td>Inside a formula: read node <code>x</code>'s output</td></tr>
+            <tr><td class="mono-col">0.05</td><td>Inside a formula: a literal constant</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Try this</span>
+        <p>
+          Change <code>"periods": 10</code> to <code>30</code> and re-send. You should
+          get <code>432.19424317675...</code> — the same model, a different horizon.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 04 ============ -->
+    <section id="c4">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 04 &middot; Novice</div>
+        <h2>Reading the Dashboard</h2>
+      </div>
+
+      <p>
+        Open <a href="http://localhost:8080/dashboard">localhost:8080/dashboard</a>.
+        It is a single page of stacked panels, each mapping to one endpoint. Nothing is
+        hidden behind menus — you can see the whole API surface at once.
+      </p>
+
+      <figure>
+        <div class="diagram">
+          <svg viewBox="0 0 560 330" role="img" aria-label="Layout map of the dashboard showing seven stacked panels: Connection, Evaluate, Simulate, Snapshots, Jobs, Audit, and Admin.">
+            <g font-family="ui-monospace, monospace" font-size="11">
+              <rect x="10" y="8" width="540" height="30" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+              <text x="24" y="27" fill="currentColor" font-weight="700">CASIROS Dashboard</text>
+
+              <rect x="10" y="46" width="540" height="38" rx="3" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+              <text x="24" y="63" fill="currentColor" font-weight="700">Connection</text>
+              <text x="24" y="77" fill="currentColor" opacity=".62">base URL &middot; API key &middot; [Check health]</text>
+
+              <rect x="10" y="92" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+              <text x="24" y="109" fill="currentColor" font-weight="700">Evaluate</text>
+              <text x="24" y="124" fill="currentColor" opacity=".62">JSON editor + bar chart</text>
+
+              <rect x="284" y="92" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+              <text x="298" y="109" fill="currentColor" font-weight="700">Simulate</text>
+              <text x="298" y="124" fill="currentColor" opacity=".62">JSON editor + stats chart</text>
+
+              <rect x="10" y="152" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+              <text x="24" y="169" fill="currentColor" font-weight="700">Snapshots</text>
+              <text x="24" y="184" fill="currentColor" opacity=".62">Save / Load / Delete / List</text>
+
+              <rect x="284" y="152" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+              <text x="298" y="169" fill="currentColor" font-weight="700">Jobs</text>
+              <text x="298" y="184" fill="currentColor" opacity=".62">Create / Get / Cancel</text>
+
+              <rect x="10" y="212" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+              <text x="24" y="229" fill="currentColor" font-weight="700">Audit</text>
+              <text x="24" y="244" fill="currentColor" opacity=".62">limit / offset &middot; [List events]</text>
+
+              <rect x="284" y="212" width="266" height="52" rx="3" fill="none" stroke="currentColor" stroke-opacity=".3"/>
+              <text x="298" y="229" fill="currentColor" font-weight="700">Admin</text>
+              <text x="298" y="244" fill="currentColor" opacity=".62">tenants &middot; keys &middot; stats</text>
+
+              <rect x="10" y="272" width="540" height="46" rx="3" fill="none" stroke="currentColor" stroke-opacity=".2" stroke-dasharray="3 3"/>
+              <text x="24" y="291" fill="currentColor" opacity=".55">Output area — JSON response, green on success, red on error</text>
+              <text x="24" y="307" fill="currentColor" opacity=".45">Footer: OpenAPI JSON &middot; Swagger UI</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Figure 4.1 — Dashboard panel layout map</figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>
+          <h4>Set your connection</h4>
+          <p>Enter the base URL and your API key in the Connection panel, then press
+          <strong>Check health</strong>. The key is reused by every other panel.</p>
+        </li>
+        <li>
+          <h4>Run the pre-loaded example</h4>
+          <p>The Evaluate panel arrives with a working future-value model already in
+          the editor. Press <strong>Run evaluation</strong> — you will see the JSON
+          response and a bar chart of the outputs.</p>
+        </li>
+        <li>
+          <h4>Edit and re-run</h4>
+          <p>The editor is plain JSON. Change a rate, add a node, press the button
+          again. This is the fastest way to learn the request format.</p>
+        </li>
+      </ol>
+
+      <div class="note">
+        <span class="note-label">Also available</span>
+        <p>
+          <a href="http://localhost:8080/swagger-ui">/swagger-ui</a> renders the full
+          OpenAPI specification with try-it-now forms for every documented endpoint.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 05 ============ -->
+    <section id="c5">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 05 &middot; Practitioner</div>
+        <h2>Building Real Models</h2>
+      </div>
+
+      <p>
+        Real models chain formulas together. Here is a weighted average cost of capital
+        with two inputs feeding one formula.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — WACC</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -X POST http://localhost:8080/evaluate \
+    -H "Content-Type: application/json" -H "X-API-Key: demo-key" \
+    -d '{
+      "nodes": [
+        {"input": {"name": "equity"}},
+        {"input": {"name": "debt"}},
+        {"formula": {"name": "wacc", "kind": {
+          "formula": "wacc",
+          "equity_value": {"node": "equity"},
+          "debt_value":   {"node": "debt"},
+          "cost_of_equity": 0.12,
+          "cost_of_debt":   0.06,
+          "tax_rate":       0.21
+        }}}
+      ],
+      "edges": [
+        {"dependency": "equity", "dependent": "wacc"},
+        {"dependency": "debt",   "dependent": "wacc"}
+      ],
+      "inputs": {"equity": "700000", "debt": "300000"}
+    }'</span>
+
+<span class="out-ok">{
+    "outputs": {
+        "debt": "300000",
+        "wacc": "0.098220",
+        "equity": "700000"
+    }
+}</span></pre></div>
+      </div>
+
+      <p>A blended cost of capital of <strong>9.822%</strong>.</p>
+
+      <h3>Formulas with no inputs at all</h3>
+      <p>
+        A formula whose ports are all constants needs no input nodes and no edges. This
+        is the quickest way to try an unfamiliar formula. Here are five at once,
+        including the risk and valuation formulas added most recently:
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — five constant-only formulas</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -X POST http://localhost:8080/evaluate \
+    -H "Content-Type: application/json" -H "X-API-Key: demo-key" \
+    -d '{"nodes":[
+      {"formula":{"name":"sortino","kind":{"formula":"sortino_ratio",
+        "portfolio_return":0.12,"risk_free_rate":0.02,"downside_deviation":0.08}}},
+      {"formula":{"name":"calmar","kind":{"formula":"calmar_ratio",
+        "cagr":0.15,"max_drawdown":0.20}}},
+      {"formula":{"name":"altman","kind":{"formula":"altman_z_score",
+        "working_capital_to_assets":0.30,"retained_earnings_to_assets":0.20,
+        "ebit_to_assets":0.25,"equity_to_liabilities":2.0,"sales_to_assets":1.5}}},
+      {"formula":{"name":"shield","kind":{"formula":"tax_shield",
+        "tax_rate":0.21,"debt":1000000}}},
+      {"formula":{"name":"apv","kind":{"formula":"adjusted_present_value",
+        "unlevered_npv":500000,"pv_tax_shield":210000}}}
+    ],"edges":[],"inputs":{}}'</span>
+
+<span class="out-ok">{
+    "outputs": {
+        "sortino": "1.25",
+        "altman":  "4.165",
+        "calmar":  "0.750",
+        "apv":     "710000",
+        "shield":  "210000.00"
+    }
+}</span></pre></div>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Result</th><th>Reading</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">sortino 1.25</td><td>1.25 units of excess return per unit of downside risk</td></tr>
+            <tr><td class="mono-col">calmar 0.750</td><td>15% growth against a 20% worst drawdown</td></tr>
+            <tr><td class="mono-col">altman 4.165</td><td>Above 3.0 — the "safe" zone for bankruptcy risk</td></tr>
+            <tr><td class="mono-col">shield 210000.00</td><td>21% of $1M debt, the present value of interest deductibility</td></tr>
+            <tr><td class="mono-col">apv 710000</td><td>$500k unlevered value plus the $210k shield</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ 06 ============ -->
+    <section id="c6">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 06 &middot; Practitioner</div>
+        <h2>Monte Carlo Simulation</h2>
+      </div>
+
+      <p>
+        Evaluation answers "what if the principal is exactly 100?". Simulation answers
+        "what if the principal is somewhere between 90 and 110, and I want the whole
+        distribution of outcomes?"
+      </p>
+      <p>
+        You add a <strong>bindings</strong> array attaching a probability distribution
+        to an input node, name a <strong>target</strong> node to measure, and set a
+        <strong>universe_count</strong> — how many independent runs to execute.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — POST /simulate, 5000 universes</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -X POST http://localhost:8080/simulate \
+    -H "Content-Type: application/json" -H "X-API-Key: demo-key" \
+    -d '{
+      "nodes": [
+        {"input": {"name": "principal"}},
+        {"formula": {"name": "fv", "kind": {"formula": "future_value",
+          "present_value": {"node": "principal"}, "rate": 0.05, "periods": 10}}}
+      ],
+      "edges": [{"dependency": "principal", "dependent": "fv"}],
+      "bindings": [{"node": "principal",
+                    "distribution": {"kind": "uniform", "low": 90, "high": 110}}],
+      "target": "fv",
+      "universe_count": 5000,
+      "seed": 42
+    }'</span>
+
+<span class="out-ok">{
+    "count":  5000,
+    "mean":   "163.01840583765845255388243872",
+    "median": "163.15086871094088973807864600",
+    "min":    "146.61446788454777351881126269",
+    "max":    "179.17610722598985879275978080"
+}</span></pre></div>
+      </div>
+
+      <p>
+        Five thousand runs: the mean outcome is about <strong>163.02</strong>, and the
+        realistic range runs from <strong>146.61</strong> to <strong>179.18</strong>.
+        That spread is the answer a single-point evaluation cannot give you.
+      </p>
+
+      <div class="note">
+        <span class="note-label">Reproducibility</span>
+        <p>
+          The <code>seed</code> field makes runs deterministic — the same seed and the
+          same model always produce byte-identical results. Omit it and CASIROS
+          defaults to seed 42. Always pin the seed for anything you intend to audit.
+        </p>
+      </div>
+
+      <h3>Available distributions</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Kind</th><th>Parameters</th><th>Use for</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">uniform</td><td><code>low</code>, <code>high</code></td><td>Equally likely anywhere in a range</td></tr>
+            <tr><td class="mono-col">normal</td><td><code>mean</code>, <code>std_dev</code></td><td>Bell-curve around an expected value</td></tr>
+            <tr><td class="mono-col">fixed</td><td><code>value</code></td><td>Pinning one input while others vary</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>How large can universe_count be?</h3>
+      <p>
+        Synchronous <code>/simulate</code> holds the HTTP connection open for the whole
+        run, so keep it in the low tens of thousands. Beyond that, use the asynchronous
+        job API in Chapter 12 — it returns immediately and executes in the background.
+      </p>
+    </section>
+
+    <!-- ============ 07 ============ -->
+    <section id="c7">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 07 &middot; Practitioner</div>
+        <h2>Saving &amp; Reusing Graphs</h2>
+      </div>
+
+      <p>
+        A snapshot stores a graph's structure — its nodes and edges, but not its input
+        values — under a name you choose, so you can rebuild the model later without
+        resending the whole document.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — snapshot lifecycle</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -X POST http://localhost:8080/snapshots \
+    -H "Content-Type: application/json" -H "X-API-Key: demo-key" \
+    -d '{"id":"retirement-model",
+         "nodes":[{"input":{"name":"principal"}},
+                  {"formula":{"name":"fv","kind":{"formula":"future_value",
+                    "present_value":{"node":"principal"},
+                    "rate":0.07,"periods":30}}}],
+         "edges":[{"dependency":"principal","dependent":"fv"}]}'</span>
+<span class="out-ok">{"id": "retirement-model"}</span>
+
+<span class="cmd">$ curl -s -H "X-API-Key: demo-key" http://localhost:8080/snapshots</span>
+<span class="out-ok">{"snapshots": [{"id": "retirement-model"}]}</span></pre></div>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Operation</th><th>Request</th></tr></thead>
+          <tbody>
+            <tr><td>Save (or overwrite)</td><td class="mono-col">POST /snapshots</td></tr>
+            <tr><td>List all</td><td class="mono-col">GET /snapshots</td></tr>
+            <tr><td>Fetch one</td><td class="mono-col">GET /snapshots/{id}</td></tr>
+            <tr><td>Delete</td><td class="mono-col">DELETE /snapshots/{id}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note crit">
+        <span class="note-label">Persistence depends on backend</span>
+        <p>
+          With the default in-memory backend, snapshots vanish when the server stops.
+          Set the Postgres backend (Chapter 10) for anything you intend to keep. The
+          startup log line tells you which one is live.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 08 ============ -->
+    <section id="c8">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 08 &middot; Practitioner</div>
+        <h2>The Command Line</h2>
+      </div>
+
+      <p>
+        <code>casiros-cli</code> runs models from JSON files with no server and no
+        database. It is the right tool for batch work, CI pipelines, and quick local
+        checks.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — casiros-cli --help</span></div>
+        <div class="term-body"><pre><span class="cmd">$ casiros-cli --help</span>
+<span class="out-dim">CASIROS command-line interface for evaluation, simulation, and graph persistence
+
+Usage: casiros-cli &lt;COMMAND&gt;
+
+Commands:
+  evaluate  Evaluate a causality graph from a JSON request file
+  simulate  Run a Monte Carlo simulation from a JSON request file
+  validate  Validate a graph request and report node/edge/depth counts
+  save      Load an engine JSON file and write a stable snapshot JSON file
+  load      Load a snapshot JSON file and write an engine JSON request file
+  convert   Convert between JSON, CSV, and Excel file formats
+  help      Print this message or the help of the given subcommand(s)</span></pre></div>
+      </div>
+
+      <p>
+        Put a model in a file — the same JSON body you would POST to
+        <code>/evaluate</code>:
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — validate then evaluate</span></div>
+        <div class="term-body"><pre><span class="cmd">$ cat graph.json</span>
+<span class="out-dim">{
+  "nodes": [
+    {"input": {"name": "principal"}},
+    {"formula": {"name": "fv", "kind": {"formula": "future_value",
+      "present_value": {"node": "principal"}, "rate": 0.07, "periods": 30}}}
+  ],
+  "edges": [{"dependency": "principal", "dependent": "fv"}],
+  "inputs": {"principal": "10000"}
+}</span>
+
+<span class="cmd">$ casiros-cli validate graph.json</span>
+<span class="out-ok">{"depth":2,"edge_count":1,"node_count":2,"valid":true}</span>
+
+<span class="cmd">$ casiros-cli evaluate graph.json</span>
+<span class="out-ok">{
+  "outputs": {
+    "principal": "10000",
+    "fv": "76122.550426620292066481289838"
+  }
+}</span></pre></div>
+      </div>
+
+      <p>
+        $10,000 compounding at 7% for 30 years reaches
+        <strong>$76,122.55</strong>. Run <code>validate</code> first in scripts — it
+        catches cycles and unknown references without executing anything, and reports
+        the graph's depth so you can spot models that have grown unexpectedly deep.
+      </p>
+    </section>
+
+    <!-- ============ 09 ============ -->
+    <section id="c9">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 09 &middot; Practitioner</div>
+        <h2>Errors &amp; What They Mean</h2>
+      </div>
+
+      <p>
+        Every error returns the same shape — <code>{"error": "..."}</code> — with a
+        message written to be actionable. These are real responses from a running
+        server.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — four failure modes</span></div>
+        <div class="term-body"><pre><span class="out-dim"># A depends on B and B depends on A</span>
+<span class="out-err">{"error":"Graph contains a directed cycle"}</span>
+
+<span class="out-dim"># A formula port points at a node that was never declared</span>
+<span class="out-err">{"error":"Port references unknown node: ghost"}</span>
+
+<span class="out-dim"># return_on_equity with equity = 0</span>
+<span class="out-err">{"error":"Formula evaluation failed at node NodeId(0):
+          Division by zero in Return on Equity (ROE)"}</span>
+
+<span class="out-dim"># An input node declared but no value supplied</span>
+<span class="out-err">{"error":"Missing required input value for node NodeId(0)"}</span></pre></div>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Status</th><th>Meaning</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill p-warn">400</span></td><td>The request or model is malformed</td><td>Read the message — it names the node or port</td></tr>
+            <tr><td><span class="pill p-crit">401</span></td><td>Missing or invalid API key</td><td>Check the <code>X-API-Key</code> header</td></tr>
+            <tr><td><span class="pill p-crit">404</span></td><td>No such resource in <em>your</em> tenant</td><td>Verify the id and the key's tenant</td></tr>
+            <tr><td><span class="pill p-warn">429</span></td><td>Rate limit exceeded</td><td>Back off, or raise the key's limit</td></tr>
+            <tr><td><span class="pill p-crit">500</span></td><td>Server-side failure</td><td>Check server logs</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">On 404 versus 403</span>
+        <p>
+          Requesting another tenant's resource returns <strong>404</strong>, not 403.
+          This is deliberate: a 403 would confirm the resource exists, leaking
+          information across the tenant boundary.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 10 ============ -->
+    <section id="c10">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 10 &middot; Professional</div>
+        <h2>Configuration</h2>
+      </div>
+
+      <p>
+        Configuration is layered. Later sources win: built-in defaults, then
+        <code>config/default.toml</code>, then environment variables.
+      </p>
+
+      <div class="note crit">
+        <span class="note-label">The single most common mistake</span>
+        <p>
+          CASIROS has <strong>two families</strong> of environment variable, and they
+          use different separators. Settings that flow through the config file layer
+          need a <strong>double underscore after the prefix</strong> —
+          <code>CASIROS__BIND_ADDR</code>, not <code>CASIROS_BIND_ADDR</code>.
+        </p>
+        <p>
+          A single underscore is not an error. It is silently ignored, and the server
+          starts on defaults while you believe your override applied. Always confirm
+          with the startup log line.
+        </p>
+      </div>
+
+      <h4>Family A — config file settings (double underscore)</h4>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">CASIROS__BIND_ADDR</td><td><code>127.0.0.1:8080</code></td><td>Listen address; use <code>0.0.0.0:8080</code> in containers</td></tr>
+            <tr><td class="mono-col">CASIROS__LOG_LEVEL</td><td><code>info</code></td><td>Log verbosity</td></tr>
+            <tr><td class="mono-col">CASIROS__SNAPSHOT__BACKEND</td><td><code>memory</code></td><td><code>memory</code> or <code>postgres</code></td></tr>
+            <tr><td class="mono-col">CASIROS__POSTGRES__URL</td><td>—</td><td>Database connection string</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Family B — read directly (single underscore)</h4>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Variable</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">CASIROS_API_KEYS</td><td>Comma-separated valid keys; unset disables auth entirely</td></tr>
+            <tr><td class="mono-col">CASIROS_API_KEY_TENANTS</td><td>Key-to-tenant mapping with optional rate limit</td></tr>
+            <tr><td class="mono-col">CASIROS_ADMIN_KEY</td><td>Separate credential for admin endpoints</td></tr>
+            <tr><td class="mono-col">CASIROS_RATE_LIMIT_RPM</td><td>Global default requests per minute</td></tr>
+            <tr><td class="mono-col">CASIROS_API_VERSION</td><td>URL version prefix, default <code>v1</code></td></tr>
+            <tr><td class="mono-col">CASIROS_OTLP_ENDPOINT</td><td>OpenTelemetry collector (needs the <code>otel</code> build feature)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — a correct production environment</span></div>
+        <div class="term-body"><pre><span class="cmd">export CASIROS__BIND_ADDR=0.0.0.0:8080
+export CASIROS__SNAPSHOT__BACKEND=postgres
+export CASIROS__POSTGRES__URL=postgresql://casiros:secret@db:5432/casiros
+export CASIROS_API_KEYS="key-acme,key-beta"
+export CASIROS_API_KEY_TENANTS="key-acme:tenant_acme:ws_prod:600,key-beta:tenant_beta:ws_prod:120"
+export CASIROS_ADMIN_KEY="rotate-me"</span></pre></div>
+      </div>
+
+      <p>Then verify the backend actually changed:</p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — confirm at startup</span></div>
+        <div class="term-body"><pre><span class="out-ok">INFO casiros_api: Using Postgres snapshot, audit, and job backends</span>
+<span class="out-dim">                              &#8593; if this says "in-memory", your
+                                config did not take effect</span></pre></div>
+      </div>
+    </section>
+
+    <!-- ============ 11 ============ -->
+    <section id="c11">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 11 &middot; Professional</div>
+        <h2>Keys, Tenants, and Limits</h2>
+      </div>
+
+      <p>
+        A <strong>tenant</strong> is the top-level ownership boundary; a
+        <strong>workspace</strong> partitions data inside it. Every snapshot, job, and
+        audit event belongs to exactly one tenant/workspace pair, and cross-tenant
+        access is refused at the storage layer — not merely hidden in the API.
+      </p>
+
+      <h3>Mapping keys to tenants</h3>
+      <p>
+        <code>CASIROS_API_KEY_TENANTS</code> takes comma-separated entries of
+        <code>key:tenant:workspace</code>, with an optional fourth field setting that
+        key's own rate limit in requests per minute.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — per-key tiers</span></div>
+        <div class="term-body"><pre><span class="cmd">export CASIROS_API_KEYS="key-free,key-pro"
+export CASIROS_API_KEY_TENANTS="key-free:tenant_a:ws_main:60,key-pro:tenant_b:ws_main:6000"</span>
+<span class="out-dim">                                                        &#8593;              &#8593;
+                                              60 req/min      6000 req/min</span></pre></div>
+      </div>
+
+      <h3>Rate limiting in action</h3>
+      <p>A key limited to 3 requests per minute, called five times:</p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — hitting the limit</span></div>
+        <div class="term-body"><pre><span class="cmd">$ for i in 1 2 3 4 5; do
+    printf "request %d -> HTTP %s\n" "$i" \
+      "$(curl -s -o /dev/null -w '%{http_code}' \
+         -H 'X-API-Key: rl-key' http://localhost:8099/snapshots)"
+  done</span>
+<span class="out-ok">request 1 -> HTTP 200
+request 2 -> HTTP 200
+request 3 -> HTTP 200</span>
+<span class="out-err">request 4 -> HTTP 429
+request 5 -> HTTP 429</span>
+
+<span class="cmd">$ curl -s -H "X-API-Key: rl-key" http://localhost:8099/snapshots</span>
+<span class="out-err">{"error":"Rate limit exceeded"}</span></pre></div>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Scaling caveat</span>
+        <p>
+          The limiter counts requests <em>per process</em> using a 60-second sliding
+          window. Three API replicas therefore permit roughly three times the
+          configured rate. A shared Redis limiter is on the roadmap; until then, size
+          limits with your replica count in mind.
+        </p>
+      </div>
+
+      <h3>Two ways to present a key</h3>
+      <p>
+        <code>X-API-Key: your-key</code> or
+        <code>Authorization: Bearer your-key</code>. Both are accepted;
+        <code>X-API-Key</code> is checked first.
+      </p>
+    </section>
+
+    <!-- ============ 12 ============ -->
+    <section id="c12">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 12 &middot; Professional</div>
+        <h2>Async Jobs &amp; Workers</h2>
+      </div>
+
+      <p>
+        Long simulations should not hold an HTTP connection open. Submit them as jobs:
+        the API returns a job id immediately, and a separate worker process executes the
+        run in batches, checkpointing progress as it goes.
+      </p>
+
+      <figure>
+        <div class="diagram">
+          <svg viewBox="0 0 560 190" role="img" aria-label="Diagram: client posts a job to the API, which writes it to Postgres; the worker claims it, runs batches, writes progress back, and the client polls for the result.">
+            <defs>
+              <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <g font-family="ui-monospace, monospace" font-size="11" color="currentColor">
+              <rect x="12" y="20" width="112" height="44" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+              <text x="34" y="47" fill="currentColor" font-weight="700">Client</text>
+
+              <rect x="222" y="20" width="112" height="44" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+              <text x="252" y="47" fill="currentColor" font-weight="700">API</text>
+
+              <rect x="222" y="118" width="112" height="46" rx="4" fill="none" stroke="currentColor" stroke-opacity=".55"/>
+              <text x="238" y="139" fill="currentColor" font-weight="700">PostgreSQL</text>
+              <text x="238" y="155" fill="currentColor" opacity=".6">simulation_jobs</text>
+
+              <rect x="432" y="118" width="112" height="46" rx="4" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+              <text x="462" y="147" fill="currentColor" font-weight="700">Worker</text>
+
+              <line x1="128" y1="36" x2="216" y2="36" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"/>
+              <text x="132" y="29" fill="currentColor" font-size="9.5" opacity=".65">POST job</text>
+
+              <line x1="216" y1="52" x2="128" y2="52" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"/>
+              <text x="140" y="64" fill="currentColor" font-size="9.5" opacity=".65">202 + id</text>
+
+              <line x1="278" y1="70" x2="278" y2="112" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"/>
+              <text x="286" y="95" fill="currentColor" font-size="9.5" opacity=".65">enqueue</text>
+
+              <line x1="426" y1="132" x2="340" y2="132" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"/>
+              <text x="348" y="125" fill="currentColor" font-size="9.5" opacity=".65">claim</text>
+
+              <line x1="340" y1="152" x2="426" y2="152" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"/>
+              <text x="348" y="166" fill="currentColor" font-size="9.5" opacity=".65">progress</text>
+
+              <line x1="68" y1="70" x2="68" y2="140" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="3 3"/>
+              <line x1="74" y1="140" x2="216" y2="140" stroke="currentColor" stroke-opacity=".4" marker-end="url(#ar2)"/>
+              <text x="84" y="134" fill="currentColor" font-size="9.5" opacity=".6">poll GET /simulate/jobs/{id}</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Figure 12.1 — Job flow across API, database, and worker</figcaption>
+      </figure>
+
+      <div class="note crit">
+        <span class="note-label">Requirement</span>
+        <p>
+          The worker reads jobs from PostgreSQL. If the API is running the in-memory
+          backend, enqueued jobs are invisible to the worker and stay
+          <code>queued</code> forever. Both processes must point at the same database.
+        </p>
+      </div>
+
+      <h3>Start a worker</h3>
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — worker startup</span></div>
+        <div class="term-body"><pre><span class="cmd">$ export CASIROS__POSTGRES__URL=postgresql://casiros:casiros@localhost:5432/casiros</span>
+<span class="cmd">$ cargo run --release -p casiros-worker</span>
+<span class="out-dim">INFO casiros_worker: Worker started, polling for jobs worker_id="worker-1941053"</span></pre></div>
+      </div>
+
+      <h3>Submit and follow a job</h3>
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — full job lifecycle</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -X POST http://localhost:8080/simulate/jobs \
+    -H "Content-Type: application/json" -H "X-API-Key: demo-key" \
+    -d '{"nodes":[{"input":{"name":"x"}},
+                  {"formula":{"name":"fv","kind":{"formula":"future_value",
+                    "present_value":{"node":"x"},"rate":0.05,"periods":10}}}],
+         "edges":[{"dependency":"x","dependent":"fv"}],
+         "bindings":[{"node":"x","distribution":{"kind":"uniform","low":90,"high":110}}],
+         "target":"fv","universe_count":1000,"seed":42}'</span>
+<span class="out-ok">{"id":"f363b830-7d41-4909-abee-1ce1560d7d5b","status":"queued"}</span>
+
+<span class="out-dim"># seconds later</span>
+<span class="cmd">$ curl -s -H "X-API-Key: demo-key" \
+    http://localhost:8080/simulate/jobs/f363b830-7d41-4909-abee-1ce1560d7d5b</span>
+<span class="out-ok">{
+    "id": "f363b830-7d41-4909-abee-1ce1560d7d5b",
+    "status": "completed",
+    "progress": {
+        "universes_total": 1000,
+        "universes_completed": 1000,
+        "fraction": 1.0
+    },
+    "created_at": "2026-08-05T14:43:03.440188Z",
+    "updated_at": "2026-08-05T14:43:04.266632Z"
+}</span></pre></div>
+      </div>
+
+      <p>The worker log shows the batch checkpointing:</p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">worker.log</span></div>
+        <div class="term-body"><pre><span class="out-dim">INFO Batch completed job_id=f363b830… completed=600  total=1000
+INFO Batch completed job_id=f363b830… completed=700  total=1000
+INFO Batch completed job_id=f363b830… completed=800  total=1000
+INFO Batch completed job_id=f363b830… completed=900  total=1000
+INFO Batch completed job_id=f363b830… completed=1000 total=1000</span>
+<span class="out-ok">INFO Job completed successfully job_id=f363b830…</span></pre></div>
+      </div>
+
+      <h3>Lifecycle and control</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill p-warn">queued</span></td><td>Accepted, waiting for a worker to claim it</td></tr>
+            <tr><td><span class="pill p-warn">running</span></td><td>Claimed; batches executing, progress advancing</td></tr>
+            <tr><td><span class="pill p-ok">completed</span></td><td>Finished successfully</td></tr>
+            <tr><td><span class="pill p-crit">failed</span></td><td>Finished with an error; see the <code>error</code> field</td></tr>
+            <tr><td><span class="pill p-crit">cancelled</span></td><td>Stopped on request before completion</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <code>POST /simulate/jobs/{id}/cancel</code> stops a queued or running job — the
+        worker checks for cancellation before each batch, so a long run halts within one
+        batch rather than at the very end.
+        <code>GET /ws/jobs/{id}</code> opens a WebSocket that pushes a progress frame
+        every 500 ms instead of requiring you to poll.
+      </p>
+
+      <div class="note">
+        <span class="note-label">Known limitation</span>
+        <p>
+          With the Postgres job store, <code>status</code> and <code>progress</code>
+          persist correctly but the <code>result</code> field currently reads back as
+          <code>null</code> — the aggregate is computed but not yet written to the
+          results column. Treat <code>status: completed</code> with
+          <code>fraction: 1.0</code> as the completion signal for now.
+        </p>
+      </div>
+
+      <p>
+        Multiple workers can run against one database safely. Each claims work with
+        <code>FOR UPDATE SKIP LOCKED</code>, so no two workers ever take the same job.
+        To increase throughput, start more worker processes.
+      </p>
+    </section>
+
+    <!-- ============ 13 ============ -->
+    <section id="c13">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 13 &middot; Professional</div>
+        <h2>The Audit Trail</h2>
+      </div>
+
+      <p>
+        Every authenticated request writes one immutable audit event: who acted, what
+        they did, which resource they touched, and how it turned out. The trail is
+        append-only — there is no update or delete operation anywhere in the codebase.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — GET /audit</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -H "X-API-Key: demo-key" "http://localhost:8080/audit?limit=2"</span>
+<span class="out-ok">{
+    "total": 2,
+    "events": [
+        {
+            "id": "ef9c9a04-e5a1-479f-b446-245aee082894",
+            "timestamp": "2026-08-05T14:34:45.926982279Z",
+            "tenant_id": "tenant_demo",
+            "workspace_id": "workspace_demo",
+            "api_key_id": "api_key",
+            "action": "job_read",
+            "resource": "/simulate/jobs/287551f0-…",
+            "result": "success",
+            "error": null,
+            "metadata": {"method": "GET", "status": "200"}
+        },
+        {
+            "id": "f69ba357-bcb9-49d1-a0a8-3f12ec737e6f",
+            "timestamp": "2026-08-05T14:34:45.828872556Z",
+            "action": "job_create",
+            "resource": "/simulate/jobs",
+            "result": "success",
+            "metadata": {"status": "202", "method": "POST"}
+        }
+    ]
+}</span></pre></div>
+      </div>
+
+      <h3>What gets recorded</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Action</th><th>Triggered by</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">evaluate</td><td><code>POST /evaluate</code></td></tr>
+            <tr><td class="mono-col">simulate</td><td><code>POST /simulate</code> and streaming variants</td></tr>
+            <tr><td class="mono-col">snapshot_create / _read / _delete</td><td>Snapshot operations by HTTP method</td></tr>
+            <tr><td class="mono-col">job_create / _read / _cancel</td><td>Job operations</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Failures are recorded too. A 400 leaves an event with
+        <code>result: "error"</code>; a 401 or 403 leaves
+        <code>result: "forbidden"</code>. The trail shows attempts, not just successes.
+      </p>
+
+      <div class="note">
+        <span class="note-label">Two deliberate design choices</span>
+        <p>
+          <code>/healthz</code> and <code>/metrics</code> are never audited — monitoring
+          traffic would otherwise drown the trail.
+        </p>
+        <p>
+          Audit writes are <em>best-effort</em>: if the backend fails, the request still
+          succeeds and the failure is logged to the <code>audit.write_failed</code>
+          target and counted in <code>casiros_audit_write_failures_total</code>. An
+          audit outage degrades observability rather than taking the API down. If your
+          compliance posture requires fail-closed auditing, alert on that counter.
+        </p>
+      </div>
+
+      <p>
+        <code>GET /audit</code> returns only the calling key's own tenant. Page with
+        <code>limit</code> (clamped to 1–1000) and <code>offset</code>.
+      </p>
+    </section>
+
+    <!-- ============ 14 ============ -->
+    <section id="c14">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 14 &middot; Professional</div>
+        <h2>Admin Operations</h2>
+      </div>
+
+      <p>
+        Admin endpoints manage tenants and keys. They are gated by
+        <code>CASIROS_ADMIN_KEY</code>, presented in the <code>X-Admin-Key</code> header
+        — a separate credential from any tenant API key.
+      </p>
+
+      <div class="note crit">
+        <span class="note-label">Both headers are required</span>
+        <p>
+          Admin routes sit behind the normal authentication middleware, so a request
+          needs <strong>both</strong> a valid <code>X-API-Key</code> and a valid
+          <code>X-Admin-Key</code>. Sending only the admin key returns
+          <code>{"error":"Missing API key"}</code>, which is easy to misread as the
+          admin key being wrong.
+        </p>
+      </div>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — admin authentication</span></div>
+        <div class="term-body"><pre><span class="out-dim"># admin key only — rejected by the outer auth layer</span>
+<span class="cmd">$ curl -s -H "X-Admin-Key: admin-secret" http://localhost:8080/admin/tenants</span>
+<span class="out-err">{"error":"Missing API key"}</span>
+
+<span class="out-dim"># API key present, admin key wrong</span>
+<span class="cmd">$ curl -s -H "X-API-Key: demo-key" -H "X-Admin-Key: wrong" \
+    http://localhost:8080/admin/tenants</span>
+<span class="out-err">{"error":"Invalid or missing admin key"}</span>
+
+<span class="out-dim"># both correct</span>
+<span class="cmd">$ curl -s -H "X-API-Key: demo-key" -H "X-Admin-Key: admin-secret" \
+    http://localhost:8080/admin/tenants</span>
+<span class="out-ok">{"tenants": []}</span></pre></div>
+      </div>
+
+      <h3>Minting a key</h3>
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — POST /admin/keys</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s -X POST http://localhost:8080/admin/keys \
+    -H "Content-Type: application/json" \
+    -H "X-API-Key: demo-key" -H "X-Admin-Key: admin-secret" \
+    -d '{"tenant_id":"tenant_demo","workspace_id":"workspace_demo"}'</span>
+<span class="out-ok">{
+    "id":  "49a41368-3f01-4fd5-9387-be7602a13fee",
+    "key": "e754ceb9-120c-4f0f-a8d2-21bc6eee41c4"
+}</span></pre></div>
+      </div>
+
+      <p>
+        The raw <code>key</code> is shown once. Capture it immediately — it is what the
+        client presents as <code>X-API-Key</code>. The <code>id</code> is what you use
+        to revoke it later.
+      </p>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">GET /admin/tenants</td><td>List tenants</td></tr>
+            <tr><td class="mono-col">POST /admin/tenants</td><td>Provision a tenant</td></tr>
+            <tr><td class="mono-col">GET /admin/tenants/{id}/stats</td><td>Usage counts for a tenant</td></tr>
+            <tr><td class="mono-col">POST /admin/keys</td><td>Mint a key</td></tr>
+            <tr><td class="mono-col">POST /admin/keys/{id}/revoke</td><td>Revoke a key</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Maturity</span>
+        <p>
+          The admin endpoints authenticate correctly and return well-formed responses,
+          but their persistence is not yet wired to the database — listings return empty
+          and stats return zeros. Treat this surface as provisional. For production key
+          management today, use <code>CASIROS_API_KEY_TENANTS</code> and the rotation
+          procedure in Chapter 16.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 15 ============ -->
+    <section id="c15">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 15 &middot; Professional</div>
+        <h2>Metrics &amp; Monitoring</h2>
+      </div>
+
+      <p>
+        <code>GET /metrics</code> serves Prometheus text format and requires no
+        authentication, so scrapers work without credential distribution.
+      </p>
+
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — GET /metrics</span></div>
+        <div class="term-body"><pre><span class="cmd">$ curl -s http://localhost:8080/metrics | head</span>
+<span class="out-dim"># HELP casiros_http_request_duration_seconds HTTP request duration in seconds
+# TYPE casiros_http_request_duration_seconds histogram</span>
+<span class="out-key">casiros_http_requests_total</span>{method="POST",path="/evaluate",status="400"} 4
+<span class="out-key">casiros_http_requests_total</span>{method="POST",path="/simulate/jobs",status="202"} 1
+<span class="out-key">casiros_http_requests_total</span>{method="GET",path="/simulate/jobs/f363…",status="200"} 1</pre></div>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Metric</th><th>Type</th><th>Watch for</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">casiros_http_requests_total</td><td>counter</td><td>Rising 4xx/5xx ratio</td></tr>
+            <tr><td class="mono-col">casiros_http_request_duration_seconds</td><td>histogram</td><td>p95 latency drift</td></tr>
+            <tr><td class="mono-col">casiros_rate_limit_denials_total</td><td>counter</td><td>Tenants hitting their ceiling</td></tr>
+            <tr><td class="mono-col">casiros_jobs_total</td><td>counter</td><td>Failed-job rate</td></tr>
+            <tr><td class="mono-col">casiros_audit_write_failures_total</td><td>counter</td><td><strong>Any</strong> non-zero value</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note crit">
+        <span class="note-label">High-cardinality label</span>
+        <p>
+          The <code>path</code> label carries the raw request path, so every job id
+          creates a distinct time series. On a busy deployment this will grow your
+          Prometheus cardinality without bound. Drop or rewrite the label for
+          <code>/simulate/jobs/*</code> in your scrape config until path templating
+          lands.
+        </p>
+      </div>
+
+      <h4>Scrape configuration</h4>
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">prometheus.yml</span></div>
+        <div class="term-body"><pre><span class="out-dim">scrape_configs:
+  - job_name: 'casiros'
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['casiros-api:8080']</span></pre></div>
+      </div>
+
+      <p>
+        Both <code>/metrics</code> and <code>/v1/metrics</code> are public, as are
+        <code>/healthz</code> and <code>/v1/healthz</code> — probes work whichever
+        prefix your load balancer routes.
+      </p>
+    </section>
+
+    <!-- ============ 16 ============ -->
+    <section id="c16">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 16 &middot; Professional</div>
+        <h2>Production Deployment</h2>
+      </div>
+
+      <h3>Pre-flight checklist</h3>
+      <ol class="steps">
+        <li>
+          <h4>Bind to all interfaces</h4>
+          <p><code>CASIROS__BIND_ADDR=0.0.0.0:8080</code>. The default binds to
+          localhost only and will be unreachable from outside a container.</p>
+        </li>
+        <li>
+          <h4>Select the Postgres backend</h4>
+          <p><code>CASIROS__SNAPSHOT__BACKEND=postgres</code> plus
+          <code>CASIROS__POSTGRES__URL</code>. Confirm the startup log line before
+          declaring the deploy healthy.</p>
+        </li>
+        <li>
+          <h4>Set API keys</h4>
+          <p>If <code>CASIROS_API_KEYS</code> is unset, <strong>authentication is
+          disabled entirely</strong> and every request is accepted. The server warns at
+          startup; treat that warning as a release blocker.</p>
+        </li>
+        <li>
+          <h4>Map keys to tenants</h4>
+          <p>Without <code>CASIROS_API_KEY_TENANTS</code>, all keys collapse into one
+          shared default tenant and see each other's data.</p>
+        </li>
+        <li>
+          <h4>Set a strong admin key</h4>
+          <p>An unset <code>CASIROS_ADMIN_KEY</code> makes admin endpoints return 403 —
+          safe by default, but you cannot use them.</p>
+        </li>
+        <li>
+          <h4>Run at least one worker</h4>
+          <p>Pointed at the same database. Without it, jobs queue and never execute.</p>
+        </li>
+        <li>
+          <h4>Point probes at /healthz</h4>
+          <p>Use it for both liveness and readiness.</p>
+        </li>
+      </ol>
+
+      <h3>Migrations</h3>
+      <p>
+        With the Postgres backend, migrations run automatically at startup — four files
+        covering snapshots, tenants and workspaces, the audit log, and the job queue.
+        For blue/green deploys, run them out of band first so old and new pods share a
+        schema.
+      </p>
+
+      <h3>Rotating a key without downtime</h3>
+      <ol class="steps">
+        <li><h4>Add the new key alongside the old</h4><p>Both listed in <code>CASIROS_API_KEYS</code>; redeploy.</p></li>
+        <li><h4>Migrate clients</h4><p>Move traffic to the new key at your own pace.</p></li>
+        <li><h4>Confirm the old key is idle</h4><p>Check the audit trail for its <code>api_key_id</code>.</p></li>
+        <li><h4>Remove the old key</h4><p>Redeploy once more.</p></li>
+      </ol>
+
+      <h3>Scaling</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Bottleneck</th><th>Response</th><th>Caveat</th></tr></thead>
+          <tbody>
+            <tr><td>HTTP throughput</td><td>More API replicas</td><td>Rate limits multiply per replica</td></tr>
+            <tr><td>Job backlog</td><td>More worker processes</td><td>Safe — <code>SKIP LOCKED</code> prevents double-claims</td></tr>
+            <tr><td>Repeated identical formulas</td><td>Enable the Redis cache</td><td>Requires the <code>redis</code> build feature</td></tr>
+            <tr><td>Database load</td><td>Read replicas, connection pooling</td><td>Writes must go to the primary</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ 17 ============ -->
+    <section id="c17">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 17 &middot; Professional</div>
+        <h2>Troubleshooting</h2>
+      </div>
+
+      <h3>Jobs stay queued forever</h3>
+      <p>
+        Almost always one of three things. Check in this order:
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Check</th><th>How</th></tr></thead>
+          <tbody>
+            <tr><td>Is a worker running?</td><td>Look for <code>Worker started, polling for jobs</code></td></tr>
+            <tr><td>Is the API on Postgres?</td><td>Startup log must say <em>Postgres … backends</em></td></tr>
+            <tr><td>Same database?</td><td>Compare both processes' <code>CASIROS__POSTGRES__URL</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">bash — is the job actually in the database?</span></div>
+        <div class="term-body"><pre><span class="cmd">$ docker exec casiros-postgres \
+    psql -U casiros -d casiros -c "SELECT id, status FROM simulation_jobs;"</span>
+<span class="out-dim"> id | status
+----+--------
+(0 rows)      &#8592; empty means the API never wrote it —
+               it is running the in-memory backend</span></pre></div>
+      </div>
+
+      <h3>Configuration changes have no effect</h3>
+      <p>
+        You almost certainly used a single underscore where the config layer needs two.
+        <code>CASIROS_SNAPSHOT__BACKEND</code> is ignored;
+        <code>CASIROS__SNAPSHOT__BACKEND</code> works. Re-read Chapter 10 and verify via
+        the startup log.
+      </p>
+
+      <h3>Everything returns 401</h3>
+      <p>
+        Confirm the key is listed in <code>CASIROS_API_KEYS</code> and that you are
+        sending <code>X-API-Key</code>. For admin routes, remember both headers are
+        required.
+      </p>
+
+      <h3>Unexpected 429s at low traffic</h3>
+      <p>
+        Check the key's fourth field in <code>CASIROS_API_KEY_TENANTS</code>; a missing
+        value falls back to <code>CASIROS_RATE_LIMIT_RPM</code>, which defaults to 60.
+        Remember the window is a rolling 60 seconds, not a calendar minute.
+      </p>
+
+      <h3>Snapshots disappear on restart</h3>
+      <p>You are on the in-memory backend. See Chapter 10.</p>
+
+      <h3>Cross-tenant reads return 404</h3>
+      <p>
+        Working as designed. Each key sees only its own tenant's data, and a missing
+        resource is indistinguishable from a forbidden one by design.
+      </p>
+    </section>
+
+    <!-- ============ 18 ============ -->
+    <section id="c18">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 18 &middot; Reference</div>
+        <h2>Formula Catalog</h2>
+      </div>
+
+      <p>
+        Fifty-one formulas are callable through the API. Each is named by its
+        <code>formula</code> field; every port accepts either a constant or
+        <code>{"node": "name"}</code>.
+      </p>
+
+      <h3>Time value of money</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Formula</th><th>Ports</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">future_value</td><td>present_value, rate, periods</td></tr>
+            <tr><td class="mono-col">present_value</td><td>future_value, rate, periods</td></tr>
+            <tr><td class="mono-col">growing_perpetuity_present_value</td><td>payment, rate, growth_rate</td></tr>
+            <tr><td class="mono-col">continuous_compounding_future_value</td><td>present_value, rate, time</td></tr>
+            <tr><td class="mono-col">amortization_payment</td><td>principal, rate, periods</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Ratios and statement analysis</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Formula</th><th>Ports</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">return_on_equity</td><td>net_income, equity</td></tr>
+            <tr><td class="mono-col">return_on_investment</td><td>gain, cost</td></tr>
+            <tr><td class="mono-col">profit_margin</td><td>net_income, revenue</td></tr>
+            <tr><td class="mono-col">asset_turnover</td><td>revenue, total_assets</td></tr>
+            <tr><td class="mono-col">equity_multiplier</td><td>total_assets, shareholders_equity</td></tr>
+            <tr><td class="mono-col">quick_ratio</td><td>current_assets, inventory, current_liabilities</td></tr>
+            <tr><td class="mono-col">interest_coverage</td><td>ebit, interest_expense</td></tr>
+            <tr><td class="mono-col">inventory_turnover</td><td>cogs, inventory</td></tr>
+            <tr><td class="mono-col">cash_conversion_cycle</td><td>days_inventory, days_sales, days_payables</td></tr>
+            <tr><td class="mono-col">altman_z_score</td><td>five ratio ports</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Corporate finance</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Formula</th><th>Ports</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">wacc</td><td>equity_value, debt_value, cost_of_equity, cost_of_debt, tax_rate</td></tr>
+            <tr><td class="mono-col">sustainable_growth_rate</td><td>roe, dividend_payout_ratio</td></tr>
+            <tr><td class="mono-col">internal_growth_rate</td><td>roe, dividend_payout_ratio</td></tr>
+            <tr><td class="mono-col">free_cash_flow_to_equity</td><td>fcff, interest_after_tax, net_borrowing</td></tr>
+            <tr><td class="mono-col">economic_value_added</td><td>nopat, invested_capital, wacc</td></tr>
+            <tr><td class="mono-col">tax_shield</td><td>tax_rate, debt</td></tr>
+            <tr><td class="mono-col">adjusted_present_value</td><td>unlevered_npv, pv_tax_shield</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Risk and markets</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Formula</th><th>Ports</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">treynor_ratio</td><td>portfolio_return, risk_free_rate, beta</td></tr>
+            <tr><td class="mono-col">sortino_ratio</td><td>portfolio_return, risk_free_rate, downside_deviation</td></tr>
+            <tr><td class="mono-col">calmar_ratio</td><td>cagr, max_drawdown</td></tr>
+            <tr><td class="mono-col">beta</td><td>asset_returns, market_returns</td></tr>
+            <tr><td class="mono-col">value_at_risk</td><td>portfolio_value, mean_return, std_dev, z_score</td></tr>
+            <tr><td class="mono-col">expected_shortfall</td><td>portfolio_value, mean_return, std_dev, z_score</td></tr>
+            <tr><td class="mono-col">simple_moving_average</td><td>prices, window</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Bonds and valuation</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Formula</th><th>Ports</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">discounted_cash_flow</td><td>cash_flows, discount_rate</td></tr>
+            <tr><td class="mono-col">yield_to_maturity_approximation</td><td>face_value, coupon_payment, price, periods</td></tr>
+            <tr><td class="mono-col">macaulay_duration</td><td>cash_flows, yield_per_period</td></tr>
+            <tr><td class="mono-col">modified_duration</td><td>macaulay_duration, yield_per_period</td></tr>
+            <tr><td class="mono-col">convexity</td><td>cash_flows, yield_per_period</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Options</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Formula</th><th>Ports</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">black_scholes_call / _put</td><td>spot, strike, risk_free_rate, volatility, time_to_maturity</td></tr>
+            <tr><td class="mono-col">binomial_option_call / _put</td><td>…the same five, plus steps</td></tr>
+            <tr><td class="mono-col">black_scholes_delta / _theta / _rho</td><td>…the same five, plus style</td></tr>
+            <tr><td class="mono-col">black_scholes_gamma / _vega</td><td>the standard five</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Banking</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Formula</th><th>Ports</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">capital_adequacy_ratio</td><td>total_capital, risk_weighted_assets</td></tr>
+            <tr><td class="mono-col">provision_coverage_ratio</td><td>provisions, non_performing_assets</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Series-valued ports</span>
+        <p>
+          <code>cash_flows</code>, <code>prices</code>, <code>asset_returns</code>, and
+          <code>market_returns</code> take a series encoded as a comma-separated string
+          rather than a JSON array.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 19 ============ -->
+    <section id="c19">
+      <div class="ch-head">
+        <div class="ch-num">Chapter 19 &middot; Reference</div>
+        <h2>Endpoint Index</h2>
+      </div>
+
+      <p>
+        Every route is served at both the root and under the version prefix — for
+        example <code>/evaluate</code> and <code>/v1/evaluate</code> are equivalent.
+        Prefer the versioned form in new clients.
+      </p>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/healthz</td><td><span class="pill p-ok">public</span></td><td>Liveness and readiness</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/metrics</td><td><span class="pill p-ok">public</span></td><td>Prometheus metrics</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/openapi.json</td><td><span class="pill p-ok">public</span></td><td>API specification</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/swagger-ui</td><td><span class="pill p-ok">public</span></td><td>Interactive docs</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/dashboard</td><td><span class="pill p-ok">public</span></td><td>Browser UI</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/evaluate</td><td><span class="pill p-warn">key</span></td><td>Evaluate a graph</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/simulate</td><td><span class="pill p-warn">key</span></td><td>Monte Carlo, synchronous</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/simulate/stream</td><td><span class="pill p-warn">key</span></td><td>Streaming progress</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/ws/simulate</td><td><span class="pill p-warn">key</span></td><td>WebSocket simulation</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/snapshots</td><td><span class="pill p-warn">key</span></td><td>Save a graph</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/snapshots</td><td><span class="pill p-warn">key</span></td><td>List graphs</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/snapshots/{id}</td><td><span class="pill p-warn">key</span></td><td>Fetch a graph</td></tr>
+            <tr><td class="mono-col">DELETE</td><td class="mono-col">/snapshots/{id}</td><td><span class="pill p-warn">key</span></td><td>Delete a graph</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/audit</td><td><span class="pill p-warn">key</span></td><td>Read the audit trail</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/simulate/jobs</td><td><span class="pill p-warn">key</span></td><td>Enqueue a job</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/simulate/jobs/{id}</td><td><span class="pill p-warn">key</span></td><td>Job status</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/simulate/jobs/{id}/cancel</td><td><span class="pill p-warn">key</span></td><td>Cancel a job</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/ws/jobs/{id}</td><td><span class="pill p-warn">key</span></td><td>Stream job progress</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/admin/tenants</td><td><span class="pill p-crit">key + admin</span></td><td>List tenants</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/admin/tenants</td><td><span class="pill p-crit">key + admin</span></td><td>Provision a tenant</td></tr>
+            <tr><td class="mono-col">GET</td><td class="mono-col">/admin/tenants/{id}/stats</td><td><span class="pill p-crit">key + admin</span></td><td>Tenant usage</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/admin/keys</td><td><span class="pill p-crit">key + admin</span></td><td>Mint a key</td></tr>
+            <tr><td class="mono-col">POST</td><td class="mono-col">/admin/keys/{id}/revoke</td><td><span class="pill p-crit">key + admin</span></td><td>Revoke a key</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Where to go next</h3>
+      <ul>
+        <li><code>docs/ops.md</code> — the operator runbook</li>
+        <li><code>docs/architecture.md</code> — layer boundaries and data flow</li>
+        <li><code>docs/development_roadmap.md</code> — planned improvements</li>
+        <li><code>CHANGELOG.md</code> — version history</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <p>
+    CASIROS Operator's Handbook — written against v0.7.0. Every command, response,
+    and log line reproduced here was captured from a live instance running against
+    PostgreSQL 16, not composed by hand. Where a feature is incomplete, the text says
+    so rather than showing an idealised result.
+  </p>
+</footer>
+</body>
+</html>

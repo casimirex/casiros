@@ -52,6 +52,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Operator's Handbook: handbook.html
   - API Reference: api.md
   - Deployment: deployment.md
   - Architecture: architecture.md

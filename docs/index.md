@@ -26,6 +26,12 @@ to the NASA JPL Institutional Coding Standard for safety-critical systems.
   and job state transitions.
 - **Admin API** — Runtime tenant and API key management.
 
+## Operator's Handbook
+
+The [Operator's Handbook](handbook.html) is a complete 19-chapter manual taking
+you from your first health check through multi-tenant production deployment.
+Every command and response in it was captured from a running instance.
+
 ## Quick Start
 
 ```bash
