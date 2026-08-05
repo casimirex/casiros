@@ -5,6 +5,37 @@ All notable changes to the CASIROS project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-05
+
+### Added
+
+- **Python SDK update** (Phase 7):
+  - 10 new client methods: `create_job`, `get_job`, `cancel_job`,
+    `list_audit_events`, `get_metrics`, `list_tenants`, `provision_tenant`,
+    `get_tenant_stats`, `create_api_key`, `revoke_api_key`.
+  - 14 new model dataclasses for job, audit, and admin types.
+
+- **Web dashboard update**:
+  - Jobs panel with Create/Get/Cancel buttons and JSON editor.
+  - Audit panel with limit/offset controls.
+  - Admin panel with tenant management and key creation/revocation.
+
+- **Formula catalog expansion**:
+  - `net_present_value` — NPV from discounted cash flows.
+  - `internal_rate_of_return` — IRR via secant method.
+  - New `InvalidInput` and `Convergence` error variants.
+
+- **CI/CD automation**:
+  - `casiros-worker` added to release binary matrix.
+  - Worker build stage in multi-stage Dockerfile.
+  - Worker and Redis services in docker-compose.yml.
+
+- **Security audit**:
+  - All endpoints enforce tenant scoping.
+  - Admin API properly gated behind `CASIROS_ADMIN_KEY`.
+  - Zero unsafe code across all 6 crates.
+  - All Postgres queries filter by tenant_id.
+
 ## [0.4.0] - 2026-08-05
 
 ### Added

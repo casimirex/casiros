@@ -554,7 +554,10 @@ pub fn continuous_compounding_future_value(
 /// let npv = net_present_value(dec!(0.10), &[dec!(-1000), dec!(300), dec!(400), dec!(500), dec!(600)]).unwrap();
 /// assert!(npv > dec!(0));
 /// ```
-pub fn net_present_value(rate: Decimal, cash_flows: &[Decimal]) -> Result<Decimal, CalculationError> {
+pub fn net_present_value(
+    rate: Decimal,
+    cash_flows: &[Decimal],
+) -> Result<Decimal, CalculationError> {
     if rate <= dec!(-1) {
         return Err(CalculationError::InvalidRate { rate });
     }
@@ -624,8 +627,8 @@ pub fn internal_rate_of_return(
         });
     }
 
-    let has_positive = cash_flows.iter().any(|cf| *cf > Decimal::ZERO);
-    let has_negative = cash_flows.iter().any(|cf| *cf < Decimal::ZERO);
+    let has_positive = cash_flows.iter().any(|cf| return *cf > Decimal::ZERO);
+    let has_negative = cash_flows.iter().any(|cf| return *cf < Decimal::ZERO);
     if !has_positive || !has_negative {
         return Err(CalculationError::InvalidInput {
             message: "cash_flows must contain both positive and negative values".to_string(),

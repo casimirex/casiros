@@ -13,7 +13,7 @@ members = [
 resolver = "3"
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 authors = ["CASIROS Contributors"]
 license = "MIT OR Apache-2.0"
@@ -26,11 +26,11 @@ documentation = "https://docs.rs/casiros-core"
 
 [workspace.dependencies]
 # Domain
-casiros-core = { path = "crates/core", version = "0.4.0" }
-casiros-dag = { path = "crates/dag", version = "0.4.0" }
-casiros-simulator = { path = "crates/simulator", version = "0.4.0" }
-casiros-api = { path = "crates/api", version = "0.4.0" }
-casiros-macros = { path = "crates/macros", version = "0.4.0" }
+casiros-core = { path = "crates/core", version = "0.5.0" }
+casiros-dag = { path = "crates/dag", version = "0.5.0" }
+casiros-simulator = { path = "crates/simulator", version = "0.5.0" }
+casiros-api = { path = "crates/api", version = "0.5.0" }
+casiros-macros = { path = "crates/macros", version = "0.5.0" }
 
 # Math & finance
 rust_decimal = { version = "1.36", features = ["maths"] }
@@ -104,6 +104,12 @@ prometheus = { version = "0.13", features = ["process"] }
 
 # Cache
 redis = { version = "0.27", features = ["tokio-comp", "json", "connection-manager"] }
+
+# OpenTelemetry (disabled — version compatibility issue with tower 0.4.x)
+# opentelemetry = { version = "0.27", features = ["trace"] }
+# opentelemetry_sdk = { version = "0.27", features = ["trace"] }
+# opentelemetry-otlp = { version = "0.27", features = ["trace"] }
+# tracing-opentelemetry = "0.28"
 
 # Identifiers and timestamps
 uuid = { version = "1", features = ["v4", "serde"] }
