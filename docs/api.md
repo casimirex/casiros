@@ -27,9 +27,50 @@ These endpoints do not require authentication.
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/evaluate` | Evaluate a DAG with fixed inputs |
+| `POST` | `/schedule/amortization` | Generate a loan repayment schedule |
 | `POST` | `/simulate` | Run a Monte Carlo simulation |
 | `POST` | `/simulate/stream` | Streaming simulation (SSE) |
 | `GET` | `/ws/simulate` | WebSocket simulation |
+
+#### Why `/schedule/amortization` is not a formula
+
+Every formula reachable through `/evaluate` returns a single `Decimal`, because
+that is what a graph node evaluates to. An amortization schedule is a table —
+one row per period — so it cannot be expressed that way without throwing away
+the breakdown that makes it useful. It gets its own route instead.
+
+`rate` is the rate **per period**, not per year. A 12% annual rate on a monthly
+schedule is `0.01`. Requests are capped at 1,000 periods.
+
+```bash
+curl -X POST http://localhost:8080/schedule/amortization \
+  -H "X-API-Key: $CASIROS_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"principal": "1000.0", "rate": "0.01", "periods": 12}'
+```
+
+```json
+{
+  "payment": "88.84878867834170733998783123",
+  "total_interest": "66.185464140100488079853974742",
+  "schedule": [
+    {
+      "period": 1,
+      "principal_paid": "78.84878867834170733998783123",
+      "interest_paid": "10.000",
+      "remaining_balance": "921.1512113216582926600121688"
+    }
+  ]
+}
+```
+
+Values are decimal strings at full precision, never floats. Trailing scale
+comes from the arithmetic rather than any formatting rule — the first period's
+interest is exactly `10.000` here — so round for display rather than assuming a
+fixed number of places.
+
+`payment` is the level payment, identical every period. A request for zero
+periods is legal and returns an empty schedule with a zero payment.
 
 ### Snapshots
 

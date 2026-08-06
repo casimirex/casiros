@@ -5,6 +5,34 @@ All notable changes to the CASIROS project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-08-06
+
+### Added
+
+- **`POST /schedule/amortization`** — the last core formula without a route.
+  Every core formula is now reachable from the API, 63 of 63.
+
+  `amortization_schedule` returns a repayment table rather than a single
+  `Decimal`, so it could never be a `FormulaRequest` variant: a graph node
+  evaluates to exactly one value. Rather than flatten the table into one
+  number, which discards the point of it, or widen every node's output type
+  for one formula, it gets its own endpoint.
+
+  The response carries the level `payment` and `total_interest` alongside the
+  per-period rows, since both are what callers compute from the table anyway.
+  `rate` is per period, not per year. Requests are capped at 1,000 periods,
+  matching the core ceiling but reported as "period count 5000 exceeds
+  maximum 1000" rather than the bare `Overflow` the core function raises.
+
+  Audited as `evaluate`: the audit event's `resource` column records the path,
+  so the two remain distinguishable in the log without a migration to widen
+  the `audit_action` Postgres enum.
+
+### Fixed
+
+- **OpenAPI `info.version`** was pinned at `0.7.0` while the workspace moved
+  on, so the served spec understated the release for two versions.
+
 ## [0.8.0] - 2026-08-06
 
 ### Added

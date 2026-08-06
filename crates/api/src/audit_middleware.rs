@@ -123,7 +123,12 @@ fn classify(method: &Method, path: &str) -> Option<AuditAction> {
         return Some(AuditAction::Simulate);
     }
 
-    if path.starts_with("/evaluate") {
+    // Both are deterministic calculations against caller-supplied numbers.
+    // They share an action because the event's `resource` field carries the
+    // path, so the two remain distinguishable in the log without widening the
+    // audit_action enum, which is a Postgres type and needs a migration to
+    // change.
+    if path.starts_with("/evaluate") || path.starts_with("/schedule") {
         return Some(AuditAction::Evaluate);
     }
 

@@ -136,6 +136,10 @@ async fn main() -> std::io::Result<()> {
                     .route("/healthz", web::get().to(handlers::healthz))
                     .route("/metrics", web::get().to(handlers::metrics))
                     .route("/evaluate", web::post().to(handlers::evaluate))
+                    .route(
+                        "/schedule/amortization",
+                        web::post().to(handlers::amortization_schedule),
+                    )
                     .route("/simulate", web::post().to(handlers::simulate))
                     .route(
                         "/simulate/stream",
@@ -191,6 +195,10 @@ async fn main() -> std::io::Result<()> {
             .route("/healthz", web::get().to(handlers::healthz))
             .route("/metrics", web::get().to(handlers::metrics))
             .route("/evaluate", web::post().to(handlers::evaluate))
+            .route(
+                "/schedule/amortization",
+                web::post().to(handlers::amortization_schedule),
+            )
             .route("/simulate", web::post().to(handlers::simulate))
             .route(
                 "/simulate/stream",

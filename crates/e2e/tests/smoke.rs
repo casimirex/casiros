@@ -606,3 +606,84 @@ fn openapi_spec_is_served() {
         assert!(paths.contains_key(p), "{p} missing from OpenAPI spec");
     }
 }
+
+/// The amortization schedule endpoint must be reachable on the real binary,
+/// at both the root and versioned paths.
+///
+/// Regression test for route registration: an in-process test builds its own
+/// `App` and registers the route by hand, so it passes whether or not
+/// `main.rs` ever wires the handler up. Only a spawned server proves the route
+/// exists in the shipped binary.
+#[test]
+fn amortization_schedule_endpoint_is_served() {
+    let api = ApiServer::start_memory();
+    let http = client();
+
+    for path in ["/schedule/amortization", "/v1/schedule/amortization"] {
+        let resp = http
+            .post(format!("{}{path}", api.base))
+            .header("X-API-Key", API_KEY)
+            .json(&serde_json::json!({
+                "principal": "300000.0",
+                "rate": "0.004",
+                "periods": 360
+            }))
+            .send()
+            .expect("request completes");
+
+        // Read the body as text first. A missing route answers 404 with an
+        // empty body, and parsing that as JSON reports "EOF while parsing"
+        // rather than the status that actually explains the failure.
+        let status = resp.status();
+        let text = resp.text().unwrap_or_default();
+        assert_eq!(status, 200, "{path} returned {status}: {text:?}");
+        let body: serde_json::Value = serde_json::from_str(&text)
+            .unwrap_or_else(|e| panic!("{path}: bad JSON ({e}): {text}"));
+
+        let rows = body["schedule"].as_array().expect("schedule is an array");
+        assert_eq!(rows.len(), 360, "{path} should return one row per period");
+
+        // A 30-year mortgage costs far more in interest than a single payment,
+        // which is the whole reason a caller wants the table rather than the
+        // level payment alone.
+        let total_interest: f64 = body["total_interest"]
+            .as_str()
+            .expect("total_interest is a decimal string")
+            .parse()
+            .expect("total_interest parses");
+        assert!(
+            total_interest > 100_000.0,
+            "{path}: 360 periods at 0.4% should accrue substantial interest, got {total_interest}"
+        );
+
+        // The loan must actually be repaid.
+        let final_balance: f64 = rows[359]["remaining_balance"]
+            .as_str()
+            .expect("balance is a decimal string")
+            .parse()
+            .expect("balance parses");
+        assert!(
+            final_balance.abs() < 0.01,
+            "{path}: balance should reach zero, got {final_balance}"
+        );
+    }
+}
+
+/// The schedule endpoint is not public: it performs work on request.
+#[test]
+fn amortization_schedule_requires_an_api_key() {
+    let api = ApiServer::start_memory();
+    let http = client();
+
+    let resp = http
+        .post(format!("{}/schedule/amortization", api.base))
+        .json(&serde_json::json!({ "principal": "1000.0", "rate": "0.01", "periods": 12 }))
+        .send()
+        .expect("request completes");
+
+    assert_eq!(
+        resp.status(),
+        401,
+        "schedule endpoint must require authentication"
+    );
+}

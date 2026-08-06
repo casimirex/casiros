@@ -5,10 +5,13 @@ use tracing::{info, instrument};
 
 use crate::engine_builder::{EngineBuilder, distribution_from_request, map_inputs_by_id};
 use crate::models::{
+    AmortizationPeriodResponse, AmortizationScheduleRequest, AmortizationScheduleResponse,
     ErrorResponse, EvaluateRequest, EvaluateResponse, HealthzResponse, SimulateRequest,
     SimulateResponse,
 };
-use crate::validation::{validate_depth, validate_evaluate, validate_simulate};
+use crate::validation::{
+    validate_amortization_schedule, validate_depth, validate_evaluate, validate_simulate,
+};
 
 /// Health check endpoint for liveness and readiness probes.
 #[utoipa::path(
@@ -113,6 +116,76 @@ pub async fn evaluate(payload: web::Json<EvaluateRequest>) -> impl Responder {
         .collect();
 
     return HttpResponse::Ok().json(EvaluateResponse { outputs: response });
+}
+
+/// Generates a full amortization schedule for a fixed-rate loan.
+///
+/// Separate from `/evaluate` because the result is a table rather than a
+/// single value. Every formula reachable through `/evaluate` produces one
+/// `Decimal`, which is what a graph node evaluates to; a per-period repayment
+/// breakdown cannot be expressed that way without discarding the breakdown.
+#[utoipa::path(
+    post,
+    path = "/schedule/amortization",
+    request_body = AmortizationScheduleRequest,
+    responses(
+        (status = 200, description = "Schedule generated", body = AmortizationScheduleResponse),
+        (status = 400, description = "Invalid request", body = ErrorResponse),
+    )
+)]
+#[instrument(name = "amortization_schedule", skip(payload))]
+pub async fn amortization_schedule(
+    payload: web::Json<AmortizationScheduleRequest>,
+) -> impl Responder {
+    info!("Amortization schedule request received");
+
+    if let Err(err) = validate_amortization_schedule(&payload) {
+        return HttpResponse::BadRequest().json(ErrorResponse {
+            error: err.to_string(),
+        });
+    }
+
+    let rows = match casiros_core::general::amortization_schedule(
+        payload.principal,
+        payload.rate,
+        payload.periods,
+    ) {
+        Ok(rows) => rows,
+        Err(err) => {
+            return HttpResponse::BadRequest().json(ErrorResponse {
+                error: err.to_string(),
+            });
+        }
+    };
+
+    // The level payment is principal + interest, identical every period by
+    // construction. A zero-period request is legal and yields an empty
+    // schedule, so there is no row to read it from.
+    let payment = rows
+        .first()
+        .map(|row| row.principal_paid + row.interest_paid)
+        .unwrap_or_default();
+
+    let total_interest = rows
+        .iter()
+        .map(|row| row.interest_paid)
+        .sum::<casiros_core::prelude::Decimal>();
+
+    let schedule = rows
+        .into_iter()
+        .map(|row| AmortizationPeriodResponse {
+            period: row.period,
+            principal_paid: row.principal_paid,
+            interest_paid: row.interest_paid,
+            remaining_balance: row.remaining_balance,
+        })
+        .collect();
+
+    return HttpResponse::Ok().json(AmortizationScheduleResponse {
+        payment,
+        total_interest,
+        schedule,
+    });
 }
 
 /// Runs a Monte Carlo simulation against a causality graph.

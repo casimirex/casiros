@@ -14,7 +14,7 @@ members = [
 resolver = "3"
 
 [workspace.package]
-version = "0.8.0"
+version = "0.9.0"
 edition = "2024"
 authors = ["CASIROS Contributors"]
 license = "MIT OR Apache-2.0"
@@ -27,11 +27,11 @@ documentation = "https://docs.rs/casiros-core"
 
 [workspace.dependencies]
 # Domain
-casiros-core = { path = "crates/core", version = "0.8.0" }
-casiros-dag = { path = "crates/dag", version = "0.8.0" }
-casiros-simulator = { path = "crates/simulator", version = "0.8.0" }
-casiros-api = { path = "crates/api", version = "0.8.0" }
-casiros-macros = { path = "crates/macros", version = "0.8.0" }
+casiros-core = { path = "crates/core", version = "0.9.0" }
+casiros-dag = { path = "crates/dag", version = "0.9.0" }
+casiros-simulator = { path = "crates/simulator", version = "0.9.0" }
+casiros-api = { path = "crates/api", version = "0.9.0" }
+casiros-macros = { path = "crates/macros", version = "0.9.0" }
 
 # Math & finance
 rust_decimal = { version = "1.36", features = ["maths"] }

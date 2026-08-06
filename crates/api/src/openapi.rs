@@ -21,12 +21,13 @@ use crate::snapshot_handlers;
 #[openapi(
     info(
         title = "CASIROS API",
-        version = "0.7.0",
+        version = "0.9.0",
         description = "NASA/JPL-grade Financial Physics Engine & Multiverse Simulator"
     ),
     paths(
         handlers::healthz,
         handlers::evaluate,
+        handlers::amortization_schedule,
         handlers::simulate,
         snapshot_handlers::save_snapshot,
         snapshot_handlers::load_snapshot,
@@ -41,6 +42,9 @@ use crate::snapshot_handlers;
         models::HealthzResponse,
         models::EvaluateRequest,
         models::EvaluateResponse,
+        models::AmortizationScheduleRequest,
+        models::AmortizationPeriodResponse,
+        models::AmortizationScheduleResponse,
         models::SimulateRequest,
         models::SimulateResponse,
         models::ErrorResponse,

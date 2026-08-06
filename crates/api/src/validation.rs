@@ -5,7 +5,7 @@
 //! against accidental or malicious requests that would consume excessive CPU,
 //! memory, or wall-clock time.
 
-use crate::models::{EvaluateRequest, SimulateRequest};
+use crate::models::{AmortizationScheduleRequest, EvaluateRequest, SimulateRequest};
 
 /// Maximum number of nodes allowed in a single request graph.
 pub const MAX_NODES: usize = 100;
@@ -21,6 +21,13 @@ pub const MAX_UNIVERSE_COUNT: usize = 100_000;
 
 /// Maximum number of input-to-distribution bindings allowed in a simulation.
 pub const MAX_BINDINGS: usize = 50;
+
+/// Maximum number of periods allowed in an amortization schedule.
+///
+/// Matches the core crate's own ceiling. Duplicated here so the caller gets
+/// "period count 5000 exceeds maximum 1000" rather than the bare `Overflow`
+/// the core function raises, which says nothing about what to change.
+pub const MAX_SCHEDULE_PERIODS: u32 = 1_000;
 
 /// Errors returned when a request violates security limits.
 #[derive(Debug, Clone, thiserror::Error, PartialEq, Eq)]
@@ -72,6 +79,13 @@ pub enum ValidationError {
     /// The graph contains a directed cycle.
     #[error("Graph contains a directed cycle")]
     Cycle,
+
+    /// Too many periods requested for an amortization schedule.
+    #[error("Period count {count} exceeds maximum {MAX_SCHEDULE_PERIODS}")]
+    TooManySchedulePeriods {
+        /// The requested period count.
+        count: u32,
+    },
 }
 
 /// Validates an evaluate request before any engine construction.
@@ -88,6 +102,26 @@ pub fn validate_evaluate(request: &EvaluateRequest) -> Result<(), ValidationErro
     if request.edges.len() > MAX_EDGES {
         return Err(ValidationError::TooManyEdges {
             count: request.edges.len(),
+        });
+    }
+    return Ok(());
+}
+
+/// Validates an amortization schedule request.
+///
+/// A schedule allocates one row per period, so the period count is the only
+/// thing a caller can use to make the response arbitrarily large.
+///
+/// # Errors
+///
+/// Returns [`ValidationError::TooManySchedulePeriods`] if the request would
+/// generate more than [`MAX_SCHEDULE_PERIODS`] rows.
+pub fn validate_amortization_schedule(
+    request: &AmortizationScheduleRequest,
+) -> Result<(), ValidationError> {
+    if request.periods > MAX_SCHEDULE_PERIODS {
+        return Err(ValidationError::TooManySchedulePeriods {
+            count: request.periods,
         });
     }
     return Ok(());

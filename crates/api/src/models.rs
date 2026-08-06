@@ -717,6 +717,55 @@ pub struct EvaluateResponse {
     pub outputs: std::collections::HashMap<String, Decimal>,
 }
 
+/// Request body for `POST /schedule/amortization`.
+///
+/// This endpoint exists because an amortization schedule is a table, not a
+/// number. Every entry in [`FormulaRequest`] evaluates to a single `Decimal`,
+/// which is what a graph node produces; a per-period repayment breakdown does
+/// not fit that shape, so it is served on its own route rather than being
+/// flattened into one value.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct AmortizationScheduleRequest {
+    /// Loan principal. Must not be negative.
+    pub principal: Decimal,
+
+    /// Interest rate per period, not per year. A 12% annual rate on a monthly
+    /// schedule is `0.01`.
+    pub rate: Decimal,
+
+    /// Number of payment periods.
+    pub periods: u32,
+}
+
+/// One period of an amortization schedule.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct AmortizationPeriodResponse {
+    /// Period number, starting at 1.
+    pub period: u32,
+
+    /// Portion of this period's payment that reduces the balance.
+    pub principal_paid: Decimal,
+
+    /// Portion of this period's payment that covers interest.
+    pub interest_paid: Decimal,
+
+    /// Balance still owed after this payment.
+    pub remaining_balance: Decimal,
+}
+
+/// Response body for `POST /schedule/amortization`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct AmortizationScheduleResponse {
+    /// The level payment made every period, principal and interest combined.
+    pub payment: Decimal,
+
+    /// Total interest paid across the whole schedule.
+    pub total_interest: Decimal,
+
+    /// One row per period, in order.
+    pub schedule: Vec<AmortizationPeriodResponse>,
+}
+
 /// Response body for `GET /healthz`.
 #[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct HealthzResponse {
