@@ -1,0 +1,45 @@
+[package]
+name = "casiros-bench"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Criterion benchmarks for CASIROS hot paths"
+publish = false
+
+[dependencies]
+actix-web = { workspace = true }
+actix-ws = { workspace = true }
+casiros-api = { workspace = true }
+casiros-core = { workspace = true }
+casiros-dag = { workspace = true }
+casiros-simulator = { workspace = true }
+criterion = { workspace = true }
+futures-util = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tokio-tungstenite = { workspace = true }
+
+[[bench]]
+name = "dag_evaluate"
+path = "benches/dag_evaluate.rs"
+harness = false
+
+[[bench]]
+name = "simulator_run"
+path = "benches/simulator_run.rs"
+harness = false
+
+[[bench]]
+name = "api_deserialize"
+path = "benches/api_deserialize.rs"
+harness = false
+
+[[bench]]
+name = "websocket_simulate"
+path = "benches/websocket_simulate.rs"
+harness = false

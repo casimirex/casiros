@@ -1,0 +1,807 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CASIROS API",
+    "description": "NASA/JPL-grade Financial Physics Engine & Multiverse Simulator",
+    "contact": {
+      "name": "CASIROS Contributors"
+    },
+    "license": {
+      "name": "MIT OR Apache-2.0",
+      "identifier": "MIT OR Apache-2.0"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/evaluate": {
+      "post": {
+        "tags": [
+          "handlers"
+        ],
+        "summary": "Evaluates a causality graph with fixed inputs.",
+        "operationId": "evaluate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Evaluation succeeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or evaluation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "tags": [
+          "handlers"
+        ],
+        "summary": "Health check endpoint for liveness and readiness probes.",
+        "operationId": "healthz",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthzResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulate": {
+      "post": {
+        "tags": [
+          "handlers"
+        ],
+        "summary": "Runs a Monte Carlo simulation against a causality graph.",
+        "operationId": "simulate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Simulation succeeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or simulation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BindingRequest": {
+        "type": "object",
+        "description": "A single input-to-distribution binding.",
+        "required": [
+          "node",
+          "distribution"
+        ],
+        "properties": {
+          "distribution": {
+            "$ref": "#/components/schemas/DistributionRequest",
+            "description": "Distribution to sample from."
+          },
+          "node": {
+            "type": "string",
+            "description": "Name of the input node."
+          }
+        }
+      },
+      "DistributionRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Uniform distribution over `[low, high]`.",
+            "required": [
+              "low",
+              "high",
+              "kind"
+            ],
+            "properties": {
+              "high": {
+                "type": "number",
+                "format": "double",
+                "description": "Upper bound."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "uniform"
+                ]
+              },
+              "low": {
+                "type": "number",
+                "format": "double",
+                "description": "Lower bound."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Normal distribution with mean and standard deviation.",
+            "required": [
+              "mean",
+              "std_dev",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "normal"
+                ]
+              },
+              "mean": {
+                "type": "number",
+                "format": "double",
+                "description": "Mean."
+              },
+              "std_dev": {
+                "type": "number",
+                "format": "double",
+                "description": "Standard deviation."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Fixed value.",
+            "required": [
+              "value",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "fixed"
+                ]
+              },
+              "value": {
+                "type": "number",
+                "format": "double",
+                "description": "Constant value."
+              }
+            }
+          }
+        ],
+        "description": "A distribution request used by the simulator."
+      },
+      "EdgeRequest": {
+        "type": "object",
+        "description": "A directed edge between two nodes.",
+        "required": [
+          "dependency",
+          "dependent"
+        ],
+        "properties": {
+          "dependency": {
+            "type": "string",
+            "description": "Name of the dependency node."
+          },
+          "dependent": {
+            "type": "string",
+            "description": "Name of the dependent node."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Error response body returned for invalid requests.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message."
+          }
+        }
+      },
+      "EvaluateRequest": {
+        "type": "object",
+        "description": "Request body for `POST /evaluate`.",
+        "required": [
+          "nodes",
+          "edges",
+          "inputs"
+        ],
+        "properties": {
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EdgeRequest"
+            },
+            "description": "Directed edges between nodes."
+          },
+          "inputs": {
+            "type": "object",
+            "description": "Values for every input node, keyed by node name.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NodeRequest"
+            },
+            "description": "Nodes that make up the DAG."
+          }
+        }
+      },
+      "EvaluateResponse": {
+        "type": "object",
+        "description": "Response body for `POST /evaluate`.",
+        "required": [
+          "outputs"
+        ],
+        "properties": {
+          "outputs": {
+            "type": "object",
+            "description": "Computed value for every node, keyed by node name.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "FormulaRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Future value: `FV = PV * (1 + r)^n`.",
+            "required": [
+              "present_value",
+              "rate",
+              "periods",
+              "formula"
+            ],
+            "properties": {
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "future_value"
+                ]
+              },
+              "periods": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Periods binding."
+              },
+              "present_value": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Present value binding."
+              },
+              "rate": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Rate binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Present value: `PV = FV / (1 + r)^n`.",
+            "required": [
+              "future_value",
+              "rate",
+              "periods",
+              "formula"
+            ],
+            "properties": {
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "present_value"
+                ]
+              },
+              "future_value": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Future value binding."
+              },
+              "periods": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Periods binding."
+              },
+              "rate": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Rate binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Return on equity.",
+            "required": [
+              "net_income",
+              "equity",
+              "formula"
+            ],
+            "properties": {
+              "equity": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Equity binding."
+              },
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "return_on_equity"
+                ]
+              },
+              "net_income": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Net income binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Weighted average cost of capital.",
+            "required": [
+              "equity_value",
+              "debt_value",
+              "cost_of_equity",
+              "cost_of_debt",
+              "tax_rate",
+              "formula"
+            ],
+            "properties": {
+              "cost_of_debt": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Cost of debt binding."
+              },
+              "cost_of_equity": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Cost of equity binding."
+              },
+              "debt_value": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Debt value binding."
+              },
+              "equity_value": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Equity value binding."
+              },
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "wacc"
+                ]
+              },
+              "tax_rate": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Tax rate binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Sustainable growth rate.",
+            "required": [
+              "roe",
+              "dividend_payout_ratio",
+              "formula"
+            ],
+            "properties": {
+              "dividend_payout_ratio": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Dividend payout ratio binding."
+              },
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "sustainable_growth_rate"
+                ]
+              },
+              "roe": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "ROE binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Amortization payment.",
+            "required": [
+              "principal",
+              "rate",
+              "periods",
+              "formula"
+            ],
+            "properties": {
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "amortization_payment"
+                ]
+              },
+              "periods": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Number of periods binding."
+              },
+              "principal": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Loan principal binding."
+              },
+              "rate": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Periodic rate binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Yield-to-maturity approximation for a bond.",
+            "required": [
+              "face_value",
+              "coupon_payment",
+              "price",
+              "periods",
+              "formula"
+            ],
+            "properties": {
+              "coupon_payment": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Periodic coupon payment binding."
+              },
+              "face_value": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Face value binding."
+              },
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "yield_to_maturity_approximation"
+                ]
+              },
+              "periods": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Periods to maturity binding."
+              },
+              "price": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Current market price binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Simple moving average over a price series.",
+            "required": [
+              "prices",
+              "window",
+              "formula"
+            ],
+            "properties": {
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "simple_moving_average"
+                ]
+              },
+              "prices": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Comma-separated price series binding."
+              },
+              "window": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Window size binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Black-Scholes European call option price.",
+            "required": [
+              "spot",
+              "strike",
+              "risk_free_rate",
+              "volatility",
+              "time_to_maturity",
+              "formula"
+            ],
+            "properties": {
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "black_scholes_call"
+                ]
+              },
+              "risk_free_rate": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Risk-free rate binding."
+              },
+              "spot": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Spot price binding."
+              },
+              "strike": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Strike price binding."
+              },
+              "time_to_maturity": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Time to maturity binding."
+              },
+              "volatility": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Volatility binding."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Black-Scholes European put option price.",
+            "required": [
+              "spot",
+              "strike",
+              "risk_free_rate",
+              "volatility",
+              "time_to_maturity",
+              "formula"
+            ],
+            "properties": {
+              "formula": {
+                "type": "string",
+                "enum": [
+                  "black_scholes_put"
+                ]
+              },
+              "risk_free_rate": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Risk-free rate binding."
+              },
+              "spot": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Spot price binding."
+              },
+              "strike": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Strike price binding."
+              },
+              "time_to_maturity": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Time to maturity binding."
+              },
+              "volatility": {
+                "$ref": "#/components/schemas/PortRequest",
+                "description": "Volatility binding."
+              }
+            }
+          }
+        ],
+        "description": "A formula request with concrete port bindings."
+      },
+      "HealthzResponse": {
+        "type": "object",
+        "description": "Response body for `GET /healthz`.",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Always `\"ok\"` when the service is healthy."
+          }
+        }
+      },
+      "NodeRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A raw numeric input provided by the caller.",
+            "required": [
+              "input"
+            ],
+            "properties": {
+              "input": {
+                "type": "object",
+                "description": "A raw numeric input provided by the caller.",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Human-readable name for the node."
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A formula from the CASIROS catalog.",
+            "required": [
+              "formula"
+            ],
+            "properties": {
+              "formula": {
+                "type": "object",
+                "description": "A formula from the CASIROS catalog.",
+                "required": [
+                  "name",
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "$ref": "#/components/schemas/FormulaRequest",
+                    "description": "The specific formula and its port bindings."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Human-readable name for the node."
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "description": "A single node in a DAG request."
+      },
+      "PortRequest": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "A literal constant value."
+          },
+          {
+            "type": "object",
+            "description": "A reference to the output of another node.",
+            "required": [
+              "node"
+            ],
+            "properties": {
+              "node": {
+                "type": "string",
+                "description": "Name of the source node."
+              }
+            }
+          }
+        ],
+        "description": "A port binding: either a literal value or a reference to another node by\nname."
+      },
+      "SimulateRequest": {
+        "type": "object",
+        "description": "Request body for `POST /simulate`.",
+        "required": [
+          "nodes",
+          "edges",
+          "bindings",
+          "target",
+          "universe_count"
+        ],
+        "properties": {
+          "bindings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BindingRequest"
+            },
+            "description": "Input nodes to perturb, each with a distribution."
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EdgeRequest"
+            },
+            "description": "Directed edges between nodes."
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NodeRequest"
+            },
+            "description": "Nodes that make up the DAG."
+          },
+          "seed": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Optional RNG seed for reproducibility.",
+            "minimum": 0
+          },
+          "target": {
+            "type": "string",
+            "description": "Name of the node whose output should be aggregated."
+          },
+          "universe_count": {
+            "type": "integer",
+            "description": "Number of universes to simulate.",
+            "minimum": 0
+          }
+        }
+      },
+      "SimulateResponse": {
+        "type": "object",
+        "description": "Response body for `POST /simulate`.",
+        "required": [
+          "count",
+          "mean",
+          "median",
+          "min",
+          "max"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Number of universes simulated.",
+            "minimum": 0
+          },
+          "max": {
+            "type": "string",
+            "description": "Maximum observed value."
+          },
+          "mean": {
+            "type": "string",
+            "description": "Mean of the target node."
+          },
+          "median": {
+            "type": "string",
+            "description": "Median of the target node."
+          },
+          "min": {
+            "type": "string",
+            "description": "Minimum observed value."
+          }
+        }
+      }
+    }
+  }
+}

@@ -72,4 +72,18 @@ pub enum CalculationError {
         /// The missing parameter name.
         parameter: &'static str,
     },
+
+    /// An input value or parameter was invalid for the computation.
+    #[error("Invalid input: {message}")]
+    InvalidInput {
+        /// Description of the invalid input.
+        message: String,
+    },
+
+    /// An iterative algorithm did not converge.
+    #[error("Convergence error: {message}")]
+    Convergence {
+        /// Description of the convergence failure.
+        message: String,
+    },
 }

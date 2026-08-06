@@ -1,0 +1,111 @@
+name: CASIROS Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
+  build-binaries:
+    name: Build Release Binaries
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - package: casiros-api
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            binary: casiros-api
+          - package: casiros-api
+            target: x86_64-apple-darwin
+            os: macos-latest
+            binary: casiros-api
+          - package: casiros-api
+            target: aarch64-apple-darwin
+            os: macos-latest
+            binary: casiros-api
+          - package: casiros-api
+            target: x86_64-pc-windows-msvc
+            os: windows-latest
+            binary: casiros-api.exe
+          - package: casiros-cli
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            binary: casiros-cli
+          - package: casiros-cli
+            target: x86_64-apple-darwin
+            os: macos-latest
+            binary: casiros-cli
+          - package: casiros-cli
+            target: aarch64-apple-darwin
+            os: macos-latest
+            binary: casiros-cli
+          - package: casiros-cli
+            target: x86_64-pc-windows-msvc
+            os: windows-latest
+            binary: casiros-cli.exe
+          - package: casiros-worker
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            binary: casiros-worker
+          - package: casiros-worker
+            target: x86_64-apple-darwin
+            os: macos-latest
+            binary: casiros-worker
+          - package: casiros-worker
+            target: aarch64-apple-darwin
+            os: macos-latest
+            binary: casiros-worker
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "casiros-release-${{ matrix.target }}"
+
+      - name: Build release binary
+        run: cargo build -p ${{ matrix.package }} --bin ${{ matrix.binary }} --release --target ${{ matrix.target }}
+
+      - name: Run tests (native target only)
+        if: matrix.target == 'x86_64-unknown-linux-gnu' || matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin'
+        run: cargo test -p ${{ matrix.package }} --all-features
+
+      - name: Package binary
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [[ "${{ matrix.binary }}" == *.exe ]]; then
+            cp target/${{ matrix.target }}/release/${{ matrix.binary }} dist/${{ matrix.binary }}-${{ matrix.target }}.exe
+          else
+            cp target/${{ matrix.target }}/release/${{ matrix.binary }} dist/${{ matrix.binary }}-${{ matrix.target }}
+          fi
+
+      - name: Upload binary to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

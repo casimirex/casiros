@@ -2727,6 +2727,95 @@ cargo doc --workspace           # Documentation builds
 
 ---
 
+## Phase 3: Ecosystem Hardening & Client Expansion
+
+*Goal: Build on the MVP and Phase 2 foundation with persistent storage, richer clients, performance work, and deeper financial coverage.*
+
+### 3.1 Persistent Storage Backends
+
+Replace in-memory-only operation with pluggable snapshot repositories.
+
+- Define `trait SnapshotRepository` in `crates/dag/` (Application Layer).
+- Implement `PostgresSnapshotRepository` in `crates/api/` via `sqlx`.
+- Implement `S3SnapshotRepository` in `crates/api/` for artifact export.
+- Keep `EngineSnapshot` JSON as the portable interchange format.
+
+Deliverables:
+- `POST /snapshots` — save a named snapshot.
+- `GET /snapshots/:id` — load a snapshot.
+- `DELETE /snapshots/:id` — remove a snapshot.
+- `LIST /snapshots` — paginated listing.
+
+### 3.2 Python Client SDK
+
+Generate or hand-write a typed Python client.
+
+- Use the committed `casiros.openapi.json` to generate a Pydantic-based client with `openapi-python-client`, or maintain a small hand-written `httpx` wrapper.
+- Publish to PyPI as `casiros-client`.
+- Provide Jupyter-friendly helpers for graph construction and simulation plotting.
+
+### 3.3 Web Dashboard / Simulation Reports
+
+Add a lightweight browser-based UI for non-engineer users.
+
+- New `crates/dashboard/` crate (or static assets under `crates/api/assets/`).
+- Render `/` as an HTML landing page with links to Swagger UI and examples.
+- Simulation result page with Vega-Lite or Chart.js histograms.
+- Graph validation visualizer (mermaid.js or DOT → SVG).
+
+### 3.4 Performance & Caching
+
+- Add deterministic memoization to `CausalityEngine::evaluate` for unchanged sub-graphs.
+- Introduce `dashmap`-backed result cache behind a trait boundary.
+- Parallelize independent node evaluation with `rayon`.
+- Add a flamegraph-friendly Criterion benchmark for large graphs.
+
+### 3.5 CSV / Excel Import & Export
+
+- `casiros-cli import csv engine.csv --output engine.json`
+- `casiros-cli export csv engine.json --output engine.csv`
+- Excel support via `calamine` / `rust_xlsxwriter`.
+- Map CSV columns to input names and formula bindings.
+
+### 3.6 Advanced Financial Formulas
+
+Expand the catalog with more option pricing and fixed-income tools.
+
+- Binomial option pricing (European & American).
+- Black-Scholes Greeks (delta, gamma, theta, vega, rho).
+- Duration, modified duration, and convexity for bonds.
+- Implied volatility approximation via Newton-Raphson.
+- Value at Risk (VaR) and Conditional VaR (CVaR) for Monte Carlo outputs.
+
+### 3.7 Streaming Simulation Progress
+
+- WebSocket endpoint `/ws/simulate` that streams universe-count progress and partial aggregates.
+- Server-Sent Events (SSE) alternative at `/simulate/stream`.
+- Keep non-streaming `/simulate` endpoint for simple clients.
+
+### 3.8 Release Engineering
+
+- Add `cargo audit` and `cargo deny` to CI.
+- Enforce code coverage gates (e.g. 90% line coverage).
+- Build release binaries for Linux, macOS, and Windows via GitHub Actions.
+- Publish `casiros-core`, `casiros-dag`, and `casiros-simulator` to crates.io.
+- Tag releases and maintain `CHANGELOG.md`.
+
+### Phase 3 Definition of Done
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features
+cargo test --workspace
+cargo doc --workspace --no-deps --document-private-items
+cargo audit
+cargo deny check
+```
+
+All checks green before merge.
+
+---
+
 ## Agent Guardrails (AI Development Prompt)
 
 *Feed this section to any AI agent (Claude Code, Copilot, etc.) working on CASIROS.*

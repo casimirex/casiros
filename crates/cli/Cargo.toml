@@ -1,0 +1,39 @@
+[package]
+name = "casiros-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CASIROS command-line interface for evaluation, simulation, and graph persistence"
+
+[[bin]]
+name = "casiros-cli"
+path = "src/main.rs"
+
+[features]
+default = ["csv", "excel"]
+csv = ["dep:csv"]
+excel = ["dep:calamine", "dep:rust_xlsxwriter"]
+
+[dependencies]
+casiros-api = { workspace = true }
+casiros-core = { workspace = true }
+casiros-dag = { workspace = true }
+casiros-simulator = { workspace = true }
+clap = { workspace = true }
+rust_decimal = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+csv = { workspace = true, optional = true }
+calamine = { workspace = true, optional = true }
+rust_xlsxwriter = { workspace = true, optional = true }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }
+rust_decimal_macros = { workspace = true }
+tempfile = { workspace = true }

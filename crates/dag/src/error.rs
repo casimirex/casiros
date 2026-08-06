@@ -47,6 +47,20 @@ pub enum DagError {
         value: Decimal,
     },
 
+    /// A snapshot contained a duplicate node name.
+    #[error("Duplicate node name '{name}' in snapshot")]
+    DuplicateNodeName {
+        /// The duplicated name.
+        name: String,
+    },
+
+    /// A snapshot edge referenced a node name that does not exist.
+    #[error("Unknown node name '{name}' in snapshot edge")]
+    UnknownNodeName {
+        /// The missing node name.
+        name: String,
+    },
+
     /// A core formula computation failed at a specific node.
     #[error("Formula evaluation failed at node {node:?}: {source}")]
     FormulaEvaluation {
@@ -54,5 +68,12 @@ pub enum DagError {
         node: NodeId,
         /// The underlying core computation error.
         source: casiros_core::prelude::CalculationError,
+    },
+
+    /// A snapshot repository operation failed.
+    #[error("Repository error: {message}")]
+    Repository {
+        /// Human-readable description of the failure.
+        message: String,
     },
 }

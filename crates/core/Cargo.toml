@@ -12,5 +12,8 @@ description = "CASIROS domain layer — pure financial formulas and shared types
 rust_decimal = { workspace = true }
 rust_decimal_macros = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
+uuid = { workspace = true }
+time = { workspace = true }
 
 [dev-dependencies]

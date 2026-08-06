@@ -2,6 +2,7 @@
 
 use actix_web::{App, test, web};
 use casiros_api::handlers;
+use casiros_api::streaming_handlers;
 use rust_decimal_macros::dec;
 use serde_json::json;
 
@@ -119,4 +120,62 @@ async fn simulate_future_value_distribution() {
     // Uniform[90, 110] * 1.05 has mean 105.
     assert!(mean > dec!(95.0), "mean too low: {mean}");
     assert!(mean < dec!(115.0), "mean too high: {mean}");
+}
+
+#[actix_web::test]
+async fn simulate_stream_returns_sse_events_and_final_result() {
+    let app = test::init_service(App::new().route(
+        "/simulate/stream",
+        web::post().to(streaming_handlers::simulate_stream),
+    ))
+    .await;
+
+    let payload = json!({
+        "nodes": [
+            { "input": { "name": "x" } },
+            {
+                "formula": {
+                    "name": "doubled",
+                    "kind": {
+                        "formula": "future_value",
+                        "present_value": { "node": "x" },
+                        "rate": 0,
+                        "periods": 1
+                    }
+                }
+            }
+        ],
+        "edges": [{ "dependency": "x", "dependent": "doubled" }],
+        "bindings": [
+            { "node": "x", "distribution": { "kind": "uniform", "low": 0.0, "high": 100.0 } }
+        ],
+        "target": "doubled",
+        "universe_count": 100,
+        "seed": 42
+    });
+
+    let req = test::TestRequest::post()
+        .uri("/simulate/stream")
+        .set_json(&payload)
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(
+        resp.status().is_success(),
+        "streaming simulate returned non-success: {:?}",
+        resp.status()
+    );
+
+    let content_type = resp.headers().get("content-type").unwrap();
+    assert!(content_type.to_str().unwrap().contains("text/event-stream"));
+
+    let body = test::read_body(resp).await;
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    let events: Vec<&str> = text.split("\n\n").filter(|s| !s.is_empty()).collect();
+    assert!(!events.is_empty());
+
+    let last = events.last().unwrap();
+    let last_json: serde_json::Value =
+        serde_json::from_str(last.strip_prefix("data: ").unwrap_or(last).trim()).unwrap();
+    assert_eq!(last_json["type"], "result");
+    assert_eq!(last_json["result"]["count"], 100);
 }

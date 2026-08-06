@@ -5,6 +5,7 @@ Cargo.lock
 # IDE
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 *~
@@ -23,3 +24,10 @@ Thumbs.db
 # Coverage
 cobertura.xml
 *.profraw
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/

@@ -20,7 +20,7 @@ use crate::error::SimulationError;
 
 /// Statistics aggregated across all simulated universes for a single target
 /// node.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SimulationResult {
     /// Number of universes that contributed to the statistics.
     pub count: usize,
@@ -224,7 +224,68 @@ impl MonteCarloConfig {
         return Self::aggregate(values);
     }
 
-    fn aggregate(mut values: Vec<Decimal>) -> Result<SimulationResult, SimulationError> {
+    /// Runs a contiguous batch of universes and returns the raw target-node
+    /// values without aggregating them.
+    ///
+    /// The RNG seed for each universe is derived from the config seed and the
+    /// universe offset, matching the behaviour of [`Self::run`].
+    ///
+    /// # Errors
+    ///
+    /// Same error conditions as [`Self::run`].
+    pub fn run_batch(
+        &self,
+        engine: &CausalityEngine,
+        target_node: NodeId,
+        offset: usize,
+        count: usize,
+    ) -> Result<Vec<Decimal>, SimulationError> {
+        if self.bindings.is_empty() {
+            return Err(SimulationError::MissingSamplers);
+        }
+
+        let values: Result<Vec<Decimal>, SimulationError> = (0..count)
+            .into_par_iter()
+            .map(|idx| {
+                let universe = offset + idx;
+                let mut rng = SmallRng::seed_from_u64(self.seed.wrapping_add(universe as u64));
+                let mut inputs: HashMap<NodeId, Decimal> =
+                    HashMap::with_capacity(self.bindings.len());
+                for binding in &self.bindings {
+                    let sample = binding.distribution.sample(&mut rng);
+                    let decimal = Distribution::to_decimal(sample).map_err(|_| {
+                        SimulationError::InvalidSample {
+                            input: format!("node {:?}", binding.node),
+                            sample,
+                        }
+                    })?;
+                    inputs.insert(binding.node, decimal);
+                }
+
+                let outputs =
+                    engine
+                        .evaluate(&inputs)
+                        .map_err(|err| SimulationError::EvaluationFailure {
+                            universe,
+                            source: err,
+                        })?;
+
+                outputs
+                    .get(&target_node)
+                    .copied()
+                    .ok_or(SimulationError::MissingTarget { node: target_node })
+            })
+            .collect();
+
+        return values;
+    }
+
+    /// Aggregates a vector of target-node values into simulation statistics.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SimulationError::InvalidUniverseCount`] if `values` is empty.
+    pub fn aggregate(mut values: Vec<Decimal>) -> Result<SimulationResult, SimulationError> {
         let count = values.len();
         if count == 0 {
             return Err(SimulationError::InvalidUniverseCount { count: 0 });

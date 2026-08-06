@@ -1,0 +1,60 @@
+site_name: CASIROS
+site_description: NASA/JPL-grade Financial Physics Engine & Multiverse Simulator
+site_url: https://casimirex.github.io/casiros
+repo_url: https://github.com/casimirex/casiros
+edit_uri: blob/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - openapi
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [python]
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Operator's Handbook: handbook.html
+  - Formula Reference: formulas.html
+  - API Reference: api.md
+  - Deployment: deployment.md
+  - Architecture: architecture.md
+  - Development: development.md

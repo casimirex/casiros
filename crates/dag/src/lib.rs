@@ -20,8 +20,15 @@
 #![deny(warnings)]
 #![allow(clippy::needless_return)]
 
+pub mod audit;
+pub mod cache;
 pub mod error;
 pub mod graph;
+pub mod job;
+pub mod persistence;
+pub mod repository;
 
 pub use error::DagError;
 pub use graph::{CausalityEngine, FormulaKind, Node, NodeId, NodeKind, Port};
+pub use persistence::{EngineSnapshot, SnapshotNode, SnapshotNodeKind};
+pub use repository::{InMemorySnapshotRepository, SnapshotRepository, SnapshotSummary};
