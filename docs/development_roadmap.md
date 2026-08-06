@@ -196,10 +196,36 @@ real binaries, and `scripts/browser-smoke.js` covers the dashboard.
   rate limits and job claiming behave sanely. This would quantify the
   per-process rate-limit caveat rather than leaving it a footnote.
 
+## Formula Surface
+
+As of v0.8.0 the API exposes 62 of the 63 core formulas. Two items remain.
+
+### `amortization_schedule` needs a dedicated endpoint
+
+It is the one core formula with no route to a caller. Every other formula
+returns a single `Decimal`, which is what a DAG node evaluates to;
+`amortization_schedule` returns `Vec<AmortizationPeriod>` — a repayment table.
+It cannot be a `FormulaKind` variant without either flattening the table into
+one number, which discards the point of it, or widening every node's output
+type to accommodate one formula.
+
+The natural shape is a separate endpoint, e.g. `POST /schedule/amortization`,
+returning the periods as rows. That also suits the CSV and Excel export paths
+the CLI already has, which are table-shaped anyway.
+
+### Formula Reference entries for the 17 wired in 0.8.0
+
+`docs/formulas.html` documents 45 formulas, each with an explanation, its
+mathematics, a worked example, and a dashboard screenshot. The 17 added in
+0.8.0 are callable but have no entries yet. Writing them means capturing 17
+more browser screenshots against a running server, the same way the original
+45 were produced.
+
 ## Version History
 
 | Version | Date | Highlights |
 |---|---|---|
+| v0.8.0 | 2026-08-06 | 17 remaining formulas wired through DAG/API/CLI (NPV, IRR, Sharpe, bond price); API now exposes 62 of 63 |
 | v0.7.0 | 2026-08-05 | Formulas wired through API, cache in evaluator, benchmarks |
 | v0.6.0 | 2026-08-05 | OTel, formulas, docs site, API versioning |
 | v0.5.0 | 2026-08-05 | Python SDK, dashboard, formulas, CI/CD, security audit |

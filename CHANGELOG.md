@@ -5,6 +5,42 @@ All notable changes to the CASIROS project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-06
+
+### Added
+
+- **17 formulas wired through DAG, API, and CLI.** These were implemented,
+  tested, and documented in the core crate but had no route to a caller: the
+  REST API exposed 45 of the 63 core formulas, and the missing 18 included
+  net present value and internal rate of return. The API now exposes 62.
+
+  - *General:* `net_present_value`, `internal_rate_of_return`,
+    `annuity_present_value`, `annuity_future_value`,
+    `perpetuity_present_value`, `effective_annual_rate`
+  - *Financial ratios:* `return_on_assets`, `dupont_roe`, `current_ratio`,
+    `debt_to_equity`
+  - *Banking:* `net_interest_margin`, `loan_to_deposit_ratio`
+  - *Markets:* `sharpe_ratio`, `jensens_alpha`
+  - *Stocks and bonds:* `dividend_discount_model`, `bond_price`
+  - *Corporate:* `free_cash_flow_to_firm`
+
+- **Value-correctness tests** for the new evaluators, with expected results
+  derived independently rather than recorded from the implementation, plus a
+  test pinning that `net_present_value` consumes its whole series instead of
+  collapsing to the first element.
+
+### Notes
+
+- `amortization_schedule` remains callable only from the core library. It
+  returns a repayment table rather than a single `Decimal`, so it does not fit
+  the formula-node model, where every node evaluates to one value. Exposing it
+  needs a dedicated endpoint, not a `FormulaKind` variant.
+
+- The internal-rate-of-return solver's iteration cap (100) and tolerance
+  (0.0001) are fixed rather than exposed as ports. They are numerical
+  controls, not financial inputs, and a graph edge feeding a convergence
+  threshold would invite meaningless wiring.
+
 ## [0.7.0] - 2026-08-05
 
 ### Added

@@ -553,6 +553,147 @@ impl EngineBuilder {
                 unlevered_npv: self.port(unlevered_npv)?,
                 pv_tax_shield: self.port(pv_tax_shield)?,
             }),
+            FormulaRequest::NetPresentValue { rate, cash_flows } => {
+                Ok(FormulaKind::NetPresentValue {
+                    rate: self.port(rate)?,
+                    cash_flows: self.port(cash_flows)?,
+                })
+            }
+            FormulaRequest::InternalRateOfReturn { cash_flows } => {
+                Ok(FormulaKind::InternalRateOfReturn {
+                    cash_flows: self.port(cash_flows)?,
+                })
+            }
+            FormulaRequest::AnnuityPresentValue {
+                payment,
+                rate,
+                periods,
+            } => Ok(FormulaKind::AnnuityPresentValue {
+                payment: self.port(payment)?,
+                rate: self.port(rate)?,
+                periods: self.port(periods)?,
+            }),
+            FormulaRequest::AnnuityFutureValue {
+                payment,
+                rate,
+                periods,
+            } => Ok(FormulaKind::AnnuityFutureValue {
+                payment: self.port(payment)?,
+                rate: self.port(rate)?,
+                periods: self.port(periods)?,
+            }),
+            FormulaRequest::PerpetuityPresentValue { payment, rate } => {
+                Ok(FormulaKind::PerpetuityPresentValue {
+                    payment: self.port(payment)?,
+                    rate: self.port(rate)?,
+                })
+            }
+            FormulaRequest::EffectiveAnnualRate {
+                nominal_rate,
+                compounding_periods,
+            } => Ok(FormulaKind::EffectiveAnnualRate {
+                nominal_rate: self.port(nominal_rate)?,
+                compounding_periods: self.port(compounding_periods)?,
+            }),
+            FormulaRequest::ReturnOnAssets {
+                net_income,
+                avg_total_assets,
+            } => Ok(FormulaKind::ReturnOnAssets {
+                net_income: self.port(net_income)?,
+                avg_total_assets: self.port(avg_total_assets)?,
+            }),
+            FormulaRequest::DupontRoe {
+                profit_margin,
+                asset_turnover,
+                equity_multiplier,
+            } => Ok(FormulaKind::DupontRoe {
+                profit_margin: self.port(profit_margin)?,
+                asset_turnover: self.port(asset_turnover)?,
+                equity_multiplier: self.port(equity_multiplier)?,
+            }),
+            FormulaRequest::CurrentRatio {
+                current_assets,
+                current_liabilities,
+            } => Ok(FormulaKind::CurrentRatio {
+                current_assets: self.port(current_assets)?,
+                current_liabilities: self.port(current_liabilities)?,
+            }),
+            FormulaRequest::DebtToEquity {
+                total_liabilities,
+                shareholders_equity,
+            } => Ok(FormulaKind::DebtToEquity {
+                total_liabilities: self.port(total_liabilities)?,
+                shareholders_equity: self.port(shareholders_equity)?,
+            }),
+            FormulaRequest::NetInterestMargin {
+                interest_income,
+                interest_expense,
+                avg_earning_assets,
+            } => Ok(FormulaKind::NetInterestMargin {
+                interest_income: self.port(interest_income)?,
+                interest_expense: self.port(interest_expense)?,
+                avg_earning_assets: self.port(avg_earning_assets)?,
+            }),
+            FormulaRequest::LoanToDepositRatio {
+                total_loans,
+                total_deposits,
+            } => Ok(FormulaKind::LoanToDepositRatio {
+                total_loans: self.port(total_loans)?,
+                total_deposits: self.port(total_deposits)?,
+            }),
+            FormulaRequest::SharpeRatio {
+                portfolio_return,
+                risk_free_rate,
+                portfolio_std_dev,
+            } => Ok(FormulaKind::SharpeRatio {
+                portfolio_return: self.port(portfolio_return)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                portfolio_std_dev: self.port(portfolio_std_dev)?,
+            }),
+            FormulaRequest::JensensAlpha {
+                portfolio_return,
+                risk_free_rate,
+                market_return,
+                beta,
+            } => Ok(FormulaKind::JensensAlpha {
+                portfolio_return: self.port(portfolio_return)?,
+                risk_free_rate: self.port(risk_free_rate)?,
+                market_return: self.port(market_return)?,
+                beta: self.port(beta)?,
+            }),
+            FormulaRequest::DividendDiscountModel {
+                next_dividend,
+                required_return,
+                growth_rate,
+            } => Ok(FormulaKind::DividendDiscountModel {
+                next_dividend: self.port(next_dividend)?,
+                required_return: self.port(required_return)?,
+                growth_rate: self.port(growth_rate)?,
+            }),
+            FormulaRequest::BondPrice {
+                face_value,
+                coupon_payment,
+                yield_per_period,
+                periods,
+            } => Ok(FormulaKind::BondPrice {
+                face_value: self.port(face_value)?,
+                coupon_payment: self.port(coupon_payment)?,
+                yield_per_period: self.port(yield_per_period)?,
+                periods: self.port(periods)?,
+            }),
+            FormulaRequest::FreeCashFlowToFirm {
+                ebit,
+                tax_rate,
+                depreciation,
+                delta_working_capital,
+                capex,
+            } => Ok(FormulaKind::FreeCashFlowToFirm {
+                ebit: self.port(ebit)?,
+                tax_rate: self.port(tax_rate)?,
+                depreciation: self.port(depreciation)?,
+                delta_working_capital: self.port(delta_working_capital)?,
+                capex: self.port(capex)?,
+            }),
         }
     }
 

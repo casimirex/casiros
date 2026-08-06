@@ -507,6 +507,170 @@ pub enum FormulaRequest {
         /// PV of tax shield binding.
         pv_tax_shield: PortRequest,
     },
+
+    /// Net present value of a cash-flow series at a discount rate.
+    NetPresentValue {
+        /// Discount rate binding.
+        rate: PortRequest,
+        /// Cash-flow series binding. Element 0 is the period-0 flow.
+        cash_flows: PortRequest,
+    },
+
+    /// Internal rate of return of a cash-flow series.
+    ///
+    /// The solver's iteration cap and tolerance are fixed by the engine; they
+    /// are numerical controls rather than financial inputs.
+    InternalRateOfReturn {
+        /// Cash-flow series binding. Must contain both a positive and a
+        /// negative value.
+        cash_flows: PortRequest,
+    },
+
+    /// Present value of a level annuity.
+    AnnuityPresentValue {
+        /// Payment per period binding.
+        payment: PortRequest,
+        /// Rate per period binding.
+        rate: PortRequest,
+        /// Number of periods binding.
+        periods: PortRequest,
+    },
+
+    /// Future value of a level annuity.
+    AnnuityFutureValue {
+        /// Payment per period binding.
+        payment: PortRequest,
+        /// Rate per period binding.
+        rate: PortRequest,
+        /// Number of periods binding.
+        periods: PortRequest,
+    },
+
+    /// Present value of a level perpetuity.
+    PerpetuityPresentValue {
+        /// Payment per period binding.
+        payment: PortRequest,
+        /// Discount rate binding.
+        rate: PortRequest,
+    },
+
+    /// Effective annual rate from a nominal rate and compounding frequency.
+    EffectiveAnnualRate {
+        /// Nominal annual rate binding.
+        nominal_rate: PortRequest,
+        /// Compounding periods per year binding.
+        compounding_periods: PortRequest,
+    },
+
+    /// Return on assets (ROA).
+    ReturnOnAssets {
+        /// Net income binding.
+        net_income: PortRequest,
+        /// Average total assets binding.
+        avg_total_assets: PortRequest,
+    },
+
+    /// `DuPont` decomposition of return on equity.
+    DupontRoe {
+        /// Profit margin binding.
+        profit_margin: PortRequest,
+        /// Asset turnover binding.
+        asset_turnover: PortRequest,
+        /// Equity multiplier binding.
+        equity_multiplier: PortRequest,
+    },
+
+    /// Current ratio (liquidity).
+    CurrentRatio {
+        /// Current assets binding.
+        current_assets: PortRequest,
+        /// Current liabilities binding.
+        current_liabilities: PortRequest,
+    },
+
+    /// Debt-to-equity leverage ratio.
+    DebtToEquity {
+        /// Total liabilities binding.
+        total_liabilities: PortRequest,
+        /// Shareholders' equity binding.
+        shareholders_equity: PortRequest,
+    },
+
+    /// Net interest margin for a lending institution.
+    NetInterestMargin {
+        /// Interest income binding.
+        interest_income: PortRequest,
+        /// Interest expense binding.
+        interest_expense: PortRequest,
+        /// Average earning assets binding.
+        avg_earning_assets: PortRequest,
+    },
+
+    /// Loan-to-deposit ratio for a lending institution.
+    LoanToDepositRatio {
+        /// Total loans binding.
+        total_loans: PortRequest,
+        /// Total deposits binding.
+        total_deposits: PortRequest,
+    },
+
+    /// Sharpe ratio (excess return per unit of total risk).
+    SharpeRatio {
+        /// Portfolio return binding.
+        portfolio_return: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Portfolio standard deviation binding.
+        portfolio_std_dev: PortRequest,
+    },
+
+    /// Jensen's alpha (excess return over the CAPM prediction).
+    JensensAlpha {
+        /// Portfolio return binding.
+        portfolio_return: PortRequest,
+        /// Risk-free rate binding.
+        risk_free_rate: PortRequest,
+        /// Market return binding.
+        market_return: PortRequest,
+        /// Portfolio beta binding.
+        beta: PortRequest,
+    },
+
+    /// Dividend discount model (Gordon growth) equity value.
+    DividendDiscountModel {
+        /// Next period's dividend binding.
+        next_dividend: PortRequest,
+        /// Required rate of return binding.
+        required_return: PortRequest,
+        /// Dividend growth rate binding.
+        growth_rate: PortRequest,
+    },
+
+    /// Present value of a fixed-coupon bond.
+    BondPrice {
+        /// Face value binding.
+        face_value: PortRequest,
+        /// Coupon payment per period binding.
+        coupon_payment: PortRequest,
+        /// Yield per period binding.
+        yield_per_period: PortRequest,
+        /// Periods to maturity binding.
+        periods: PortRequest,
+    },
+
+    /// Free cash flow to the firm (FCFF).
+    FreeCashFlowToFirm {
+        /// EBIT binding.
+        ebit: PortRequest,
+        /// Tax rate binding.
+        tax_rate: PortRequest,
+        /// Depreciation binding.
+        depreciation: PortRequest,
+        /// Change in working capital binding.
+        delta_working_capital: PortRequest,
+        /// Capital expenditure binding.
+        capex: PortRequest,
+    },
 }
 
 /// A port binding: either a literal value or a reference to another node by

@@ -751,6 +751,147 @@ fn formula_request_from_kind(
             unlevered_npv: port(unlevered_npv, id_to_name),
             pv_tax_shield: port(pv_tax_shield, id_to_name),
         },
+        FormulaKind::NetPresentValue { rate, cash_flows } => {
+            casiros_api::models::FormulaRequest::NetPresentValue {
+                rate: port(rate, id_to_name),
+                cash_flows: port(cash_flows, id_to_name),
+            }
+        }
+        FormulaKind::InternalRateOfReturn { cash_flows } => {
+            casiros_api::models::FormulaRequest::InternalRateOfReturn {
+                cash_flows: port(cash_flows, id_to_name),
+            }
+        }
+        FormulaKind::AnnuityPresentValue {
+            payment,
+            rate,
+            periods,
+        } => casiros_api::models::FormulaRequest::AnnuityPresentValue {
+            payment: port(payment, id_to_name),
+            rate: port(rate, id_to_name),
+            periods: port(periods, id_to_name),
+        },
+        FormulaKind::AnnuityFutureValue {
+            payment,
+            rate,
+            periods,
+        } => casiros_api::models::FormulaRequest::AnnuityFutureValue {
+            payment: port(payment, id_to_name),
+            rate: port(rate, id_to_name),
+            periods: port(periods, id_to_name),
+        },
+        FormulaKind::PerpetuityPresentValue { payment, rate } => {
+            casiros_api::models::FormulaRequest::PerpetuityPresentValue {
+                payment: port(payment, id_to_name),
+                rate: port(rate, id_to_name),
+            }
+        }
+        FormulaKind::EffectiveAnnualRate {
+            nominal_rate,
+            compounding_periods,
+        } => casiros_api::models::FormulaRequest::EffectiveAnnualRate {
+            nominal_rate: port(nominal_rate, id_to_name),
+            compounding_periods: port(compounding_periods, id_to_name),
+        },
+        FormulaKind::ReturnOnAssets {
+            net_income,
+            avg_total_assets,
+        } => casiros_api::models::FormulaRequest::ReturnOnAssets {
+            net_income: port(net_income, id_to_name),
+            avg_total_assets: port(avg_total_assets, id_to_name),
+        },
+        FormulaKind::DupontRoe {
+            profit_margin,
+            asset_turnover,
+            equity_multiplier,
+        } => casiros_api::models::FormulaRequest::DupontRoe {
+            profit_margin: port(profit_margin, id_to_name),
+            asset_turnover: port(asset_turnover, id_to_name),
+            equity_multiplier: port(equity_multiplier, id_to_name),
+        },
+        FormulaKind::CurrentRatio {
+            current_assets,
+            current_liabilities,
+        } => casiros_api::models::FormulaRequest::CurrentRatio {
+            current_assets: port(current_assets, id_to_name),
+            current_liabilities: port(current_liabilities, id_to_name),
+        },
+        FormulaKind::DebtToEquity {
+            total_liabilities,
+            shareholders_equity,
+        } => casiros_api::models::FormulaRequest::DebtToEquity {
+            total_liabilities: port(total_liabilities, id_to_name),
+            shareholders_equity: port(shareholders_equity, id_to_name),
+        },
+        FormulaKind::NetInterestMargin {
+            interest_income,
+            interest_expense,
+            avg_earning_assets,
+        } => casiros_api::models::FormulaRequest::NetInterestMargin {
+            interest_income: port(interest_income, id_to_name),
+            interest_expense: port(interest_expense, id_to_name),
+            avg_earning_assets: port(avg_earning_assets, id_to_name),
+        },
+        FormulaKind::LoanToDepositRatio {
+            total_loans,
+            total_deposits,
+        } => casiros_api::models::FormulaRequest::LoanToDepositRatio {
+            total_loans: port(total_loans, id_to_name),
+            total_deposits: port(total_deposits, id_to_name),
+        },
+        FormulaKind::SharpeRatio {
+            portfolio_return,
+            risk_free_rate,
+            portfolio_std_dev,
+        } => casiros_api::models::FormulaRequest::SharpeRatio {
+            portfolio_return: port(portfolio_return, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            portfolio_std_dev: port(portfolio_std_dev, id_to_name),
+        },
+        FormulaKind::JensensAlpha {
+            portfolio_return,
+            risk_free_rate,
+            market_return,
+            beta,
+        } => casiros_api::models::FormulaRequest::JensensAlpha {
+            portfolio_return: port(portfolio_return, id_to_name),
+            risk_free_rate: port(risk_free_rate, id_to_name),
+            market_return: port(market_return, id_to_name),
+            beta: port(beta, id_to_name),
+        },
+        FormulaKind::DividendDiscountModel {
+            next_dividend,
+            required_return,
+            growth_rate,
+        } => casiros_api::models::FormulaRequest::DividendDiscountModel {
+            next_dividend: port(next_dividend, id_to_name),
+            required_return: port(required_return, id_to_name),
+            growth_rate: port(growth_rate, id_to_name),
+        },
+        FormulaKind::BondPrice {
+            face_value,
+            coupon_payment,
+            yield_per_period,
+            periods,
+        } => casiros_api::models::FormulaRequest::BondPrice {
+            face_value: port(face_value, id_to_name),
+            coupon_payment: port(coupon_payment, id_to_name),
+            yield_per_period: port(yield_per_period, id_to_name),
+            periods: port(periods, id_to_name),
+        },
+        FormulaKind::FreeCashFlowToFirm {
+            ebit,
+            tax_rate,
+            depreciation,
+            delta_working_capital,
+            capex,
+        } => casiros_api::models::FormulaRequest::FreeCashFlowToFirm {
+            ebit: port(ebit, id_to_name),
+            tax_rate: port(tax_rate, id_to_name),
+            depreciation: port(depreciation, id_to_name),
+            delta_working_capital: port(delta_working_capital, id_to_name),
+            capex: port(capex, id_to_name),
+        },
     };
 }
 

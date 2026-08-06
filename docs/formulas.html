@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CASIROS Formula Reference</title>
-<meta name="description" content="Plain-English explanation, mathematics, worked example, and dashboard screenshot for all 45 CASIROS formulas.">
+<meta name="description" content="Plain-English explanation, mathematics, worked example, and dashboard screenshot for 45 of the 62 CASIROS formulas.">
 <style>
   :root {
     --ground: #f7f8fa; --panel: #ffffff; --panel-2: #eef1f5;
@@ -190,7 +190,7 @@
 <body>
 <header class="masthead">
   <div class="masthead-inner">
-    <div class="stencil">Formula Reference &middot; 45 formulas &middot; v0.7.0</div>
+    <div class="stencil">Formula Reference &middot; 45 of 62 formulas &middot; captured on v0.7.0</div>
     <h1>Every CASIROS Formula, Explained</h1>
     <p class="subtitle">
       What each formula means in plain language, the mathematics behind it, a
@@ -198,12 +198,19 @@
       request running in the dashboard. Every result shown was returned by a
       live server.
     </p>
+    <p class="subtitle">
+      This reference covers the 45 formulas the API exposed as of v0.7.0.
+      Release 0.8.0 wired a further 17 &mdash; among them net present value,
+      internal rate of return, the annuity and perpetuity family, Sharpe, and
+      bond price. Those are callable now but are not yet written up here; the
+      CHANGELOG lists them in full.
+    </p>
   </div>
 </header>
 
 <div class="shell">
   <nav class="rail" aria-label="Formula index">
-    <p class="rail-head">45 formulas</p>
+    <p class="rail-head">45 of 62 formulas</p>
       <p class="tier">Time value of money <span class="tier-n">5</span></p>
       <ul>
         <li><a href="#amortization-payment">Amortization Payment</a></li>
@@ -1797,7 +1804,8 @@
 
 <footer>
   <p>
-    CASIROS Formula Reference — 45 formulas against v0.7.0. Every result was
+    CASIROS Formula Reference — 45 formulas, captured against v0.7.0 and unchanged
+    since; 0.8.0 only added formulas. Every result was
     produced by POSTing the request shown to a running server backed by
     PostgreSQL 16, and every screenshot was captured from the live dashboard.
     Results are displayed to six decimal places; the full precision returned by

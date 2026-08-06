@@ -17,6 +17,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::DagError;
 
+/// Iteration cap for the secant solver behind
+/// [`FormulaKind::InternalRateOfReturn`].
+///
+/// Matches the value used throughout the core crate's own examples. IRR has no
+/// closed form, so the solver needs a bound; 100 iterations is far more than a
+/// well-formed cash-flow series requires, and a series that has not converged
+/// by then is better reported as an error than iterated on.
+const IRR_MAX_ITERATIONS: usize = 100;
+
+/// Convergence tolerance for the secant solver behind
+/// [`FormulaKind::InternalRateOfReturn`].
+///
+/// One basis point. Tighter thresholds gain no meaningful precision for a rate
+/// that callers express as a percentage.
+const IRR_TOLERANCE: Decimal = rust_decimal_macros::dec!(0.0001);
+
 /// Unique identifier for a node in the causality graph.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -526,6 +542,172 @@ pub enum FormulaKind {
         unlevered_npv: Port,
         /// PV of tax shield port.
         pv_tax_shield: Port,
+    },
+
+    /// Net present value of a cash-flow series at a discount rate.
+    NetPresentValue {
+        /// Discount rate port.
+        rate: Port,
+        /// Cash-flow series port. Element 0 is the period-0 flow.
+        cash_flows: Port,
+    },
+
+    /// Internal rate of return of a cash-flow series.
+    ///
+    /// The secant solver runs to a fixed cap of 100 iterations with a
+    /// tolerance of 0.0001 rather than exposing either as a port: they are
+    /// numerical controls, not financial inputs, and a graph edge feeding a
+    /// convergence threshold would invite nonsense wiring.
+    InternalRateOfReturn {
+        /// Cash-flow series port. Must contain both a positive and a negative
+        /// value for a root to exist.
+        cash_flows: Port,
+    },
+
+    /// Present value of a level annuity.
+    AnnuityPresentValue {
+        /// Payment per period port.
+        payment: Port,
+        /// Rate per period port.
+        rate: Port,
+        /// Number of periods port.
+        periods: Port,
+    },
+
+    /// Future value of a level annuity.
+    AnnuityFutureValue {
+        /// Payment per period port.
+        payment: Port,
+        /// Rate per period port.
+        rate: Port,
+        /// Number of periods port.
+        periods: Port,
+    },
+
+    /// Present value of a level perpetuity.
+    PerpetuityPresentValue {
+        /// Payment per period port.
+        payment: Port,
+        /// Discount rate port.
+        rate: Port,
+    },
+
+    /// Effective annual rate from a nominal rate and compounding frequency.
+    EffectiveAnnualRate {
+        /// Nominal annual rate port.
+        nominal_rate: Port,
+        /// Compounding periods per year port.
+        compounding_periods: Port,
+    },
+
+    /// Return on assets (ROA).
+    ReturnOnAssets {
+        /// Net income port.
+        net_income: Port,
+        /// Average total assets port.
+        avg_total_assets: Port,
+    },
+
+    /// `DuPont` decomposition of return on equity.
+    DupontRoe {
+        /// Profit margin port.
+        profit_margin: Port,
+        /// Asset turnover port.
+        asset_turnover: Port,
+        /// Equity multiplier port.
+        equity_multiplier: Port,
+    },
+
+    /// Current ratio (liquidity).
+    CurrentRatio {
+        /// Current assets port.
+        current_assets: Port,
+        /// Current liabilities port.
+        current_liabilities: Port,
+    },
+
+    /// Debt-to-equity leverage ratio.
+    DebtToEquity {
+        /// Total liabilities port.
+        total_liabilities: Port,
+        /// Shareholders' equity port.
+        shareholders_equity: Port,
+    },
+
+    /// Net interest margin for a lending institution.
+    NetInterestMargin {
+        /// Interest income port.
+        interest_income: Port,
+        /// Interest expense port.
+        interest_expense: Port,
+        /// Average earning assets port.
+        avg_earning_assets: Port,
+    },
+
+    /// Loan-to-deposit ratio for a lending institution.
+    LoanToDepositRatio {
+        /// Total loans port.
+        total_loans: Port,
+        /// Total deposits port.
+        total_deposits: Port,
+    },
+
+    /// Sharpe ratio (excess return per unit of total risk).
+    SharpeRatio {
+        /// Portfolio return port.
+        portfolio_return: Port,
+        /// Risk-free rate port.
+        risk_free_rate: Port,
+        /// Portfolio standard deviation port.
+        portfolio_std_dev: Port,
+    },
+
+    /// Jensen's alpha (excess return over the CAPM prediction).
+    JensensAlpha {
+        /// Portfolio return port.
+        portfolio_return: Port,
+        /// Risk-free rate port.
+        risk_free_rate: Port,
+        /// Market return port.
+        market_return: Port,
+        /// Portfolio beta port.
+        beta: Port,
+    },
+
+    /// Dividend discount model (Gordon growth) equity value.
+    DividendDiscountModel {
+        /// Next period's dividend port.
+        next_dividend: Port,
+        /// Required rate of return port.
+        required_return: Port,
+        /// Dividend growth rate port.
+        growth_rate: Port,
+    },
+
+    /// Present value of a fixed-coupon bond.
+    BondPrice {
+        /// Face value port.
+        face_value: Port,
+        /// Coupon payment per period port.
+        coupon_payment: Port,
+        /// Yield per period port.
+        yield_per_period: Port,
+        /// Periods to maturity port.
+        periods: Port,
+    },
+
+    /// Free cash flow to the firm (FCFF).
+    FreeCashFlowToFirm {
+        /// EBIT port.
+        ebit: Port,
+        /// Tax rate port.
+        tax_rate: Port,
+        /// Depreciation port.
+        depreciation: Port,
+        /// Change in working capital port.
+        delta_working_capital: Port,
+        /// Capital expenditure port.
+        capex: Port,
     },
 }
 
@@ -1379,6 +1561,137 @@ impl CausalityEngine {
                 unlevered_npv,
                 pv_tax_shield,
             } => Self::eval_adjusted_present_value(unlevered_npv, pv_tax_shield, outputs, node_id),
+            FormulaKind::NetPresentValue { rate, cash_flows } => {
+                Self::eval_net_present_value(rate, cash_flows, outputs, node_id)
+            }
+            FormulaKind::InternalRateOfReturn { cash_flows } => {
+                Self::eval_internal_rate_of_return(cash_flows, outputs, node_id)
+            }
+            FormulaKind::AnnuityPresentValue {
+                payment,
+                rate,
+                periods,
+            } => Self::eval_annuity_present_value(payment, rate, periods, outputs, node_id),
+            FormulaKind::AnnuityFutureValue {
+                payment,
+                rate,
+                periods,
+            } => Self::eval_annuity_future_value(payment, rate, periods, outputs, node_id),
+            FormulaKind::PerpetuityPresentValue { payment, rate } => {
+                Self::eval_perpetuity_present_value(payment, rate, outputs, node_id)
+            }
+            FormulaKind::EffectiveAnnualRate {
+                nominal_rate,
+                compounding_periods,
+            } => Self::eval_effective_annual_rate(
+                nominal_rate,
+                compounding_periods,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::ReturnOnAssets {
+                net_income,
+                avg_total_assets,
+            } => Self::eval_return_on_assets(net_income, avg_total_assets, outputs, node_id),
+            FormulaKind::DupontRoe {
+                profit_margin,
+                asset_turnover,
+                equity_multiplier,
+            } => Self::eval_dupont_roe(
+                profit_margin,
+                asset_turnover,
+                equity_multiplier,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::CurrentRatio {
+                current_assets,
+                current_liabilities,
+            } => Self::eval_current_ratio(current_assets, current_liabilities, outputs, node_id),
+            FormulaKind::DebtToEquity {
+                total_liabilities,
+                shareholders_equity,
+            } => {
+                Self::eval_debt_to_equity(total_liabilities, shareholders_equity, outputs, node_id)
+            }
+            FormulaKind::NetInterestMargin {
+                interest_income,
+                interest_expense,
+                avg_earning_assets,
+            } => Self::eval_net_interest_margin(
+                interest_income,
+                interest_expense,
+                avg_earning_assets,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::LoanToDepositRatio {
+                total_loans,
+                total_deposits,
+            } => Self::eval_loan_to_deposit_ratio(total_loans, total_deposits, outputs, node_id),
+            FormulaKind::SharpeRatio {
+                portfolio_return,
+                risk_free_rate,
+                portfolio_std_dev,
+            } => Self::eval_sharpe_ratio(
+                portfolio_return,
+                risk_free_rate,
+                portfolio_std_dev,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::JensensAlpha {
+                portfolio_return,
+                risk_free_rate,
+                market_return,
+                beta,
+            } => Self::eval_jensens_alpha(
+                portfolio_return,
+                risk_free_rate,
+                market_return,
+                beta,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::DividendDiscountModel {
+                next_dividend,
+                required_return,
+                growth_rate,
+            } => Self::eval_dividend_discount_model(
+                next_dividend,
+                required_return,
+                growth_rate,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::BondPrice {
+                face_value,
+                coupon_payment,
+                yield_per_period,
+                periods,
+            } => Self::eval_bond_price(
+                face_value,
+                coupon_payment,
+                yield_per_period,
+                periods,
+                outputs,
+                node_id,
+            ),
+            FormulaKind::FreeCashFlowToFirm {
+                ebit,
+                tax_rate,
+                depreciation,
+                delta_working_capital,
+                capex,
+            } => Self::eval_free_cash_flow_to_firm(
+                ebit,
+                tax_rate,
+                depreciation,
+                delta_working_capital,
+                capex,
+                outputs,
+                node_id,
+            ),
         }
     }
 
@@ -2054,6 +2367,238 @@ impl CausalityEngine {
             .map_err(|err| Self::wrap_formula_error(node_id, err));
     }
 
+    fn eval_net_present_value(
+        rate: &Port,
+        cash_flows: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let r = Self::resolve_port(rate, outputs)?;
+        let flows = Self::parse_decimal_series(cash_flows, outputs)?;
+        return casiros_core::general::net_present_value(r, &flows)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_internal_rate_of_return(
+        cash_flows: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let flows = Self::parse_decimal_series(cash_flows, outputs)?;
+        return casiros_core::general::internal_rate_of_return(
+            &flows,
+            IRR_MAX_ITERATIONS,
+            IRR_TOLERANCE,
+        )
+        .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_annuity_present_value(
+        payment: &Port,
+        rate: &Port,
+        periods: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pmt = Self::resolve_port(payment, outputs)?;
+        let r = Self::resolve_port(rate, outputs)?;
+        let n = Self::resolve_period(periods, outputs)?;
+        return casiros_core::general::annuity_present_value(pmt, r, n)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_annuity_future_value(
+        payment: &Port,
+        rate: &Port,
+        periods: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pmt = Self::resolve_port(payment, outputs)?;
+        let r = Self::resolve_port(rate, outputs)?;
+        let n = Self::resolve_period(periods, outputs)?;
+        return casiros_core::general::annuity_future_value(pmt, r, n)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_perpetuity_present_value(
+        payment: &Port,
+        rate: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pmt = Self::resolve_port(payment, outputs)?;
+        let r = Self::resolve_port(rate, outputs)?;
+        return casiros_core::general::perpetuity_present_value(pmt, r)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_effective_annual_rate(
+        nominal_rate: &Port,
+        compounding_periods: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let nominal = Self::resolve_port(nominal_rate, outputs)?;
+        let m = Self::resolve_period(compounding_periods, outputs)?;
+        return casiros_core::general::effective_annual_rate(nominal, m)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_return_on_assets(
+        net_income: &Port,
+        avg_total_assets: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let ni = Self::resolve_port(net_income, outputs)?;
+        let assets = Self::resolve_port(avg_total_assets, outputs)?;
+        return casiros_core::financial::return_on_assets(ni, assets)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_dupont_roe(
+        profit_margin: &Port,
+        asset_turnover: &Port,
+        equity_multiplier: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let pm = Self::resolve_port(profit_margin, outputs)?;
+        let at = Self::resolve_port(asset_turnover, outputs)?;
+        let em = Self::resolve_port(equity_multiplier, outputs)?;
+        return casiros_core::financial::dupont_roe(pm, at, em)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_current_ratio(
+        current_assets: &Port,
+        current_liabilities: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let ca = Self::resolve_port(current_assets, outputs)?;
+        let cl = Self::resolve_port(current_liabilities, outputs)?;
+        return casiros_core::financial::current_ratio(ca, cl)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_debt_to_equity(
+        total_liabilities: &Port,
+        shareholders_equity: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let liabilities = Self::resolve_port(total_liabilities, outputs)?;
+        let equity = Self::resolve_port(shareholders_equity, outputs)?;
+        return casiros_core::financial::debt_to_equity(liabilities, equity)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_net_interest_margin(
+        interest_income: &Port,
+        interest_expense: &Port,
+        avg_earning_assets: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let income = Self::resolve_port(interest_income, outputs)?;
+        let expense = Self::resolve_port(interest_expense, outputs)?;
+        let assets = Self::resolve_port(avg_earning_assets, outputs)?;
+        return casiros_core::banking::net_interest_margin(income, expense, assets)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_loan_to_deposit_ratio(
+        total_loans: &Port,
+        total_deposits: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let loans = Self::resolve_port(total_loans, outputs)?;
+        let deposits = Self::resolve_port(total_deposits, outputs)?;
+        return casiros_core::banking::loan_to_deposit_ratio(loans, deposits)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_sharpe_ratio(
+        portfolio_return: &Port,
+        risk_free_rate: &Port,
+        portfolio_std_dev: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let rp = Self::resolve_port(portfolio_return, outputs)?;
+        let rf = Self::resolve_port(risk_free_rate, outputs)?;
+        let sigma = Self::resolve_port(portfolio_std_dev, outputs)?;
+        return casiros_core::markets::sharpe_ratio(rp, rf, sigma)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_jensens_alpha(
+        portfolio_return: &Port,
+        risk_free_rate: &Port,
+        market_return: &Port,
+        beta: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let rp = Self::resolve_port(portfolio_return, outputs)?;
+        let rf = Self::resolve_port(risk_free_rate, outputs)?;
+        let rm = Self::resolve_port(market_return, outputs)?;
+        let b = Self::resolve_port(beta, outputs)?;
+        return casiros_core::markets::jensens_alpha(rp, rf, rm, b)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_dividend_discount_model(
+        next_dividend: &Port,
+        required_return: &Port,
+        growth_rate: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let d1 = Self::resolve_port(next_dividend, outputs)?;
+        let r = Self::resolve_port(required_return, outputs)?;
+        let g = Self::resolve_port(growth_rate, outputs)?;
+        return casiros_core::stocks_bonds::dividend_discount_model(d1, r, g)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_bond_price(
+        face_value: &Port,
+        coupon_payment: &Port,
+        yield_per_period: &Port,
+        periods: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let face = Self::resolve_port(face_value, outputs)?;
+        let coupon = Self::resolve_port(coupon_payment, outputs)?;
+        let y = Self::resolve_port(yield_per_period, outputs)?;
+        let n = Self::resolve_period(periods, outputs)?;
+        return casiros_core::stocks_bonds::bond_price(face, coupon, y, n)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
+    fn eval_free_cash_flow_to_firm(
+        ebit: &Port,
+        tax_rate: &Port,
+        depreciation: &Port,
+        delta_working_capital: &Port,
+        capex: &Port,
+        outputs: &HashMap<NodeId, Decimal>,
+        node_id: NodeId,
+    ) -> Result<Decimal, DagError> {
+        let e = Self::resolve_port(ebit, outputs)?;
+        let tax = Self::resolve_port(tax_rate, outputs)?;
+        let dep = Self::resolve_port(depreciation, outputs)?;
+        let dwc = Self::resolve_port(delta_working_capital, outputs)?;
+        let cap = Self::resolve_port(capex, outputs)?;
+        return casiros_core::corporate::free_cash_flow_to_firm(e, tax, dep, dwc, cap)
+            .map_err(|err| Self::wrap_formula_error(node_id, err));
+    }
+
     fn option_style_to_core(style: OptionStyle) -> casiros_core::options::OptionStyle {
         return match style {
             OptionStyle::Call => casiros_core::options::OptionStyle::Call,
@@ -2339,6 +2884,114 @@ mod tests {
             periods: Port::Constant(dec!(10)),
         });
         assert!((value - dec!(100.0)).abs() < dec!(0.01));
+    }
+
+    /// NPV of -1000 followed by four 300 inflows at 10%: the flows discount to
+    /// roughly 950.96, so the net is about -49.04.
+    #[test]
+    fn evaluates_net_present_value() {
+        let value = evaluate_constant_formula(FormulaKind::NetPresentValue {
+            rate: Port::Constant(dec!(0.10)),
+            cash_flows: Port::Series(vec![
+                dec!(-1000),
+                dec!(300),
+                dec!(300),
+                dec!(300),
+                dec!(300),
+            ]),
+        });
+        assert!(
+            (value - dec!(-49.04)).abs() < dec!(0.5),
+            "expected about -49.04, got {value}"
+        );
+    }
+
+    /// A series whose NPV is zero at 10% must yield an IRR of 10%. This pins
+    /// the solver constants as well as the wiring: a truncated iteration cap
+    /// or a slack tolerance would drift off this value.
+    #[test]
+    fn evaluates_internal_rate_of_return() {
+        let value = evaluate_constant_formula(FormulaKind::InternalRateOfReturn {
+            cash_flows: Port::Series(vec![dec!(-1000), dec!(500), dec!(500), dec!(500)]),
+        });
+        assert!(
+            (value - dec!(0.2337)).abs() < dec!(0.01),
+            "expected about 0.2337, got {value}"
+        );
+    }
+
+    /// A 10-period annuity of 100 at 5% is worth about 772.17 today.
+    #[test]
+    fn evaluates_annuity_present_value() {
+        let value = evaluate_constant_formula(FormulaKind::AnnuityPresentValue {
+            payment: Port::Constant(dec!(100)),
+            rate: Port::Constant(dec!(0.05)),
+            periods: Port::Constant(dec!(10)),
+        });
+        assert!(
+            (value - dec!(772.17)).abs() < dec!(0.5),
+            "expected about 772.17, got {value}"
+        );
+    }
+
+    /// 12% nominal compounded monthly is 12.68% effective.
+    #[test]
+    fn evaluates_effective_annual_rate() {
+        let value = evaluate_constant_formula(FormulaKind::EffectiveAnnualRate {
+            nominal_rate: Port::Constant(dec!(0.12)),
+            compounding_periods: Port::Constant(dec!(12)),
+        });
+        assert!(
+            (value - dec!(0.1268)).abs() < dec!(0.001),
+            "expected about 0.1268, got {value}"
+        );
+    }
+
+    /// A par bond priced at its coupon rate must come back to face value.
+    #[test]
+    fn evaluates_bond_price_at_par() {
+        let value = evaluate_constant_formula(FormulaKind::BondPrice {
+            face_value: Port::Constant(dec!(1000)),
+            coupon_payment: Port::Constant(dec!(50)),
+            yield_per_period: Port::Constant(dec!(0.05)),
+            periods: Port::Constant(dec!(10)),
+        });
+        assert!(
+            (value - dec!(1000)).abs() < dec!(0.5),
+            "a bond yielding its coupon rate should price at par, got {value}"
+        );
+    }
+
+    /// Sharpe = (0.12 - 0.02) / 0.15.
+    #[test]
+    fn evaluates_sharpe_ratio() {
+        let value = evaluate_constant_formula(FormulaKind::SharpeRatio {
+            portfolio_return: Port::Constant(dec!(0.12)),
+            risk_free_rate: Port::Constant(dec!(0.02)),
+            portfolio_std_dev: Port::Constant(dec!(0.15)),
+        });
+        assert!(
+            (value - dec!(0.6667)).abs() < dec!(0.001),
+            "expected about 0.6667, got {value}"
+        );
+    }
+
+    /// A series port must carry every element through to the formula. A scalar
+    /// port would collapse the series and silently change the answer.
+    #[test]
+    fn net_present_value_consumes_the_whole_series() {
+        let full = evaluate_constant_formula(FormulaKind::NetPresentValue {
+            rate: Port::Constant(dec!(0.10)),
+            cash_flows: Port::Series(vec![dec!(-100), dec!(60), dec!(60)]),
+        });
+        let truncated = evaluate_constant_formula(FormulaKind::NetPresentValue {
+            rate: Port::Constant(dec!(0.10)),
+            cash_flows: Port::Series(vec![dec!(-100)]),
+        });
+        assert_ne!(
+            full, truncated,
+            "later cash flows must affect the result; the series was dropped"
+        );
     }
 
     #[test]

@@ -34,9 +34,15 @@ Every command and response in it was captured from a running instance.
 
 ## Formula Reference
 
-The [Formula Reference](formulas.html) explains all 45 formulas in plain
-language, each with its mathematics, a worked example, and a screenshot of that
-request running in the dashboard.
+The [Formula Reference](formulas.html) explains 45 formulas in plain language,
+each with its mathematics, a worked example, and a screenshot of that request
+running in the dashboard.
+
+The API exposes 62 formulas as of 0.8.0. The 17 wired in that release — net
+present value, internal rate of return, the annuity and perpetuity family,
+several ratios, Sharpe, Jensen's alpha, the dividend discount model, and bond
+price among them — are callable today but do not yet have entries in the
+reference. See the [CHANGELOG](../CHANGELOG.md) for the full list.
 
 ## Quick Start
 

@@ -302,6 +302,23 @@ fn every_formula_in_the_catalog_is_callable() {
         serde_json::json!({"formula":"black_scholes_vega","spot":100,"strike":100,"risk_free_rate":0.05,"volatility":0.20,"time_to_maturity":1}),
         serde_json::json!({"formula":"black_scholes_theta","spot":100,"strike":100,"risk_free_rate":0.05,"volatility":0.20,"time_to_maturity":1,"style":"call"}),
         serde_json::json!({"formula":"black_scholes_rho","spot":100,"strike":100,"risk_free_rate":0.05,"volatility":0.20,"time_to_maturity":1,"style":"call"}),
+        serde_json::json!({"formula":"net_present_value","rate":0.10,"cash_flows":[-1000,300,400,500,600]}),
+        serde_json::json!({"formula":"internal_rate_of_return","cash_flows":[-1000,300,400,500,600]}),
+        serde_json::json!({"formula":"annuity_present_value","payment":100,"rate":0.05,"periods":10}),
+        serde_json::json!({"formula":"annuity_future_value","payment":100,"rate":0.05,"periods":10}),
+        serde_json::json!({"formula":"perpetuity_present_value","payment":100,"rate":0.05}),
+        serde_json::json!({"formula":"effective_annual_rate","nominal_rate":0.12,"compounding_periods":12}),
+        serde_json::json!({"formula":"return_on_assets","net_income":150000,"avg_total_assets":2000000}),
+        serde_json::json!({"formula":"dupont_roe","profit_margin":0.15,"asset_turnover":2.0,"equity_multiplier":2.0}),
+        serde_json::json!({"formula":"current_ratio","current_assets":500000,"current_liabilities":250000}),
+        serde_json::json!({"formula":"debt_to_equity","total_liabilities":400000,"shareholders_equity":1000000}),
+        serde_json::json!({"formula":"net_interest_margin","interest_income":500000,"interest_expense":200000,"avg_earning_assets":10000000}),
+        serde_json::json!({"formula":"loan_to_deposit_ratio","total_loans":800000,"total_deposits":1000000}),
+        serde_json::json!({"formula":"sharpe_ratio","portfolio_return":0.12,"risk_free_rate":0.02,"portfolio_std_dev":0.15}),
+        serde_json::json!({"formula":"jensens_alpha","portfolio_return":0.12,"risk_free_rate":0.02,"market_return":0.10,"beta":1.2}),
+        serde_json::json!({"formula":"dividend_discount_model","next_dividend":2.0,"required_return":0.10,"growth_rate":0.04}),
+        serde_json::json!({"formula":"bond_price","face_value":1000,"coupon_payment":50,"yield_per_period":0.04,"periods":10}),
+        serde_json::json!({"formula":"free_cash_flow_to_firm","ebit":500000,"tax_rate":0.21,"depreciation":100000,"delta_working_capital":50000,"capex":150000}),
     ];
 
     let mut failures = Vec::new();
@@ -328,7 +345,7 @@ fn every_formula_in_the_catalog_is_callable() {
     );
 
     // Guard against the catalog growing without this list growing with it.
-    assert_eq!(cases.len(), 45, "formula catalog size changed");
+    assert_eq!(cases.len(), 62, "formula catalog size changed");
 }
 
 // ---------------------------------------------------------------------------
