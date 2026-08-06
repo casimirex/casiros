@@ -34,9 +34,6 @@ jobs:
         run: |
           cargo run -p casiros-api --bin casiros-api-export-openapi > docs/openapi.json
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
       - name: Build docs
         uses: actions/setup-python@v5
         with:
@@ -46,16 +43,30 @@ jobs:
         run: |
           pip install mkdocs mkdocs-material mkdocs-openapi-plugin
 
+      # The strict build is the part worth gating merges on: it fails on broken
+      # links and bad references whether or not the site is ever published.
       - name: Build site
         run: mkdocs build --strict
 
+      # Everything below publishes to GitHub Pages, which is switched off for
+      # this repository. configure-pages fails outright when Pages is disabled,
+      # so these steps are gated on an opt-in variable rather than running and
+      # failing on every docs change. To turn the site on: enable Pages (repo
+      # Settings -> Pages, source "GitHub Actions"), then add a repository
+      # variable PUBLISH_DOCS=true. Note Pages on a private repository needs a
+      # paid plan, and publishing makes the site reachable by its URL.
+      - name: Setup Pages
+        if: vars.PUBLISH_DOCS == 'true'
+        uses: actions/configure-pages@v5
+
       - name: Upload artifact
+        if: vars.PUBLISH_DOCS == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && vars.PUBLISH_DOCS == 'true'
     needs: build
     runs-on: ubuntu-latest
     environment:

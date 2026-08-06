@@ -57,10 +57,18 @@ jobs:
 
       # Serial: the Postgres job-store tests operate on the shared
       # simulation_jobs queue, so concurrent runs claim each other's jobs.
+      #
+      # Deliberately not --all-targets: that sweeps in the criterion benches,
+      # whose harness rejects --test-threads. It also suppresses doc-tests,
+      # so this step never ran them despite its name. Benches are compiled
+      # separately below.
       - name: Run all tests (unit, integration, and doc-tests)
         env:
           CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
-        run: cargo test --workspace --all-targets --all-features -- --test-threads=1
+        run: cargo test --workspace --all-features -- --test-threads=1
+
+      - name: Check that benches compile
+        run: cargo build --workspace --all-features --benches
 
   smoke:
     name: End-to-End Smoke
@@ -147,8 +155,19 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
 
+      # Both ignored advisories sit in sqlx-mysql's dependency tree. We enable
+      # only sqlx's "postgres" feature, so sqlx-mysql is never compiled --
+      # `cargo tree -i rsa --target all` finds no path to either crate. They
+      # appear here because Cargo.lock records the resolution for every
+      # optional feature, and cargo-audit scans the lockfile rather than the
+      # built graph. cargo-deny, which walks the real graph, reports clean.
+      #
+      #   RUSTSEC-2023-0071  rsa    Marvin timing sidechannel; no fix exists
+      #   RUSTSEC-2026-0235  rkyv   OOB read; fix needs sqlx to move to 0.8
+      #
+      # Revisit if sqlx ever gains a MySQL backend here.
       - name: Audit dependencies
-        run: cargo audit
+        run: cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2026-0235
 
   deny:
     name: License and Dependency Check
@@ -180,10 +199,26 @@ jobs:
           CASIROS__POSTGRES__URL: postgresql://casiros:casiros@localhost:5432/casiros
         run: cargo tarpaulin --workspace --all-features --out Xml --timeout 120
 
+      # Always keep the report, so coverage is inspectable whether or not
+      # Codecov is wired up.
+      - name: Upload coverage report as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cobertura
+          path: cobertura.xml
+
+      # This repository is private, and Codecov rejects tokenless uploads from
+      # private repos outright -- fail_ci_if_error does not cover that, because
+      # the action itself errors before the upload is attempted. Skipped until
+      # a CODECOV_TOKEN secret exists; add one to turn reporting back on.
       - name: Upload coverage to Codecov
+        if: env.CODECOV_TOKEN != ''
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         uses: codecov/codecov-action@v4
         with:
           files: ./cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
       - name: Enforce coverage gate

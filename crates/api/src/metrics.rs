@@ -1,7 +1,8 @@
 //! Prometheus metrics for the CASIROS API server.
 //!
-//! All metrics use the `casiros_` prefix. The [`MetricsRegistry`] singleton is
-//! created once at startup and shared across the middleware and handlers.
+//! All metrics use the `casiros_` prefix. [`init_metrics`] builds the registry
+//! once at startup; the counters and histograms live in module-level statics
+//! that the middleware and handlers record through.
 
 use std::sync::OnceLock;
 
