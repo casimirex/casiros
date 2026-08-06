@@ -1,0 +1,22 @@
+[package]
+name = "casiros-e2e"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CASIROS end-to-end smoke tests — exercises the real binaries over HTTP"
+publish = false
+
+# No library or binary: this crate exists solely to host integration tests that
+# drive the compiled `casiros-api` and `casiros-worker` binaries.
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+
+[dev-dependencies]
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }

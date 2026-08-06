@@ -42,6 +42,31 @@ casiros/
 └── docs/              # Documentation site
 ```
 
+## End-to-End Smoke Tests
+
+The `casiros-e2e` crate launches the real `casiros-api` and `casiros-worker`
+binaries and drives them over HTTP. It covers the layer the in-process suites
+cannot reach — which backend `main.rs` selected, whether an environment
+variable was spelled in a form the config crate accepts, whether a route was
+registered, and whether the API and worker agree on where jobs live.
+
+```bash
+docker compose up -d postgres
+cargo build -p casiros-api -p casiros-worker   # the tests spawn these
+cargo test -p casiros-e2e
+```
+
+A browser smoke test covers the dashboard, catching page exceptions and
+missing assets that no Rust test can see:
+
+```bash
+npm install puppeteer-core@23 --no-save
+cargo run --release -p casiros-api &
+node scripts/browser-smoke.js http://localhost:8080 your-api-key
+```
+
+See `crates/e2e/README.md` for the defects each test was written against.
+
 ## Code Quality Gates
 
 Every commit must pass:

@@ -176,6 +176,26 @@ Profile and optimize hot paths.
 
 ---
 
+## Testing Strategy
+
+### End-to-end smoke tests (added)
+
+Six defects reached the repository despite a green test suite, all for the same
+structural reason: every suite rebuilt the Actix app in-process and so never
+executed `main.rs`. The `casiros-e2e` crate closes that gap by launching the
+real binaries, and `scripts/browser-smoke.js` covers the dashboard.
+
+### Remaining gaps
+
+- **Docker image smoke test** — build the image and assert the container
+  answers on its published port. The `Dockerfile` bind-address defect would
+  have been caught by exactly this.
+- **Upgrade test** — run migrations from an older schema against a current
+  binary, so a migration that breaks existing data is caught before release.
+- **Multi-replica test** — two API instances against one database, asserting
+  rate limits and job claiming behave sanely. This would quantify the
+  per-process rate-limit caveat rather than leaving it a footnote.
+
 ## Version History
 
 | Version | Date | Highlights |
