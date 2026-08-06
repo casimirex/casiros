@@ -29,6 +29,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   test pinning that `net_present_value` consumes its whole series instead of
   collapsing to the first element.
 
+- **Formula Reference entries for all 17**, so `docs/formulas.html` now covers
+  every formula the API exposes: plain-English explanation, mathematics, a
+  worked example, and a dashboard screenshot captured against a live server.
+
+- **`scripts/capture-formula-screenshots.js`** — reproducible screenshot
+  capture for the reference. The original 45 images were produced by hand and
+  the method was lost; this replaces it. The script drives the real dashboard
+  in headless Chrome and refuses to write an image when the server returns an
+  error, so no screenshot here can show a request that did not work. Pass
+  formula names to refresh a subset.
+
 ### Notes
 
 - `amortization_schedule` remains callable only from the core library. It

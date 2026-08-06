@@ -213,13 +213,23 @@ The natural shape is a separate endpoint, e.g. `POST /schedule/amortization`,
 returning the periods as rows. That also suits the CSV and Excel export paths
 the CLI already has, which are table-shaped anyway.
 
-### Formula Reference entries for the 17 wired in 0.8.0
+### Formula Reference is complete (done in 0.8.0)
 
-`docs/formulas.html` documents 45 formulas, each with an explanation, its
-mathematics, a worked example, and a dashboard screenshot. The 17 added in
-0.8.0 are callable but have no entries yet. Writing them means capturing 17
-more browser screenshots against a running server, the same way the original
-45 were produced.
+`docs/formulas.html` documents all 62 exposed formulas, each with an
+explanation, its mathematics, a worked example, and a dashboard screenshot
+captured against a live server.
+
+Screenshots are now reproducible rather than hand-made:
+
+```bash
+cargo run -p casiros-api &
+npm install puppeteer-core@23 --no-save
+node scripts/capture-formula-screenshots.js http://localhost:8080 <api-key>
+```
+
+Pass formula names as trailing arguments to refresh only those. The script
+fails rather than writing an image if the server returns an error, so a
+screenshot in this reference cannot show a request that did not work.
 
 ## Version History
 

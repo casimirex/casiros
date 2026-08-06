@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CASIROS Formula Reference</title>
-<meta name="description" content="Plain-English explanation, mathematics, worked example, and dashboard screenshot for 45 of the 62 CASIROS formulas.">
+<meta name="description" content="Plain-English explanation, mathematics, worked example, and dashboard screenshot for all 62 CASIROS formulas.">
 <style>
   :root {
     --ground: #f7f8fa; --panel: #ffffff; --panel-2: #eef1f5;
@@ -190,7 +190,7 @@
 <body>
 <header class="masthead">
   <div class="masthead-inner">
-    <div class="stencil">Formula Reference &middot; 45 of 62 formulas &middot; captured on v0.7.0</div>
+    <div class="stencil">Formula Reference &middot; 62 formulas &middot; v0.8.0</div>
     <h1>Every CASIROS Formula, Explained</h1>
     <p class="subtitle">
       What each formula means in plain language, the mathematics behind it, a
@@ -199,29 +199,36 @@
       live server.
     </p>
     <p class="subtitle">
-      This reference covers the 45 formulas the API exposed as of v0.7.0.
-      Release 0.8.0 wired a further 17 &mdash; among them net present value,
-      internal rate of return, the annuity and perpetuity family, Sharpe, and
-      bond price. Those are callable now but are not yet written up here; the
-      CHANGELOG lists them in full.
+      Every formula the API exposes is here. The 17 added in v0.8.0 &mdash;
+      net present value, internal rate of return, the annuity and perpetuity
+      family, Sharpe, bond price and the rest &mdash; were captured the same
+      way as the original 45, against a live server.
     </p>
   </div>
 </header>
 
 <div class="shell">
   <nav class="rail" aria-label="Formula index">
-    <p class="rail-head">45 of 62 formulas</p>
-      <p class="tier">Time value of money <span class="tier-n">5</span></p>
+    <p class="rail-head">62 formulas</p>
+      <p class="tier">Time value of money <span class="tier-n">11</span></p>
       <ul>
         <li><a href="#amortization-payment">Amortization Payment</a></li>
+        <li><a href="#annuity-future-value">Annuity Future Value</a></li>
+        <li><a href="#annuity-present-value">Annuity Present Value</a></li>
         <li><a href="#continuous-compounding-future-value">Continuous Compounding</a></li>
+        <li><a href="#effective-annual-rate">Effective Annual Rate</a></li>
         <li><a href="#future-value">Future Value</a></li>
         <li><a href="#growing-perpetuity-present-value">Growing Perpetuity</a></li>
+        <li><a href="#internal-rate-of-return">Internal Rate of Return</a></li>
+        <li><a href="#net-present-value">Net Present Value</a></li>
+        <li><a href="#perpetuity-present-value">Perpetuity</a></li>
         <li><a href="#present-value">Present Value</a></li>
       </ul>
-      <p class="tier">Profitability <span class="tier-n">3</span></p>
+      <p class="tier">Profitability <span class="tier-n">5</span></p>
       <ul>
+        <li><a href="#dupont-roe">DuPont ROE</a></li>
         <li><a href="#profit-margin">Profit Margin</a></li>
+        <li><a href="#return-on-assets">Return on Assets</a></li>
         <li><a href="#return-on-equity">Return on Equity</a></li>
         <li><a href="#return-on-investment">Return on Investment</a></li>
       </ul>
@@ -231,12 +238,14 @@
         <li><a href="#cash-conversion-cycle">Cash Conversion Cycle</a></li>
         <li><a href="#inventory-turnover">Inventory Turnover</a></li>
       </ul>
-      <p class="tier">Liquidity <span class="tier-n">1</span></p>
+      <p class="tier">Liquidity <span class="tier-n">2</span></p>
       <ul>
+        <li><a href="#current-ratio">Current Ratio</a></li>
         <li><a href="#quick-ratio">Quick Ratio</a></li>
       </ul>
-      <p class="tier">Leverage <span class="tier-n">2</span></p>
+      <p class="tier">Leverage <span class="tier-n">3</span></p>
       <ul>
+        <li><a href="#debt-to-equity">Debt to Equity</a></li>
         <li><a href="#equity-multiplier">Equity Multiplier</a></li>
         <li><a href="#interest-coverage">Interest Coverage</a></li>
       </ul>
@@ -244,37 +253,44 @@
       <ul>
         <li><a href="#altman-z-score">Altman Z-Score</a></li>
       </ul>
-      <p class="tier">Corporate finance <span class="tier-n">7</span></p>
+      <p class="tier">Corporate finance <span class="tier-n">8</span></p>
       <ul>
         <li><a href="#adjusted-present-value">Adjusted Present Value</a></li>
         <li><a href="#economic-value-added">Economic Value Added</a></li>
         <li><a href="#free-cash-flow-to-equity">Free Cash Flow to Equity</a></li>
+        <li><a href="#free-cash-flow-to-firm">Free Cash Flow to Firm</a></li>
         <li><a href="#internal-growth-rate">Internal Growth Rate</a></li>
         <li><a href="#sustainable-growth-rate">Sustainable Growth Rate</a></li>
         <li><a href="#tax-shield">Tax Shield</a></li>
         <li><a href="#wacc">Weighted Average Cost of Capital</a></li>
       </ul>
-      <p class="tier">Risk &amp; markets <span class="tier-n">7</span></p>
+      <p class="tier">Risk &amp; markets <span class="tier-n">9</span></p>
       <ul>
         <li><a href="#beta">Beta</a></li>
         <li><a href="#calmar-ratio">Calmar Ratio</a></li>
         <li><a href="#expected-shortfall">Expected Shortfall</a></li>
+        <li><a href="#jensens-alpha">Jensen's Alpha</a></li>
+        <li><a href="#sharpe-ratio">Sharpe Ratio</a></li>
         <li><a href="#simple-moving-average">Simple Moving Average</a></li>
         <li><a href="#sortino-ratio">Sortino Ratio</a></li>
         <li><a href="#treynor-ratio">Treynor Ratio</a></li>
         <li><a href="#value-at-risk">Value at Risk</a></li>
       </ul>
-      <p class="tier">Bonds <span class="tier-n">5</span></p>
+      <p class="tier">Stocks &amp; bonds <span class="tier-n">7</span></p>
       <ul>
+        <li><a href="#bond-price">Bond Price</a></li>
         <li><a href="#convexity">Convexity</a></li>
         <li><a href="#discounted-cash-flow">Discounted Cash Flow</a></li>
+        <li><a href="#dividend-discount-model">Dividend Discount Model</a></li>
         <li><a href="#macaulay-duration">Macaulay Duration</a></li>
         <li><a href="#modified-duration">Modified Duration</a></li>
         <li><a href="#yield-to-maturity-approximation">Yield to Maturity (approx.)</a></li>
       </ul>
-      <p class="tier">Banking <span class="tier-n">2</span></p>
+      <p class="tier">Banking <span class="tier-n">4</span></p>
       <ul>
         <li><a href="#capital-adequacy-ratio">Capital Adequacy Ratio</a></li>
+        <li><a href="#loan-to-deposit-ratio">Loan-to-Deposit Ratio</a></li>
+        <li><a href="#net-interest-margin">Net Interest Margin</a></li>
         <li><a href="#provision-coverage-ratio">Provision Coverage Ratio</a></li>
       </ul>
       <p class="tier">Options <span class="tier-n">9</span></p>
@@ -354,6 +370,68 @@
           </figure>
         </div>
       </article>
+      <article class="formula" id="annuity-future-value">
+        <header class="f-head">
+          <h3>Annuity Future Value</h3>
+          <code class="f-id">annuity_future_value</code>
+        </header>
+
+        <p class="f-plain">What a fixed run of equal payments accumulates to by the end, once each one has earned interest.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">FV = PMT × ((1 + r)ⁿ − 1) ÷ r</div>
+            <p class="f-story">$100 saved every year for 10 years, earning 5%.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">payment</td><td class="mono-col num">100</td></tr>
+            <tr><td class="mono-col">rate</td><td class="mono-col num">0.05</td></tr>
+            <tr><td class="mono-col">periods</td><td class="mono-col num">10</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">1257.789254…</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/annuity_future_value.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Annuity Future Value request using formula annuity_future_value, and the returned result 1257.789254….">
+            <figcaption>Run in the dashboard &middot; full precision <code>1257.789253554882812500</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="annuity-present-value">
+        <header class="f-head">
+          <h3>Annuity Present Value</h3>
+          <code class="f-id">annuity_present_value</code>
+        </header>
+
+        <p class="f-plain">What a fixed run of equal payments is worth today.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">PV = PMT × (1 − (1 + r)⁻ⁿ) ÷ r</div>
+            <p class="f-story">$100 a year for 10 years, discounted at 5%.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">payment</td><td class="mono-col num">100</td></tr>
+            <tr><td class="mono-col">rate</td><td class="mono-col num">0.05</td></tr>
+            <tr><td class="mono-col">periods</td><td class="mono-col num">10</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">772.173493…</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/annuity_present_value.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Annuity Present Value request using formula annuity_present_value, and the returned result 772.173493….">
+            <figcaption>Run in the dashboard &middot; full precision <code>772.1734929184812512829062028</code></figcaption>
+          </figure>
+        </div>
+      </article>
       <article class="formula" id="continuous-compounding-future-value">
         <header class="f-head">
           <h3>Continuous Compounding</h3>
@@ -382,6 +460,36 @@
           <figure class="f-shot">
             <img loading="lazy" src="img/formulas/continuous_compounding_future_value.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Continuous Compounding request using formula continuous_compounding_future_value, and the returned result 164.872127….">
             <figcaption>Run in the dashboard &middot; full precision <code>164.87212707001471238652108904</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="effective-annual-rate">
+        <header class="f-head">
+          <h3>Effective Annual Rate</h3>
+          <code class="f-id">effective_annual_rate</code>
+        </header>
+
+        <p class="f-plain">What a quoted nominal rate actually costs once compounding inside the year is counted. Always at least the nominal rate, and above it whenever compounding happens more than once.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">EAR = (1 + r ÷ m)^m − 1</div>
+            <p class="f-story">12% nominal, compounded monthly — so really 12.68%.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">nominal_rate</td><td class="mono-col num">0.12</td></tr>
+            <tr><td class="mono-col">compounding_periods</td><td class="mono-col num">12</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.126825…</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/effective_annual_rate.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Effective Annual Rate request using formula effective_annual_rate, and the returned result 0.126825….">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.126825030131969720661201</code></figcaption>
           </figure>
         </div>
       </article>
@@ -447,6 +555,95 @@
           </figure>
         </div>
       </article>
+      <article class="formula" id="internal-rate-of-return">
+        <header class="f-head">
+          <h3>Internal Rate of Return</h3>
+          <code class="f-id">internal_rate_of_return</code>
+        </header>
+
+        <p class="f-plain">The discount rate at which a project's net present value is exactly zero — its break-even rate of return. There is no closed form, so this is solved numerically.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">0 = Σ CFₜ ÷ (1 + IRR)ᵗ</div>
+            <p class="f-story">$1,000 invested today returning $500 a year for three years.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">cash_flows</td><td class="mono-col num">[-1000, 500, 500, 500]</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.233752…</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/internal_rate_of_return.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Internal Rate of Return request using formula internal_rate_of_return, and the returned result 0.233752….">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.2337517858067790690903377949</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="net-present-value">
+        <header class="f-head">
+          <h3>Net Present Value</h3>
+          <code class="f-id">net_present_value</code>
+        </header>
+
+        <p class="f-plain">What a stream of future cash flows is worth today, net of what you paid to get it. Positive means the investment clears the discount rate; negative means it does not.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">NPV = Σ CFₜ ÷ (1 + r)ᵗ</div>
+            <p class="f-story">$1,000 out today, returning $300, $400, $500 and $600 over four years, discounted at 10%.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">rate</td><td class="mono-col num">0.1</td></tr>
+            <tr><td class="mono-col">cash_flows</td><td class="mono-col num">[-1000, 300, 400, 500, 600]</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">388.771259…</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/net_present_value.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Net Present Value request using formula net_present_value, and the returned result 388.771259….">
+            <figcaption>Run in the dashboard &middot; full precision <code>388.77125879379823782528515812</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="perpetuity-present-value">
+        <header class="f-head">
+          <h3>Perpetuity</h3>
+          <code class="f-id">perpetuity_present_value</code>
+        </header>
+
+        <p class="f-plain">Value of a fixed payment that carries on forever. The growing version is <a href="#growing-perpetuity-present-value">Growing Perpetuity</a>.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">PV = PMT ÷ r</div>
+            <p class="f-story">$100 a year forever, discounted at 5%.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">payment</td><td class="mono-col num">100</td></tr>
+            <tr><td class="mono-col">rate</td><td class="mono-col num">0.05</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">2000</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/perpetuity_present_value.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Perpetuity request using formula perpetuity_present_value, and the returned result 2000.">
+            <figcaption>Run in the dashboard &middot; full precision <code>2000</code></figcaption>
+          </figure>
+        </div>
+      </article>
       <article class="formula" id="present-value">
         <header class="f-head">
           <h3>Present Value</h3>
@@ -485,6 +682,37 @@
         <p class="g-note">How much of what comes in survives as profit.</p>
       </div>
 
+      <article class="formula" id="dupont-roe">
+        <header class="f-head">
+          <h3>DuPont ROE</h3>
+          <code class="f-id">dupont_roe</code>
+        </header>
+
+        <p class="f-plain">Return on equity broken into the three things that drive it: margin, how hard the assets work, and how much leverage sits underneath.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">ROE = PM × AT × EM</div>
+            <p class="f-story">A 15% margin, assets turning over twice, equity geared two to one.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">profit_margin</td><td class="mono-col num">0.15</td></tr>
+            <tr><td class="mono-col">asset_turnover</td><td class="mono-col num">2.0</td></tr>
+            <tr><td class="mono-col">equity_multiplier</td><td class="mono-col num">2.0</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.60</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/dupont_roe.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a DuPont ROE request using formula dupont_roe, and the returned result 0.60.">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.60</code></figcaption>
+          </figure>
+        </div>
+      </article>
       <article class="formula" id="profit-margin">
         <header class="f-head">
           <h3>Profit Margin</h3>
@@ -512,6 +740,36 @@
           <figure class="f-shot">
             <img loading="lazy" src="img/formulas/profit_margin.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Profit Margin request using formula profit_margin, and the returned result 0.15.">
             <figcaption>Run in the dashboard &middot; full precision <code>0.15</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="return-on-assets">
+        <header class="f-head">
+          <h3>Return on Assets</h3>
+          <code class="f-id">return_on_assets</code>
+        </header>
+
+        <p class="f-plain">How much profit the business earns per dollar of assets it holds, regardless of how those assets were financed.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">ROA = NI ÷ TA</div>
+            <p class="f-story">$150,000 of net income on $2,000,000 of average total assets.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">net_income</td><td class="mono-col num">150000</td></tr>
+            <tr><td class="mono-col">avg_total_assets</td><td class="mono-col num">2000000</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.075</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/return_on_assets.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Return on Assets request using formula return_on_assets, and the returned result 0.075.">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.075</code></figcaption>
           </figure>
         </div>
       </article>
@@ -680,6 +938,36 @@
         <p class="g-note">Whether short-term obligations can be met.</p>
       </div>
 
+      <article class="formula" id="current-ratio">
+        <header class="f-head">
+          <h3>Current Ratio</h3>
+          <code class="f-id">current_ratio</code>
+        </header>
+
+        <p class="f-plain">Whether short-term assets cover short-term debts. Above 1 means they do. Stricter than this is the <a href="#quick-ratio">Quick Ratio</a>, which excludes inventory.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">CR = CA ÷ CL</div>
+            <p class="f-story">$500,000 of current assets against $250,000 of current liabilities.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">current_assets</td><td class="mono-col num">500000</td></tr>
+            <tr><td class="mono-col">current_liabilities</td><td class="mono-col num">250000</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">2</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/current_ratio.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Current Ratio request using formula current_ratio, and the returned result 2.">
+            <figcaption>Run in the dashboard &middot; full precision <code>2</code></figcaption>
+          </figure>
+        </div>
+      </article>
       <article class="formula" id="quick-ratio">
         <header class="f-head">
           <h3>Quick Ratio</h3>
@@ -718,6 +1006,36 @@
         <p class="g-note">How much of the business is funded by borrowing, and whether the interest is affordable.</p>
       </div>
 
+      <article class="formula" id="debt-to-equity">
+        <header class="f-head">
+          <h3>Debt to Equity</h3>
+          <code class="f-id">debt_to_equity</code>
+        </header>
+
+        <p class="f-plain">How much the business has borrowed relative to what its owners have put in. Higher means more leverage, and more risk if earnings fall.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">D/E = Total liabilities ÷ Shareholders' equity</div>
+            <p class="f-story">$400,000 of liabilities against $1,000,000 of equity.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">total_liabilities</td><td class="mono-col num">400000</td></tr>
+            <tr><td class="mono-col">shareholders_equity</td><td class="mono-col num">1000000</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.40</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/debt_to_equity.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Debt to Equity request using formula debt_to_equity, and the returned result 0.40.">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.40</code></figcaption>
+          </figure>
+        </div>
+      </article>
       <article class="formula" id="equity-multiplier">
         <header class="f-head">
           <h3>Equity Multiplier</h3>
@@ -914,6 +1232,39 @@
           <figure class="f-shot">
             <img loading="lazy" src="img/formulas/free_cash_flow_to_equity.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Free Cash Flow to Equity request using formula free_cash_flow_to_equity, and the returned result 470000.">
             <figcaption>Run in the dashboard &middot; full precision <code>470000</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="free-cash-flow-to-firm">
+        <header class="f-head">
+          <h3>Free Cash Flow to Firm</h3>
+          <code class="f-id">free_cash_flow_to_firm</code>
+        </header>
+
+        <p class="f-plain">Cash the business throws off for everyone who funded it — lenders and owners alike — after tax and after reinvestment. The lenders' share is stripped out in <a href="#free-cash-flow-to-equity">Free Cash Flow to Equity</a>.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">FCFF = EBIT × (1 − t) + D − ΔWC − CapEx</div>
+            <p class="f-story">$500,000 of EBIT taxed at 21%, $100,000 of depreciation added back, $50,000 more tied up in working capital, $150,000 spent on capital.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">ebit</td><td class="mono-col num">500000</td></tr>
+            <tr><td class="mono-col">tax_rate</td><td class="mono-col num">0.21</td></tr>
+            <tr><td class="mono-col">depreciation</td><td class="mono-col num">100000</td></tr>
+            <tr><td class="mono-col">delta_working_capital</td><td class="mono-col num">50000</td></tr>
+            <tr><td class="mono-col">capex</td><td class="mono-col num">150000</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">295000.00</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/free_cash_flow_to_firm.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Free Cash Flow to Firm request using formula free_cash_flow_to_firm, and the returned result 295000.00.">
+            <figcaption>Run in the dashboard &middot; full precision <code>295000.00</code></figcaption>
           </figure>
         </div>
       </article>
@@ -1139,6 +1490,69 @@
           </figure>
         </div>
       </article>
+      <article class="formula" id="jensens-alpha">
+        <header class="f-head">
+          <h3>Jensen's Alpha</h3>
+          <code class="f-id">jensens_alpha</code>
+        </header>
+
+        <p class="f-plain">How much a portfolio beat — or missed — the return CAPM said its risk entitled it to. Positive alpha is return the market exposure does not explain.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">α = Rp − [Rf + β(Rm − Rf)]</div>
+            <p class="f-story">A portfolio returning 12% where CAPM predicted 11.6% for a beta of 1.2.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">portfolio_return</td><td class="mono-col num">0.12</td></tr>
+            <tr><td class="mono-col">risk_free_rate</td><td class="mono-col num">0.02</td></tr>
+            <tr><td class="mono-col">market_return</td><td class="mono-col num">0.1</td></tr>
+            <tr><td class="mono-col">beta</td><td class="mono-col num">1.2</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.004</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/jensens_alpha.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Jensen's Alpha request using formula jensens_alpha, and the returned result 0.004.">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.004</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="sharpe-ratio">
+        <header class="f-head">
+          <h3>Sharpe Ratio</h3>
+          <code class="f-id">sharpe_ratio</code>
+        </header>
+
+        <p class="f-plain">Return earned above the risk-free rate, per unit of total volatility. Where <a href="#sortino-ratio">Sortino</a> counts only downside moves, this counts every move as risk.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">S = (Rp − Rf) ÷ σp</div>
+            <p class="f-story">A portfolio returning 12% with 15% volatility, against a 2% risk-free rate.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">portfolio_return</td><td class="mono-col num">0.12</td></tr>
+            <tr><td class="mono-col">risk_free_rate</td><td class="mono-col num">0.02</td></tr>
+            <tr><td class="mono-col">portfolio_std_dev</td><td class="mono-col num">0.15</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.666667…</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/sharpe_ratio.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Sharpe Ratio request using formula sharpe_ratio, and the returned result 0.666667….">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.6666666666666666666666666667</code></figcaption>
+          </figure>
+        </div>
+      </article>
       <article class="formula" id="simple-moving-average">
         <header class="f-head">
           <h3>Simple Moving Average</h3>
@@ -1270,6 +1684,38 @@
         <p class="g-note">Pricing fixed income and measuring its sensitivity to rates.</p>
       </div>
 
+      <article class="formula" id="bond-price">
+        <header class="f-head">
+          <h3>Bond Price</h3>
+          <code class="f-id">bond_price</code>
+        </header>
+
+        <p class="f-plain">Present value of everything a bond pays: each coupon, plus the face value returned at maturity. When the coupon rate equals the yield the bond prices at par, which is what happens here.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">P = Σ C ÷ (1 + y)ᵗ + F ÷ (1 + y)ⁿ</div>
+            <p class="f-story">A $1,000 bond paying $50 a period for 10 periods, yielding 5%.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">face_value</td><td class="mono-col num">1000</td></tr>
+            <tr><td class="mono-col">coupon_payment</td><td class="mono-col num">50</td></tr>
+            <tr><td class="mono-col">yield_per_period</td><td class="mono-col num">0.05</td></tr>
+            <tr><td class="mono-col">periods</td><td class="mono-col num">10</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">1000.000000</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/bond_price.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Bond Price request using formula bond_price, and the returned result 1000.000000.">
+            <figcaption>Run in the dashboard &middot; full precision <code>1000.0000000000000000000000000</code></figcaption>
+          </figure>
+        </div>
+      </article>
       <article class="formula" id="convexity">
         <header class="f-head">
           <h3>Convexity</h3>
@@ -1327,6 +1773,37 @@
           <figure class="f-shot">
             <img loading="lazy" src="img/formulas/discounted_cash_flow.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Discounted Cash Flow request using formula discounted_cash_flow, and the returned result 754.798169….">
             <figcaption>Run in the dashboard &middot; full precision <code>754.79816952393962161054572776</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="dividend-discount-model">
+        <header class="f-head">
+          <h3>Dividend Discount Model</h3>
+          <code class="f-id">dividend_discount_model</code>
+        </header>
+
+        <p class="f-plain">What a share is worth valued purely as a dividend stream growing at a constant rate. Requires the required return to exceed the growth rate, or the value diverges.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">P₀ = D₁ ÷ (r − g)</div>
+            <p class="f-story">A $2 dividend next year, growing 4% a year, discounted at 10%.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">next_dividend</td><td class="mono-col num">2.0</td></tr>
+            <tr><td class="mono-col">required_return</td><td class="mono-col num">0.1</td></tr>
+            <tr><td class="mono-col">growth_rate</td><td class="mono-col num">0.04</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">33.333333…</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/dividend_discount_model.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Dividend Discount Model request using formula dividend_discount_model, and the returned result 33.333333….">
+            <figcaption>Run in the dashboard &middot; full precision <code>33.333333333333333333333333333</code></figcaption>
           </figure>
         </div>
       </article>
@@ -1456,6 +1933,67 @@
           <figure class="f-shot">
             <img loading="lazy" src="img/formulas/capital_adequacy_ratio.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Capital Adequacy Ratio request using formula capital_adequacy_ratio, and the returned result 0.12.">
             <figcaption>Run in the dashboard &middot; full precision <code>0.12</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="loan-to-deposit-ratio">
+        <header class="f-head">
+          <h3>Loan-to-Deposit Ratio</h3>
+          <code class="f-id">loan_to_deposit_ratio</code>
+        </header>
+
+        <p class="f-plain">How much of a bank's deposit funding it has lent back out. Too low wastes the funding; too high leaves little liquidity buffer.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">LDR = Total loans ÷ Total deposits</div>
+            <p class="f-story">$800,000 of loans funded by $1,000,000 of deposits.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">total_loans</td><td class="mono-col num">800000</td></tr>
+            <tr><td class="mono-col">total_deposits</td><td class="mono-col num">1000000</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.80</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/loan_to_deposit_ratio.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Loan-to-Deposit Ratio request using formula loan_to_deposit_ratio, and the returned result 0.80.">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.80</code></figcaption>
+          </figure>
+        </div>
+      </article>
+      <article class="formula" id="net-interest-margin">
+        <header class="f-head">
+          <h3>Net Interest Margin</h3>
+          <code class="f-id">net_interest_margin</code>
+        </header>
+
+        <p class="f-plain">What a bank earns on its lending after paying for its own funding, per dollar of assets that actually earn interest.</p>
+
+        <div class="f-grid">
+          <div class="f-left">
+            <div class="f-math">NIM = (Interest income − Interest expense) ÷ Avg earning assets</div>
+            <p class="f-story">$500,000 earned and $200,000 paid, on $10,000,000 of earning assets.</p>
+            <table class="f-ports">
+              <thead><tr><th>Port</th><th>Value</th></tr></thead>
+              <tbody>
+            <tr><td class="mono-col">interest_income</td><td class="mono-col num">500000</td></tr>
+            <tr><td class="mono-col">interest_expense</td><td class="mono-col num">200000</td></tr>
+            <tr><td class="mono-col">avg_earning_assets</td><td class="mono-col num">10000000</td></tr>
+              </tbody>
+            </table>
+            <div class="f-result">
+              <span class="f-result-label">Result</span>
+              <span class="f-result-value">0.03</span>
+            </div>
+          </div>
+          <figure class="f-shot">
+            <img loading="lazy" src="img/formulas/net_interest_margin.png" width="852" height="497" alt="The CASIROS dashboard Evaluate panel showing a Net Interest Margin request using formula net_interest_margin, and the returned result 0.03.">
+            <figcaption>Run in the dashboard &middot; full precision <code>0.03</code></figcaption>
           </figure>
         </div>
       </article>
@@ -1804,8 +2342,9 @@
 
 <footer>
   <p>
-    CASIROS Formula Reference — 45 formulas, captured against v0.7.0 and unchanged
-    since; 0.8.0 only added formulas. Every result was
+    CASIROS Formula Reference — 62 formulas. The first 45 were captured against
+    v0.7.0 and are unchanged since; the 17 added in v0.8.0 were captured against
+    that release. Every result was
     produced by POSTing the request shown to a running server backed by
     PostgreSQL 16, and every screenshot was captured from the live dashboard.
     Results are displayed to six decimal places; the full precision returned by
